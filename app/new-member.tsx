@@ -33,6 +33,12 @@ export default function NewMemberScreen() {
 
       {/* Content Container */}
       <View style={styles.contentContainer}>
+        {/* Progress Indicator */}
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressBarActive, { width: isAdmin ? 107 : 80 }]} />
+          <View style={styles.progressBarInactive} />
+        </View>
+
         {/* Title */}
         <ThemedText style={styles.title}>New Member</ThemedText>
 
@@ -130,6 +136,25 @@ const styles = StyleSheet.create({
     paddingTop: 100,
     paddingHorizontal: 24,
     alignItems: 'center',
+  },
+  progressContainer: {
+    width: '100%',
+    maxWidth: 320,
+    flexDirection: 'row',
+    marginBottom: 32,
+    height: 4,
+  },
+  progressBarActive: {
+    height: 4,
+    backgroundColor: '#5B4C9D',
+    borderRadius: 2,
+    marginRight: 4,
+  },
+  progressBarInactive: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
   },
   title: {
     fontSize: 32,

@@ -43,7 +43,7 @@ export default function IdentityHubScreen() {
       <View style={styles.contentContainer}>
         {/* Progress Indicator */}
         <View style={styles.progressContainer}>
-          <View style={styles.progressBarActive} />
+          <View style={[styles.progressBarActive, { width: isAdmin ? 213 : 160 }]} />
           <View style={styles.progressBarInactive} />
         </View>
 
