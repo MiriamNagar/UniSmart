@@ -5,6 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useSelection } from '@/contexts/selection-context';
+import { ROUTES } from '@/constants/routes';
 
 export default function DepartmentScreen() {
   const { userInfo, setUserInfo } = useSelection();
@@ -39,7 +40,7 @@ export default function DepartmentScreen() {
         faculty: selectedFaculty,
         major: selectedMajor,
       });
-      router.push('/academic-level');
+      router.push(ROUTES.ONBOARDING.ACADEMIC_LEVEL);
     }
   };
 

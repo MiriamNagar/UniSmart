@@ -1,20 +1,24 @@
-import { StyleSheet, TextInput, TouchableOpacity, View, Image } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ROUTES } from '@/constants/routes';
 
-export default function StudentLoginScreen() {
+export default function NewMemberScreen() {
+  const { userType } = useLocalSearchParams<{ userType?: string }>();
+  const isAdmin = userType === 'admin';
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const isFormValid = email.trim().length > 0 && password.trim().length > 0;
 
-  const handleAuthenticate = () => {
+  const handleCreateProfile = () => {
     if (isFormValid) {
-      // Navigate to planner after successful login
-      router.push('/planner');
+      // Both admin and student go to identity-hub, pass userType
+      router.push({ pathname: ROUTES.ONBOARDING.IDENTITY_HUB, params: { userType: userType || 'student' } });
     }
   };
 
@@ -30,8 +34,14 @@ export default function StudentLoginScreen() {
 
       {/* Content Container */}
       <View style={styles.contentContainer}>
+        {/* Progress Indicator */}
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressBarActive, { width: isAdmin ? 107 : 80 }]} />
+          <View style={styles.progressBarInactive} />
+        </View>
+
         {/* Title */}
-        <ThemedText style={styles.title}>Welcome Back</ThemedText>
+        <ThemedText style={styles.title}>New Member</ThemedText>
 
         {/* Subtitle */}
         <ThemedText style={styles.subtitle}>Enter your credentials.</ThemedText>
@@ -40,10 +50,10 @@ export default function StudentLoginScreen() {
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>UNIVERSITY EMAIL</ThemedText>
           <TextInput
-            style={styles.input}
+            style={styles.emailInput}
             value={email}
             onChangeText={setEmail}
-            placeholder="student@university.edu"
+            placeholder={isAdmin ? "admin@msmail.ariel.ac.il" : "student-name@msmail.ariel.ac.il"}
             placeholderTextColor="#9B9B9B"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -54,28 +64,31 @@ export default function StudentLoginScreen() {
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>PASSWORD</ThemedText>
           <TextInput
-            style={styles.input}
+            style={styles.passwordInput}
             value={password}
             onChangeText={setPassword}
-            placeholder="........"
+            placeholder="...."
             placeholderTextColor="#9B9B9B"
             secureTextEntry
             autoCapitalize="none"
           />
         </View>
 
-        {/* Authenticate Button */}
+        {/* Create Profile Button */}
         <TouchableOpacity
-          style={[styles.authenticateButton, !isFormValid && styles.authenticateButtonDisabled]}
+          style={[
+            styles.createProfileButton,
+            !isFormValid && styles.createProfileButtonDisabled,
+          ]}
           activeOpacity={isFormValid ? 0.8 : 1}
-          onPress={handleAuthenticate}
+          onPress={handleCreateProfile}
           disabled={!isFormValid}>
           <ThemedText
             style={[
-              styles.authenticateButtonText,
-              !isFormValid && styles.authenticateButtonTextDisabled,
+              styles.createProfileButtonText,
+              !isFormValid && styles.createProfileButtonTextDisabled,
             ]}>
-            AUTHENTICATE
+            CREATE PROFILE
           </ThemedText>
         </TouchableOpacity>
 
@@ -92,7 +105,8 @@ export default function StudentLoginScreen() {
           activeOpacity={0.8}
           onPress={() => {
             // TODO: Implement Google authentication
-            router.push('/planner');
+            // For now, navigate to identity-hub with userType
+            router.push({ pathname: ROUTES.ONBOARDING.IDENTITY_HUB, params: { userType: userType || 'student' } });
           }}>
           <Image
             source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
@@ -124,6 +138,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
   },
+  progressContainer: {
+    width: '100%',
+    maxWidth: 320,
+    flexDirection: 'row',
+    marginBottom: 32,
+    height: 4,
+  },
+  progressBarActive: {
+    height: 4,
+    backgroundColor: '#5B4C9D',
+    borderRadius: 2,
+    marginRight: 4,
+  },
+  progressBarInactive: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+  },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
@@ -152,7 +185,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  input: {
+  emailInput: {
     width: '100%',
     height: 56,
     backgroundColor: '#F5F5F5',
@@ -161,7 +194,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1A1A1A',
   },
-  authenticateButton: {
+  passwordInput: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#5B4C9D',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: '#1A1A1A',
+  },
+  createProfileButton: {
     width: '100%',
     maxWidth: 320,
     height: 56,
@@ -171,16 +215,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  authenticateButtonText: {
+  createProfileButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  authenticateButtonDisabled: {
+  createProfileButtonDisabled: {
     backgroundColor: '#E0E0E0',
   },
-  authenticateButtonTextDisabled: {
+  createProfileButtonTextDisabled: {
     color: '#9B9B9B',
   },
   dividerContainer: {

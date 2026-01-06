@@ -8,6 +8,7 @@ import { useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
+import { ROUTES } from '@/constants/routes';
 
 // Conditionally import Sharing and IntentLauncher (will be available after npm install)
 let Sharing: any = null;
@@ -33,16 +34,13 @@ interface NoteItem {
 
 export default function FolderContentScreen() {
   const { folderName } = useLocalSearchParams<{ folderName: string }>();
-  const { lastPlannerRoute, alerts, userInfo } = useSelection();
+  const { userInfo } = useSelection();
   const [isGalleryModalVisible, setGalleryModalVisible] = useState(false);
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedNote, setSelectedNote] = useState<NoteItem | null>(null);
 
   const displayName = folderName || 'General Notes';
-
-  // Check if user is admin (admin has empty faculty, major, academicLevel)
-  const isAdmin = !userInfo.faculty && !userInfo.major && !userInfo.academicLevel;
 
   const requestCameraPermission = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -314,7 +312,7 @@ export default function FolderContentScreen() {
       <View style={styles.navBar}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={() => router.push(ROUTES.STUDENT.NOTES)}
           activeOpacity={0.7}>
           <MaterialIcons name="chevron-left" size={24} color="#1A1A1A" />
         </TouchableOpacity>
@@ -451,77 +449,6 @@ export default function FolderContentScreen() {
           )}
         </View>
       </Modal>
-
-      {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        {isAdmin ? (
-          <>
-            {/* Admin Navigation */}
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/admin-dashboard')}>
-              <MaterialIcons name="bar-chart" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>ANALYSIS</ThemedText>
-            </TouchableOpacity>
-            <View style={styles.navItem}>
-              <MaterialIcons name="description" size={24} color="#5B4C9D" />
-              <ThemedText style={styles.navItemTextActive}>NOTES</ThemedText>
-            </View>
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/account')}>
-              <MaterialIcons name="account-circle" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>ACCOUNT</ThemedText>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            {/* Student Navigation */}
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => {
-                const route = lastPlannerRoute || '/planner';
-                router.push(route as any);
-              }}>
-              <MaterialIcons name="event-note" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>PLANNER</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/saved')}>
-              <MaterialIcons name="bookmark" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>SAVED</ThemedText>
-            </TouchableOpacity>
-            <View style={styles.navItem}>
-              <MaterialIcons name="description" size={24} color="#5B4C9D" />
-              <ThemedText style={styles.navItemTextActive}>NOTES</ThemedText>
-            </View>
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/alerts')}>
-              <View style={styles.alertIconContainer}>
-                <MaterialIcons name="notifications" size={24} color="#9B9B9B" />
-                {alerts.filter((alert) => !alert.isRead).length > 0 && (
-                  <View style={styles.alertDot} />
-                )}
-              </View>
-              <ThemedText style={styles.navItemText}>ALERTS</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/account')}>
-              <MaterialIcons name="account-circle" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>ACCOUNT</ThemedText>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
     </ThemedView>
   );
 }
@@ -616,7 +543,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   emptyState: {
     flex: 1,
@@ -627,37 +554,6 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 16,
     color: '#9B9B9B',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 32,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingVertical: 8,
-  },
-  navItemText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#9B9B9B',
-    marginTop: 4,
-    textTransform: 'uppercase',
-  },
-  navItemTextActive: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#5B4C9D',
-    marginTop: 4,
-    textTransform: 'uppercase',
   },
   notesGrid: {
     flexDirection: 'row',
@@ -817,18 +713,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     textAlign: 'center',
-  },
-  alertIconContainer: {
-    position: 'relative',
-  },
-  alertDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF4444',
   },
 });
 

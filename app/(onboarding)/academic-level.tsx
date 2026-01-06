@@ -5,6 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useSelection } from '@/contexts/selection-context';
+import { ROUTES } from '@/constants/routes';
 
 export default function AcademicLevelScreen() {
   const { userInfo, setUserInfo } = useSelection();
@@ -27,7 +28,7 @@ export default function AcademicLevelScreen() {
         ...userInfo,
         academicLevel: selectedLevel,
       });
-      router.push('/setup-complete');
+      router.push(ROUTES.ONBOARDING.SETUP_COMPLETE);
     }
   };
 

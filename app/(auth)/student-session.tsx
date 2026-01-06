@@ -1,35 +1,33 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ROUTES } from '@/constants/routes';
 
-export default function AdminSessionScreen() {
+export default function LoginScreen() {
   return (
     <ThemedView style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-        activeOpacity={0.7}>
-        <MaterialIcons name="chevron-left" size={28} color="#9B9B9B" />
-      </TouchableOpacity>
-
       {/* Content Container */}
       <View style={styles.contentContainer}>
         {/* Title */}
-        <ThemedText style={styles.title}>Admin Session</ThemedText>
+        <ThemedText style={styles.title}>Let&apos;s Start</ThemedText>
 
         {/* Subtitle */}
         <ThemedText style={styles.subtitle}>How would you like to continue?</ThemedText>
 
         {/* Sign In Button */}
-        <TouchableOpacity style={styles.signInButton} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.signInButton}
+          activeOpacity={0.8}
+          onPress={() => router.push({ pathname: ROUTES.AUTH.WELCOME, params: { mode: 'signin' } })}>
           <ThemedText style={styles.signInButtonText}>SIGN IN</ThemedText>
         </TouchableOpacity>
 
         {/* Create Account Button */}
-        <TouchableOpacity style={styles.createAccountButton} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.createAccountButton}
+          activeOpacity={0.8}
+          onPress={() => router.push({ pathname: ROUTES.AUTH.WELCOME, params: { mode: 'signup' } })}>
           <ThemedText style={styles.createAccountButtonText}>CREATE ACCOUNT</ThemedText>
         </TouchableOpacity>
       </View>
@@ -42,25 +40,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 16,
-    zIndex: 1,
-    padding: 8,
-  },
   contentContainer: {
     flex: 1,
-    paddingTop: 100,
-    paddingHorizontal: 24,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 16,
+    color: '#2C2C2C',
+    marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
@@ -74,7 +64,7 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     height: 56,
     backgroundColor: '#5B4C9D',
-    borderRadius: 28,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -90,9 +80,9 @@ const styles = StyleSheet.create({
     maxWidth: 320,
     height: 56,
     backgroundColor: '#FFFFFF',
-    borderRadius: 28,
     borderWidth: 2,
     borderColor: '#5B4C9D',
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -4,6 +4,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
+import { ROUTES } from '@/constants/routes';
 
 export default function SplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -24,7 +25,7 @@ export default function SplashScreen() {
         duration: 500,
         useNativeDriver: true,
       }).start(() => {
-        router.replace('/student-session');
+        router.replace(ROUTES.AUTH.STUDENT_SESSION);
       });
     }, 2000);
 
@@ -38,7 +39,7 @@ export default function SplashScreen() {
       duration: 500,
       useNativeDriver: true,
     }).start(() => {
-      router.replace('/student-session');
+      router.replace(ROUTES.AUTH.STUDENT_SESSION);
     });
   };
 

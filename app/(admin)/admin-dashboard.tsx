@@ -4,6 +4,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
 import { useSelection } from '@/contexts/selection-context';
+import { ROUTES } from '@/constants/routes';
 
 interface CourseTrend {
   code: string;
@@ -153,28 +154,6 @@ export default function AdminDashboardScreen() {
           </View>
         </View>
       </ScrollView>
-
-      {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <View style={styles.navItem}>
-          <MaterialIcons name="bar-chart" size={24} color="#5B4C9D" />
-          <ThemedText style={styles.navItemTextActive}>ANALYSIS</ThemedText>
-        </View>
-        <TouchableOpacity
-          style={styles.navItem}
-          activeOpacity={0.7}
-          onPress={() => router.push('/notes')}>
-          <MaterialIcons name="description" size={24} color="#9B9B9B" />
-          <ThemedText style={styles.navItemText}>NOTES</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          activeOpacity={0.7}
-          onPress={() => router.push('/account')}>
-          <MaterialIcons name="account-circle" size={24} color="#9B9B9B" />
-          <ThemedText style={styles.navItemText}>ACCOUNT</ThemedText>
-        </TouchableOpacity>
-      </View>
     </ThemedView>
   );
 }
@@ -410,37 +389,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     letterSpacing: 0.5,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 32,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingVertical: 8,
-  },
-  navItemText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#9B9B9B',
-    marginTop: 4,
-    textTransform: 'uppercase',
-  },
-  navItemTextActive: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#5B4C9D',
-    marginTop: 4,
-    textTransform: 'uppercase',
   },
 });
 

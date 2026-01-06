@@ -3,6 +3,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ROUTES } from '@/constants/routes';
 
 export default function WelcomeScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
@@ -10,17 +11,17 @@ export default function WelcomeScreen() {
 
   const handleStudentPress = () => {
     if (isSignIn) {
-      router.push('/student-login');
+      router.push(ROUTES.AUTH.STUDENT_LOGIN);
     } else {
-      router.push({ pathname: '/new-member', params: { userType: 'student' } });
+      router.push({ pathname: ROUTES.AUTH.NEW_MEMBER, params: { userType: 'student' } });
     }
   };
 
   const handleAdminPress = () => {
     if (isSignIn) {
-      router.push('/admin-login');
+      router.push(ROUTES.AUTH.ADMIN_LOGIN);
     } else {
-      router.push({ pathname: '/new-member', params: { userType: 'admin' } });
+      router.push({ pathname: ROUTES.AUTH.NEW_MEMBER, params: { userType: 'admin' } });
     }
   };
 

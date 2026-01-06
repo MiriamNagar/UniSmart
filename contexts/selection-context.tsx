@@ -27,6 +27,7 @@ interface UserInfo {
   faculty: string;
   major: string;
   academicLevel: string;
+  userType?: 'student' | 'admin';
 }
 
 interface SelectionContextType {
@@ -40,8 +41,6 @@ interface SelectionContextType {
   setEndHour: (hour: string) => void;
   selectedSemester: string;
   setSelectedSemester: (semester: string) => void;
-  lastPlannerRoute: string;
-  setLastPlannerRoute: (route: string) => void;
   savedPlans: SavedPlan[];
   setSavedPlans: (plans: SavedPlan[] | ((prev: SavedPlan[]) => SavedPlan[])) => void;
   customFolders: string[];
@@ -60,7 +59,6 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const [startHour, setStartHour] = useState('Any');
   const [endHour, setEndHour] = useState('Any');
   const [selectedSemester, setSelectedSemester] = useState('Sem 1');
-  const [lastPlannerRoute, setLastPlannerRoute] = useState('/planner');
   const [savedPlans, setSavedPlansState] = useState<SavedPlan[]>([]);
   const [customFolders, setCustomFoldersState] = useState<string[]>([]);
   const [alerts, setAlertsState] = useState<Alert[]>([
@@ -83,6 +81,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     faculty: '',
     major: '',
     academicLevel: '',
+    userType: undefined,
   });
 
   const setUserInfo = (info: UserInfo) => {
@@ -146,8 +145,6 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         setEndHour,
         selectedSemester,
         setSelectedSemester,
-        lastPlannerRoute,
-        setLastPlannerRoute,
         savedPlans,
         setSavedPlans,
         customFolders,

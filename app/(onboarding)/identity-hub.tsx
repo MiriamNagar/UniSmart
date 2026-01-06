@@ -5,6 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useSelection } from '@/contexts/selection-context';
+import { ROUTES } from '@/constants/routes';
 
 export default function IdentityHubScreen() {
   const { userType } = useLocalSearchParams<{ userType?: string }>();
@@ -18,13 +19,26 @@ export default function IdentityHubScreen() {
   const handleContinue = () => {
     if (isFormValid) {
       if (isAdmin) {
-        // Admin: save info and go directly to setup-complete
-        setUserInfo({ ...userInfo, fullName, age, faculty: '', major: '', academicLevel: '' });
-        router.push('/setup-complete');
+        // Admin: save info with userType and go directly to setup-complete
+        setUserInfo({ 
+          ...userInfo, 
+          fullName, 
+          age, 
+          faculty: '', 
+          major: '', 
+          academicLevel: '',
+          userType: 'admin'
+        });
+        router.push(ROUTES.ONBOARDING.SETUP_COMPLETE);
       } else {
-        // Student: save info and go to department
-        setUserInfo({ ...userInfo, fullName, age });
-        router.push('/department');
+        // Student: save info with userType and go to department
+        setUserInfo({ 
+          ...userInfo, 
+          fullName, 
+          age,
+          userType: 'student'
+        });
+        router.push(ROUTES.ONBOARDING.DEPARTMENT);
       }
     }
   };

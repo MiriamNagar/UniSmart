@@ -1,9 +1,10 @@
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ROUTES } from '@/constants/routes';
 
-export default function LoginScreen() {
+export default function AdminSessionScreen() {
   return (
     <ThemedView style={styles.container}>
       {/* Content Container */}
@@ -15,18 +16,18 @@ export default function LoginScreen() {
         <ThemedText style={styles.subtitle}>How would you like to continue?</ThemedText>
 
         {/* Sign In Button */}
-        <TouchableOpacity
-          style={styles.signInButton}
+        <TouchableOpacity 
+          style={styles.signInButton} 
           activeOpacity={0.8}
-          onPress={() => router.push({ pathname: '/welcome', params: { mode: 'signin' } })}>
+          onPress={() => router.push(ROUTES.AUTH.ADMIN_LOGIN)}>
           <ThemedText style={styles.signInButtonText}>SIGN IN</ThemedText>
         </TouchableOpacity>
 
         {/* Create Account Button */}
-        <TouchableOpacity
-          style={styles.createAccountButton}
+        <TouchableOpacity 
+          style={styles.createAccountButton} 
           activeOpacity={0.8}
-          onPress={() => router.push({ pathname: '/welcome', params: { mode: 'signup' } })}>
+          onPress={() => router.push({ pathname: ROUTES.AUTH.NEW_MEMBER, params: { userType: 'admin' } })}>
           <ThemedText style={styles.createAccountButtonText}>CREATE ACCOUNT</ThemedText>
         </TouchableOpacity>
       </View>

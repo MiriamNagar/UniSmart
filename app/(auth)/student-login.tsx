@@ -4,17 +4,36 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { ROUTES } from '@/constants/routes';
+import { useSelection } from '@/contexts/selection-context';
 
-export default function AdminLoginScreen() {
+export default function StudentLoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { setUserInfo, userInfo } = useSelection();
 
   const isFormValid = email.trim().length > 0 && password.trim().length > 0;
 
   const handleAuthenticate = () => {
     if (isFormValid) {
-      // Navigate to admin dashboard after successful login
-      router.push('/admin-dashboard');
+      // Set userInfo to indicate authentication (preserve existing data if available)
+      if (!userInfo.fullName) {
+        // Extract name from email as a placeholder, or use a default
+        const nameFromEmail = email.split('@')[0] || 'Student';
+        setUserInfo({
+          ...userInfo,
+          fullName: nameFromEmail,
+          userType: 'student',
+        });
+      } else if (!userInfo.userType) {
+        // Ensure userType is set even if fullName already exists
+        setUserInfo({
+          ...userInfo,
+          userType: 'student',
+        });
+      }
+      // Navigate to planner after successful login
+      router.replace(ROUTES.STUDENT.PLANNER);
     }
   };
 
@@ -43,7 +62,7 @@ export default function AdminLoginScreen() {
             style={styles.input}
             value={email}
             onChangeText={setEmail}
-            placeholder="admin@university.edu"
+            placeholder="student@university.edu"
             placeholderTextColor="#9B9B9B"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -92,7 +111,20 @@ export default function AdminLoginScreen() {
           activeOpacity={0.8}
           onPress={() => {
             // TODO: Implement Google authentication
-            router.push('/admin-dashboard');
+            // Set userInfo to indicate authentication
+            if (!userInfo.fullName) {
+              setUserInfo({
+                ...userInfo,
+                fullName: 'Student',
+                userType: 'student',
+              });
+            } else if (!userInfo.userType) {
+              setUserInfo({
+                ...userInfo,
+                userType: 'student',
+              });
+            }
+            router.replace(ROUTES.STUDENT.PLANNER);
           }}>
           <Image
             source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}

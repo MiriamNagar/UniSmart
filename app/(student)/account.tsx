@@ -4,12 +4,13 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
 import { useSelection } from '@/contexts/selection-context';
+import { ROUTES } from '@/constants/routes';
 
 export default function AccountScreen() {
-  const { lastPlannerRoute, userInfo, alerts } = useSelection();
+  const { userInfo, setUserInfo } = useSelection();
 
-  // Check if user is admin (admin has empty faculty, major, academicLevel)
-  const isAdmin = !userInfo.faculty && !userInfo.major && !userInfo.academicLevel;
+  // Check if user is admin
+  const isAdmin = userInfo.userType === 'admin';
 
   const getInitials = (name: string) => {
     if (!name) return 'SU';
@@ -39,7 +40,21 @@ export default function AccountScreen() {
         text: 'Logout',
         style: 'destructive',
         onPress: () => {
-          router.replace('/student-session');
+          // Navigate first to get to auth route before layouts check
+          router.replace(ROUTES.AUTH.STUDENT_SESSION);
+          
+          // Clear userInfo after navigation has completed
+          // This prevents student/admin layouts from redirecting
+          setTimeout(() => {
+            setUserInfo({
+              fullName: '',
+              age: '',
+              faculty: '',
+              major: '',
+              academicLevel: '',
+              userType: undefined,
+            });
+          }, 200);
         },
       },
     ]);
@@ -74,10 +89,10 @@ export default function AccountScreen() {
             <ThemedText style={styles.userName}>
               {userInfo.fullName || 'Student User'}
             </ThemedText>
-                    <View style={styles.roleContainer}>
-                      <ThemedText style={styles.roleLabel}>ROLE: </ThemedText>
-                      <ThemedText style={styles.roleValue}>{isAdmin ? 'ADMIN' : 'STUDENT'}</ThemedText>
-                    </View>
+            <View style={styles.roleContainer}>
+              <ThemedText style={styles.roleLabel}>ROLE: </ThemedText>
+              <ThemedText style={styles.roleValue}>{isAdmin ? 'ADMIN' : 'STUDENT'}</ThemedText>
+            </View>
           </View>
         </View>
 
@@ -111,77 +126,6 @@ export default function AccountScreen() {
           <ThemedText style={styles.logoutText}>LOGOUT</ThemedText>
         </TouchableOpacity>
       </ScrollView>
-
-      {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        {isAdmin ? (
-          <>
-            {/* Admin Navigation */}
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/admin-dashboard')}>
-              <MaterialIcons name="bar-chart" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>ANALYSIS</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/notes')}>
-              <MaterialIcons name="description" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>NOTES</ThemedText>
-            </TouchableOpacity>
-            <View style={styles.navItem}>
-              <MaterialIcons name="account-circle" size={24} color="#5B4C9D" />
-              <ThemedText style={styles.navItemTextActive}>ACCOUNT</ThemedText>
-            </View>
-          </>
-        ) : (
-          <>
-            {/* Student Navigation */}
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => {
-                const route = lastPlannerRoute || '/planner';
-                router.push(route as any);
-              }}>
-              <MaterialIcons name="event-note" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>PLANNER</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/saved')}>
-              <MaterialIcons name="bookmark" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>SAVED</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/notes')}>
-              <MaterialIcons name="description" size={24} color="#9B9B9B" />
-              <ThemedText style={styles.navItemText}>NOTES</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.navItem}
-              activeOpacity={0.7}
-              onPress={() => router.push('/alerts')}>
-              <View style={styles.alertIconContainer}>
-                <MaterialIcons name="notifications" size={24} color="#9B9B9B" />
-                {alerts.filter((alert) => !alert.isRead).length > 0 && (
-                  <View style={styles.alertDot} />
-                )}
-              </View>
-              <ThemedText style={styles.navItemText}>ALERTS</ThemedText>
-            </TouchableOpacity>
-            <View style={styles.navItem}>
-              <MaterialIcons name="account-circle" size={24} color="#5B4C9D" />
-              <ThemedText style={styles.navItemTextActive}>ACCOUNT</ThemedText>
-            </View>
-          </>
-        )}
-      </View>
     </ThemedView>
   );
 }
@@ -321,49 +265,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FF4444',
     letterSpacing: 0.5,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 32,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingVertical: 8,
-  },
-  navItemText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#9B9B9B',
-    marginTop: 4,
-    textTransform: 'uppercase',
-  },
-  navItemTextActive: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#5B4C9D',
-    marginTop: 4,
-    textTransform: 'uppercase',
-  },
-  alertIconContainer: {
-    position: 'relative',
-  },
-  alertDot: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF4444',
   },
 });
 

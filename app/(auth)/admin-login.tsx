@@ -1,23 +1,42 @@
+import { StyleSheet, TextInput, TouchableOpacity, View, Image } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { MaterialIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ROUTES } from '@/constants/routes';
+import { useSelection } from '@/contexts/selection-context';
 
-export default function NewMemberScreen() {
-  const { userType } = useLocalSearchParams<{ userType?: string }>();
-  const isAdmin = userType === 'admin';
-  
+export default function AdminLoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { setUserInfo, userInfo } = useSelection();
 
   const isFormValid = email.trim().length > 0 && password.trim().length > 0;
 
-  const handleCreateProfile = () => {
+  const handleAuthenticate = () => {
     if (isFormValid) {
-      // Both admin and student go to identity-hub, pass userType
-      router.push({ pathname: '/identity-hub', params: { userType: userType || 'student' } });
+      // Set userInfo for admin
+      if (!userInfo.fullName) {
+        // Extract name from email as a placeholder, or use a default
+        const nameFromEmail = email.split('@')[0] || 'Admin';
+        setUserInfo({
+          fullName: nameFromEmail,
+          age: '',
+          faculty: '',
+          major: '',
+          academicLevel: '',
+          userType: 'admin',
+        });
+      } else if (!userInfo.userType) {
+        // Ensure userType is set even if fullName already exists
+        setUserInfo({
+          ...userInfo,
+          userType: 'admin',
+        });
+      }
+      // Navigate to admin dashboard after successful login
+      router.replace(ROUTES.ADMIN.DASHBOARD);
     }
   };
 
@@ -33,14 +52,8 @@ export default function NewMemberScreen() {
 
       {/* Content Container */}
       <View style={styles.contentContainer}>
-        {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBarActive, { width: isAdmin ? 107 : 80 }]} />
-          <View style={styles.progressBarInactive} />
-        </View>
-
         {/* Title */}
-        <ThemedText style={styles.title}>New Member</ThemedText>
+        <ThemedText style={styles.title}>Welcome Back</ThemedText>
 
         {/* Subtitle */}
         <ThemedText style={styles.subtitle}>Enter your credentials.</ThemedText>
@@ -49,10 +62,10 @@ export default function NewMemberScreen() {
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>UNIVERSITY EMAIL</ThemedText>
           <TextInput
-            style={styles.emailInput}
+            style={styles.input}
             value={email}
             onChangeText={setEmail}
-            placeholder={isAdmin ? "admin@msmail.ariel.ac.il" : "student-name@msmail.ariel.ac.il"}
+            placeholder="admin@university.edu"
             placeholderTextColor="#9B9B9B"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -63,31 +76,28 @@ export default function NewMemberScreen() {
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>PASSWORD</ThemedText>
           <TextInput
-            style={styles.passwordInput}
+            style={styles.input}
             value={password}
             onChangeText={setPassword}
-            placeholder="...."
+            placeholder="........"
             placeholderTextColor="#9B9B9B"
             secureTextEntry
             autoCapitalize="none"
           />
         </View>
 
-        {/* Create Profile Button */}
+        {/* Authenticate Button */}
         <TouchableOpacity
-          style={[
-            styles.createProfileButton,
-            !isFormValid && styles.createProfileButtonDisabled,
-          ]}
+          style={[styles.authenticateButton, !isFormValid && styles.authenticateButtonDisabled]}
           activeOpacity={isFormValid ? 0.8 : 1}
-          onPress={handleCreateProfile}
+          onPress={handleAuthenticate}
           disabled={!isFormValid}>
           <ThemedText
             style={[
-              styles.createProfileButtonText,
-              !isFormValid && styles.createProfileButtonTextDisabled,
+              styles.authenticateButtonText,
+              !isFormValid && styles.authenticateButtonTextDisabled,
             ]}>
-            CREATE PROFILE
+            AUTHENTICATE
           </ThemedText>
         </TouchableOpacity>
 
@@ -104,8 +114,23 @@ export default function NewMemberScreen() {
           activeOpacity={0.8}
           onPress={() => {
             // TODO: Implement Google authentication
-            // For now, navigate to identity-hub with userType
-            router.push({ pathname: '/identity-hub', params: { userType: userType || 'student' } });
+            // Set userInfo for admin
+            if (!userInfo.fullName) {
+              setUserInfo({
+                fullName: 'Admin',
+                age: '',
+                faculty: '',
+                major: '',
+                academicLevel: '',
+                userType: 'admin',
+              });
+            } else if (!userInfo.userType) {
+              setUserInfo({
+                ...userInfo,
+                userType: 'admin',
+              });
+            }
+            router.replace(ROUTES.ADMIN.DASHBOARD);
           }}>
           <Image
             source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
@@ -137,25 +162,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
   },
-  progressContainer: {
-    width: '100%',
-    maxWidth: 320,
-    flexDirection: 'row',
-    marginBottom: 32,
-    height: 4,
-  },
-  progressBarActive: {
-    height: 4,
-    backgroundColor: '#5B4C9D',
-    borderRadius: 2,
-    marginRight: 4,
-  },
-  progressBarInactive: {
-    flex: 1,
-    height: 4,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 2,
-  },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
@@ -184,7 +190,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  emailInput: {
+  input: {
     width: '100%',
     height: 56,
     backgroundColor: '#F5F5F5',
@@ -193,18 +199,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1A1A1A',
   },
-  passwordInput: {
-    width: '100%',
-    height: 56,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 2,
-    borderColor: '#5B4C9D',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: '#1A1A1A',
-  },
-  createProfileButton: {
+  authenticateButton: {
     width: '100%',
     maxWidth: 320,
     height: 56,
@@ -214,16 +209,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  createProfileButtonText: {
+  authenticateButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  createProfileButtonDisabled: {
+  authenticateButtonDisabled: {
     backgroundColor: '#E0E0E0',
   },
-  createProfileButtonTextDisabled: {
+  authenticateButtonTextDisabled: {
     color: '#9B9B9B',
   },
   dividerContainer: {
