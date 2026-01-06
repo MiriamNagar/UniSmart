@@ -2,12 +2,25 @@ import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
 export default function PlannerScreen() {
-  const { selectedSemester, setSelectedSemester } = useSelection();
+  const { selectedSemester, setSelectedSemester, lastPlannerFlowRoute, setLastPlannerFlowRoute } = useSelection();
+
+  // Clear saved route when explicitly navigating to main planner screen
+  // This allows users to start fresh when they come back to main planner
+  useFocusEffect(
+    useCallback(() => {
+      if (lastPlannerFlowRoute) {
+        // Clear the saved route when we're explicitly on the main planner screen
+        // This means the user wants to see the main planner, not the saved state
+        setLastPlannerFlowRoute(null);
+      }
+    }, [lastPlannerFlowRoute, setLastPlannerFlowRoute])
+  );
 
   return (
     <ThemedView style={styles.container}>
@@ -82,7 +95,11 @@ export default function PlannerScreen() {
         <TouchableOpacity
           style={styles.beginButton}
           activeOpacity={0.8}
-          onPress={() => router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION)}>
+          onPress={() => {
+            // Clear any previous flow route when starting fresh
+            setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
+            router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
+          }}>
           <ThemedText style={styles.beginButtonText}>Begin Course Selection</ThemedText>
         </TouchableOpacity>
       </ScrollView>

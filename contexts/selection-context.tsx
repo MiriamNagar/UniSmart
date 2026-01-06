@@ -49,6 +49,8 @@ interface SelectionContextType {
   setAlerts: (alerts: Alert[] | ((prev: Alert[]) => Alert[])) => void;
   userInfo: UserInfo;
   setUserInfo: (info: UserInfo) => void;
+  lastPlannerFlowRoute: string | null;
+  setLastPlannerFlowRoute: (route: string | null) => void;
 }
 
 const SelectionContext = createContext<SelectionContextType | undefined>(undefined);
@@ -83,6 +85,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     academicLevel: '',
     userType: undefined,
   });
+  const [lastPlannerFlowRoute, setLastPlannerFlowRoute] = useState<string | null>(null);
 
   const setUserInfo = (info: UserInfo) => {
     setUserInfoState(info);
@@ -149,11 +152,13 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         setSavedPlans,
         customFolders,
         setCustomFolders,
-        alerts,
-        setAlerts,
-        userInfo,
-        setUserInfo,
-      }}>
+      alerts,
+      setAlerts,
+      userInfo,
+      setUserInfo,
+      lastPlannerFlowRoute,
+      setLastPlannerFlowRoute,
+    }}>
       {children}
     </SelectionContext.Provider>
   );

@@ -3,11 +3,17 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
 export default function CourseSelectionScreen() {
-  const { selectedCourses, setSelectedCourses } = useSelection();
+  const { selectedCourses, setSelectedCourses, setLastPlannerFlowRoute } = useSelection();
+
+  // Save this route as the last visited planner flow route
+  useEffect(() => {
+    setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
+  }, [setLastPlannerFlowRoute]);
 
   const courses = [
     {
@@ -87,7 +93,10 @@ export default function CourseSelectionScreen() {
       <View style={styles.bottomActions}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.push(ROUTES.STUDENT.PLANNER)}
+          onPress={() => {
+            setLastPlannerFlowRoute(null);
+            router.push(ROUTES.STUDENT.PLANNER);
+          }}
           activeOpacity={0.7}>
           <MaterialIcons name="chevron-left" size={24} color="#FFFFFF" />
         </TouchableOpacity>

@@ -3,6 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
+import { useEffect } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
@@ -13,7 +14,13 @@ export default function GeneratedOptionsScreen() {
     endHour,
     savedPlans,
     setSavedPlans,
+    setLastPlannerFlowRoute,
   } = useSelection();
+
+  // Save this route as the last visited planner flow route
+  useEffect(() => {
+    setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS);
+  }, [setLastPlannerFlowRoute]);
 
   // Calculate the number of constraints
   const getConstraintCount = () => {
@@ -279,7 +286,10 @@ export default function GeneratedOptionsScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.adjustButton}
-          onPress={() => router.push(ROUTES.STUDENT.PLANNER)}
+          onPress={() => {
+            setLastPlannerFlowRoute(null);
+            router.push(ROUTES.STUDENT.PLANNER);
+          }}
           activeOpacity={0.8}>
           <ThemedText style={styles.adjustButtonText}>ADJUST SELECTION</ThemedText>
         </TouchableOpacity>

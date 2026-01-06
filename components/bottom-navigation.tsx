@@ -7,7 +7,7 @@ import { ROUTES } from '@/constants/routes';
 
 export function StudentBottomNavigation() {
   const segments = useSegments();
-  const { alerts } = useSelection();
+  const { alerts, lastPlannerFlowRoute } = useSelection();
 
   const unreadAlertCount = alerts.filter((alert) => !alert.isRead).length;
 
@@ -33,10 +33,32 @@ export function StudentBottomNavigation() {
   };
 
   const handleNavigation = (route: string) => {
+    // Special handling for planner tab - navigate to saved route if available
+    if (route === ROUTES.STUDENT.PLANNER) {
+      const currentPath = `/${segments.join('/')}`;
+      
+      // If we have a saved route and we're not already on it, go to the saved route
+      if (lastPlannerFlowRoute && currentPath !== lastPlannerFlowRoute) {
+        router.push(lastPlannerFlowRoute);
+        return;
+      }
+      
+      // If we're already on the saved route or on the planner screen, go to main planner
+      // This allows returning to the main planner screen
+      if (currentPath !== ROUTES.STUDENT.PLANNER) {
+        router.push(ROUTES.STUDENT.PLANNER);
+        return;
+      }
+      
+      // If already on main planner, don't navigate
+      return;
+    }
+    
     // Don't navigate if we're already on this route
     if (isActive(route)) {
       return;
     }
+    
     router.push(route);
   };
 

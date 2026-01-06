@@ -3,7 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
@@ -15,7 +15,13 @@ export default function CustomRulesScreen() {
     setStartHour,
     endHour,
     setEndHour,
+    setLastPlannerFlowRoute,
   } = useSelection();
+
+  // Save this route as the last visited planner flow route
+  useEffect(() => {
+    setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.CUSTOM_RULES);
+  }, [setLastPlannerFlowRoute]);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 

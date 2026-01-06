@@ -1,11 +1,11 @@
-import { StyleSheet, TextInput, TouchableOpacity, View, Image } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useState } from 'react';
 import { ROUTES } from '@/constants/routes';
 import { useSelection } from '@/contexts/selection-context';
+import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function AdminLoginScreen() {
   const [email, setEmail] = useState('');
