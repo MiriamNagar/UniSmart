@@ -22,6 +22,20 @@ export default function HomeScreen() {
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
+        <Link href="/student-session">
+          <ThemedText type="subtitle" style={styles.linkText}>
+            → Go to Login/Signup Screen
+          </ThemedText>
+        </Link>
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
+        <Link href="/planner">
+          <ThemedText type="subtitle" style={styles.linkText}>
+            → Go to Main App (Planner)
+          </ThemedText>
+        </Link>
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
         <ThemedText>
           Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
@@ -94,5 +108,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  linkText: {
+    color: '#0a7ea4',
+    textDecorationLine: 'underline',
   },
 });
