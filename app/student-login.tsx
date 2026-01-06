@@ -1,4 +1,4 @@
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -77,6 +77,29 @@ export default function StudentLoginScreen() {
             ]}>
             AUTHENTICATE
           </ThemedText>
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={styles.dividerContainer}>
+          <View style={styles.dividerLine} />
+          <ThemedText style={styles.dividerText}>OR</ThemedText>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Google Auth Button */}
+        <TouchableOpacity
+          style={styles.googleButton}
+          activeOpacity={0.8}
+          onPress={() => {
+            // TODO: Implement Google authentication
+            router.push('/planner');
+          }}>
+          <Image
+            source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+            style={styles.googleIcon}
+            resizeMode="contain"
+          />
+          <ThemedText style={styles.googleButtonText}>Continue with Google</ThemedText>
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -159,6 +182,47 @@ const styles = StyleSheet.create({
   },
   authenticateButtonTextDisabled: {
     color: '#9B9B9B',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 320,
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E0E0E0',
+  },
+  dividerText: {
+    fontSize: 14,
+    color: '#9B9B9B',
+    marginHorizontal: 16,
+    fontWeight: '500',
+  },
+  googleButton: {
+    width: '100%',
+    maxWidth: 320,
+    height: 56,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+  },
+  googleButtonText: {
+    color: '#1A1A1A',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
