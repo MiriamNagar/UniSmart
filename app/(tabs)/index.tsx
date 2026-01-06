@@ -22,6 +22,13 @@ export default function HomeScreen() {
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
+        <Link href="/">
+          <ThemedText type="subtitle" style={styles.linkText}>
+            → Go to Splash Screen
+          </ThemedText>
+        </Link>
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
         <Link href="/student-session">
           <ThemedText type="subtitle" style={styles.linkText}>
             → Go to Login/Signup Screen
