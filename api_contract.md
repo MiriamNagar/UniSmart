@@ -1,10 +1,11 @@
 # API Contract: /generate-schedules
 
 ## Request (POST)
+
 {
   "selected_course_ids": ["uuid-1", "uuid-2"],
   "preferences": {
-    "preferred_start_time": "09:00", 
+    "preferred_start_time": "09:00",
     "preferred_end_time": "11:00",
     "day_off_requested": 5, // 0=Sun, 5=Fri
     "course_preferences": [
@@ -15,6 +16,7 @@
 }
 
 ## Response (JSON)
+
 {
   "status": "success",
   "options": [
