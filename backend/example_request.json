@@ -1,0 +1,14 @@
+{
+  "selected_course_ids": ["CS101", "MATH101", "MATH102", "MATH103", "CS102"],
+  "preferences": {
+    "preferred_start_time": "09:00",
+    "preferred_end_time": "16:00",
+    "course_preferences": [
+      {
+        "course_id": "CS101",
+        "preferred_instructor_id": "inst-1"
+      }
+    ]
+  },
+  "max_options": 5
+}
