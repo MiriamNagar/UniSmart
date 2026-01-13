@@ -20,6 +20,23 @@ app.add_middleware(
 )
 
 
+@app.get("/courses")
+async def get_courses(semester: str = None):
+    """
+    Get list of available courses, optionally filtered by semester.
+    """
+    courses_list = []
+    for course_id, course_data in COURSES.items():
+        if semester is None or course_data.get("semester") == semester:
+            courses_list.append({
+                "id": course_id,
+                "name": course_data["name"],
+                "semester": course_data.get("semester", "A"),
+            })
+    
+    return {"courses": courses_list}
+
+
 @app.post("/generate-schedules", response_model=ScheduleResponse)
 async def generate_schedules_endpoint(request: ScheduleRequest):
     """
@@ -127,5 +144,4 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
+    uvicorn.run(app, host="0.0.0.0", port=8080)

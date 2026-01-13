@@ -1,28 +1,108 @@
-import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
+import { useSelection } from '@/contexts/selection-context';
+import { mapSemesterToBackend } from '@/utils/data-transformers';
+import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+// For Android emulator, use 10.0.2.2 instead of localhost
+// For iOS simulator and web, localhost works
+// For physical devices, use your computer's IP address
+const API_BASE_URL = Platform.OS === "android" 
+  ? "http://192.168.1.249:8080" 
+  : "http://192.168.1.249:8080";
+
+interface Course {
+  id: string;
+  name: string;
+  credits?: number;
+}
 
 export default function CourseSelectionScreen() {
-  const { selectedCourses, setSelectedCourses, setLastPlannerFlowRoute } = useSelection();
+  const { selectedCourses, setSelectedCourses, selectedSemester, setLastPlannerFlowRoute } = useSelection();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Save this route as the last visited planner flow route
   useEffect(() => {
     setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
   }, [setLastPlannerFlowRoute]);
 
-  const courses = [
-    {
-      id: 'CS101',
-      name: 'Intro to Programming',
-      credits: 4,
-    },
-    // Add more courses as needed
-  ];
+  // Fetch courses from backend
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setIsLoading(true);
+        const semester = mapSemesterToBackend(selectedSemester);
+        const coursesUrl = `${API_BASE_URL}/courses?semester=${semester}`;
+        
+        console.log('Fetching courses from:', coursesUrl);
+        console.log('Platform:', Platform.OS);
+        console.log('API Base URL:', API_BASE_URL);
+        
+        // Add timeout to fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        try {
+          const response = await fetch(coursesUrl, {
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to fetch courses: ${response.status} ${errorText}`);
+          }
+
+          const data = await response.json();
+          console.log('Received courses data:', data);
+          
+          // Check if data has courses array
+          if (!data.courses || !Array.isArray(data.courses)) {
+            throw new Error('Invalid response format: courses array not found');
+          }
+          
+          // Transform backend format to frontend format
+          const transformedCourses: Course[] = data.courses.map((c: { id: string; name: string; semester: string }) => ({
+            id: c.id,
+            name: c.name,
+            credits: 0, // Could be added to backend if needed
+          }));
+          
+          console.log(`Successfully loaded ${transformedCourses.length} courses`);
+          setCourses(transformedCourses);
+        } catch (fetchError: any) {
+          clearTimeout(timeoutId);
+          if (fetchError.name === 'AbortError') {
+            throw new Error(`Backend connection timeout. Make sure the backend is running at ${API_BASE_URL}. Start it with: cd backend && python main.py (or use backend/start_server.bat on Windows)`);
+          }
+          throw fetchError;
+        }
+      } catch (error: any) {
+        console.error('Error fetching courses:', error);
+        console.error('Error message:', error?.message);
+        console.error('API Base URL:', API_BASE_URL);
+        console.error('API URL:', `${API_BASE_URL}/courses?semester=${mapSemesterToBackend(selectedSemester)}`);
+        console.error('Selected semester:', selectedSemester);
+        console.error('Platform:', Platform.OS);
+        console.error('Troubleshooting:');
+        console.error('  1. Make sure the backend is running: cd backend && python main.py');
+        console.error('  2. For Android emulator, backend must be accessible at http://10.0.2.2:8080');
+        console.error('  3. For iOS simulator, backend must be accessible at http://localhost:8080');
+        console.error('  4. Check Windows Firewall is not blocking port 8080');
+        // Fallback to empty array on error
+        setCourses([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [selectedSemester]);
 
   const toggleCourse = (courseId: string) => {
     const newSelected = new Set(selectedCourses);
@@ -59,33 +139,52 @@ export default function CourseSelectionScreen() {
         {/* Course List */}
         <View style={styles.courseListSection}>
           <ThemedText style={styles.sectionLabel}>COURSE LIST</ThemedText>
-          {courses.map((course) => {
-            const isSelected = selectedCourses.has(course.id);
-            return (
-              <TouchableOpacity
-                key={course.id}
-                style={styles.courseCard}
-                onPress={() => toggleCourse(course.id)}
-                activeOpacity={0.7}>
-                <View style={styles.courseCardContent}>
-                  <View style={styles.courseInfo}>
-                    <ThemedText style={styles.courseCode}>{course.id}</ThemedText>
-                    <ThemedText style={styles.courseName}>{course.name}</ThemedText>
-                    <ThemedText style={styles.courseCredits}>{course.credits} Credits</ThemedText>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#5B4C9D" />
+              <ThemedText style={styles.loadingText}>Loading courses...</ThemedText>
+            </View>
+          ) : courses.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <ThemedText style={styles.emptyText}>
+                No courses available. Please make sure the backend server is running.
+              </ThemedText>
+              <ThemedText style={[styles.emptyText, { marginTop: 8, fontSize: 12 }]}>
+                Start it with: cd backend && python main.py
+              </ThemedText>
+              <ThemedText style={[styles.emptyText, { marginTop: 4, fontSize: 12 }]}>
+                Backend URL: {API_BASE_URL}
+              </ThemedText>
+            </View>
+          ) : (
+            courses.map((course) => {
+              const isSelected = selectedCourses.has(course.id);
+              return (
+                <TouchableOpacity
+                  key={course.id}
+                  style={styles.courseCard}
+                  onPress={() => toggleCourse(course.id)}
+                  activeOpacity={0.7}>
+                  <View style={styles.courseCardContent}>
+                    <View style={styles.courseInfo}>
+                      <ThemedText style={styles.courseCode}>{course.id}</ThemedText>
+                      <ThemedText style={styles.courseName}>{course.name}</ThemedText>
+                      <ThemedText style={styles.courseCredits}>{course.credits} Credits</ThemedText>
+                    </View>
+                    <View
+                      style={[
+                        styles.checkIcon,
+                        isSelected && styles.checkIconSelected,
+                      ]}>
+                      {isSelected && (
+                        <MaterialIcons name="check" size={20} color="#FFFFFF" />
+                      )}
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.checkIcon,
-                      isSelected && styles.checkIconSelected,
-                    ]}>
-                    {isSelected && (
-                      <MaterialIcons name="check" size={20} color="#FFFFFF" />
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+                </TouchableOpacity>
+              );
+            })
+          )}
         </View>
       </ScrollView>
 
@@ -276,6 +375,26 @@ const styles = StyleSheet.create({
   },
   solverButtonTextDisabled: {
     color: '#9B9B9B',
+  },
+  loadingContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: '#9B9B9B',
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#9B9B9B',
+    textAlign: 'center',
   },
 });
 

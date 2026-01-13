@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, ScrollView, Modal } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ScrollView, Modal, ActivityIndicator, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -6,9 +6,13 @@ import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
+import { generateSchedules } from '@/utils/api';
+import { createScheduleRequest } from '@/utils/data-transformers';
+import { transformScheduleResponse } from '@/utils/schedule-transformer';
 
 export default function CustomRulesScreen() {
   const {
+    selectedCourses,
     selectedDays,
     setSelectedDays,
     startHour,
@@ -24,6 +28,7 @@ export default function CustomRulesScreen() {
   }, [setLastPlannerFlowRoute]);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Generate hour options from 8 AM to 9 PM
   const hourOptions = [
@@ -248,10 +253,64 @@ export default function CustomRulesScreen() {
           <MaterialIcons name="chevron-left" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.optimizerButton}
+          style={[styles.optimizerButton, isLoading && styles.optimizerButtonDisabled]}
           activeOpacity={0.8}
-          onPress={() => router.push(ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS)}>
-          <ThemedText style={styles.optimizerButtonText}>RUN OPTIMIZER</ThemedText>
+          disabled={isLoading || selectedCourses.size === 0}
+          onPress={async () => {
+            if (selectedCourses.size === 0) {
+              Alert.alert("No Courses Selected", "Please select at least one course before running the optimizer.");
+              return;
+            }
+
+            setIsLoading(true);
+            try {
+              // Create API request from frontend data
+              const request = createScheduleRequest(
+                Array.from(selectedCourses),
+                startHour,
+                endHour,
+                selectedDays
+              );
+
+              // Call API
+              const response = await generateSchedules(request);
+
+              // Transform response to frontend format
+              const proposals = transformScheduleResponse(response);
+
+              if (proposals.length === 0) {
+                Alert.alert(
+                  "No Schedules Found",
+                  "The optimizer couldn't find any valid schedules with the current constraints. Try adjusting your preferences."
+                );
+                setIsLoading(false);
+                return;
+              }
+
+              // Navigate to generated options screen with data
+              router.push({
+                pathname: ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS,
+                params: {
+                  proposals: JSON.stringify(proposals),
+                },
+              });
+            } catch (error) {
+              console.error("Error generating schedules:", error);
+              Alert.alert(
+                "Error",
+                error instanceof Error 
+                  ? error.message 
+                  : "Failed to generate schedules. Please try again."
+              );
+            } finally {
+              setIsLoading(false);
+            }
+          }}>
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <ThemedText style={styles.optimizerButtonText}>RUN OPTIMIZER</ThemedText>
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>

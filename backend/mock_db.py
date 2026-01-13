@@ -3,13 +3,13 @@ Mock Database for University Schedule Generator
 Contains sample data for courses, instructors, sections, and section times.
 """
 
-# Courses dictionary: {course_id: {"name": str}}
+# Courses dictionary: {course_id: {"name": str, "semester": str}}
 COURSES = {
-    "CS101": {"name": "Introduction to Computer Science"},
-    "MATH101": {"name": "Infinitesimal Calculus 1 for CS"},
-    "MATH102": {"name": "Linear Algebra 1 for CS"},
-    "MATH103": {"name": "Logic and Set Theory for CS"},
-    "CS102": {"name": "Digital Systems"},
+    "CS101": {"name": "Introduction to Computer Science", "semester": "A"},
+    "MATH101": {"name": "Infinitesimal Calculus 1 for CS", "semester": "A"},
+    "MATH102": {"name": "Linear Algebra 1 for CS", "semester": "A"},
+    "MATH103": {"name": "Logic and Set Theory for CS", "semester": "A"},
+    "CS102": {"name": "Digital Systems", "semester": "A"},
 }
 
 # Instructors dictionary: {instructor_id: {"name": str}}

@@ -2,8 +2,8 @@ import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
@@ -32,52 +32,33 @@ export default function GeneratedOptionsScreen() {
   };
 
   const constraintCount = getConstraintCount();
-  const proposals = [
-    {
-      id: 1,
-      fitScore: 115,
-      schedule: {
-        SUN: [],
-        MON: [],
-        TUE: [],
-        WED: [
-          {
-            courseCode: 'CS101',
-            courseName: 'Intro to Programm...',
-            instructor: 'Dr. Smith',
-            location: 'HALL A',
-            time: '09:00-11:00',
-            startTime: '09:00',
-            endTime: '11:00',
-          },
-        ],
-        THU: [],
-        FRI: [],
-      },
-    },
-    {
-      id: 2,
-      fitScore: 90,
-      schedule: {
-        SUN: [],
-        MON: [
-          {
-            courseCode: 'CS101',
-            courseName: 'Intro to Programm...',
-            instructor: 'Dr. Smith',
-            location: 'HALL A',
-            time: '09:00-11:00',
-            startTime: '09:00',
-            endTime: '11:00',
-          },
-        ],
-        TUE: [],
-        WED: [],
-        THU: [],
-        FRI: [],
-      },
-    },
-  ];
+  const params = useLocalSearchParams();
+  const [proposals, setProposals] = useState<Array<{
+    id: number;
+    fitScore: number;
+    schedule: {
+      SUN: any[];
+      MON: any[];
+      TUE: any[];
+      WED: any[];
+      THU: any[];
+      FRI: any[];
+    };
+  }>>([]);
+
+  // Parse proposals from route params
+  useEffect(() => {
+    if (params.proposals && typeof params.proposals === 'string') {
+      try {
+        const parsed = JSON.parse(params.proposals);
+        setProposals(parsed);
+      } catch (error) {
+        console.error('Error parsing proposals:', error);
+        // Fallback to empty array
+        setProposals([]);
+      }
+    }
+  }, [params.proposals]);
 
   const timeSlots = [
     '8:00',
@@ -134,7 +115,14 @@ export default function GeneratedOptionsScreen() {
         </View>
 
         {/* Proposals */}
-        {proposals.map((proposal, proposalIndex) => (
+        {proposals.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <ThemedText style={styles.emptyText}>
+              No schedules generated. Please go back and run the optimizer.
+            </ThemedText>
+          </View>
+        ) : (
+          proposals.map((proposal, proposalIndex) => (
           <View key={proposal.id} style={styles.proposalContainer}>
             {/* Proposal Header */}
             <View style={styles.proposalHeader}>
@@ -273,7 +261,8 @@ export default function GeneratedOptionsScreen() {
 
             </View>
           </View>
-        ))}
+        ))
+        )}
       </ScrollView>
 
       {/* Bottom Action Buttons */}
@@ -582,6 +571,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     color: '#FFFFFF',
+  },
+  emptyContainer: {
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#9B9B9B',
+    textAlign: 'center',
   },
 });
 
