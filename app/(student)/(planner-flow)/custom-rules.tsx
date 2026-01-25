@@ -16,6 +16,9 @@ export default function CustomRulesScreen() {
     endHour,
     setEndHour,
     setLastPlannerFlowRoute,
+    selectedCourses,
+    professorPreferences,
+    setProfessorPreferences,
   } = useSelection();
 
   // Save this route as the last visited planner flow route
@@ -24,6 +27,18 @@ export default function CustomRulesScreen() {
   }, [setLastPlannerFlowRoute]);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [showProfessorModal, setShowProfessorModal] = useState(false);
+  const [selectedCourseForProfessor, setSelectedCourseForProfessor] = useState<string | null>(null);
+
+  // Mock course data with names
+  const courseData: Record<string, { name: string }> = {
+    CS101: { name: 'Intro to Programming' },
+  };
+
+  // Mock professor data - in a real app, this would come from an API
+  const professorsByCourse: Record<string, string[]> = {
+    CS101: ['Dr. Smith', 'Dr. Johnson', 'Dr. Williams', 'Dr. Brown'],
+  };
 
   // Generate hour options from 8 AM to 9 PM
   const hourOptions = [
@@ -64,6 +79,39 @@ export default function CustomRulesScreen() {
       newSelected.add(day);
     }
     setSelectedDays(newSelected);
+  };
+
+  const handleAddProfessorPreference = () => {
+    setSelectedCourseForProfessor(null);
+    setShowProfessorModal(true);
+  };
+
+  const handleSelectCourse = (courseId: string) => {
+    setSelectedCourseForProfessor(courseId);
+  };
+
+  const handleSelectProfessor = (professor: string) => {
+    if (selectedCourseForProfessor) {
+      setProfessorPreferences((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(selectedCourseForProfessor, professor);
+        return newMap;
+      });
+      setShowProfessorModal(false);
+      setSelectedCourseForProfessor(null);
+    }
+  };
+
+  const handleRemoveProfessorPreference = (courseId: string) => {
+    setProfessorPreferences((prev) => {
+      const newMap = new Map(prev);
+      newMap.delete(courseId);
+      return newMap;
+    });
+  };
+
+  const getAvailableCourses = () => {
+    return Array.from(selectedCourses).filter((courseId) => !professorPreferences.has(courseId));
   };
 
   return (
@@ -138,6 +186,49 @@ export default function CustomRulesScreen() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+
+        {/* Professor Preferences Card */}
+        <View style={styles.card}>
+          <ThemedText style={styles.cardLabel}>PROFESSOR PREFERENCES</ThemedText>
+          <ThemedText style={styles.avoidText}>Preferred professors for courses</ThemedText>
+
+          {/* Existing Preferences */}
+          {Array.from(professorPreferences.entries()).map(([courseId, professor]) => (
+            <View key={courseId} style={styles.preferenceItem}>
+              <View style={styles.preferenceInfo}>
+                <ThemedText style={styles.preferenceCourse}>
+                  {courseId} - {courseData[courseId]?.name || courseId}
+                </ThemedText>
+                <ThemedText style={styles.preferenceProfessor}>{professor}</ThemedText>
+              </View>
+              <TouchableOpacity
+                onPress={() => handleRemoveProfessorPreference(courseId)}
+                style={styles.removeButton}
+                activeOpacity={0.7}>
+                <MaterialIcons name="close" size={20} color="#9B9B9B" />
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          {/* Add Button */}
+          {getAvailableCourses().length > 0 && (
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleAddProfessorPreference}
+              activeOpacity={0.7}>
+              <MaterialIcons name="add" size={24} color="#5B4C9D" />
+              <ThemedText style={styles.addButtonText}>Add Course with Professor</ThemedText>
+            </TouchableOpacity>
+          )}
+
+          {professorPreferences.size === 0 && getAvailableCourses().length === 0 && (
+            <ThemedText style={styles.emptyText}>
+              {selectedCourses.size === 0
+                ? 'Select courses first to add professor preferences'
+                : 'All selected courses have professor preferences'}
+            </ThemedText>
+          )}
         </View>
       </ScrollView>
 
@@ -234,6 +325,97 @@ export default function CustomRulesScreen() {
                   )}
                 </TouchableOpacity>
               ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Professor Preference Modal */}
+      <Modal
+        visible={showProfessorModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => {
+          setShowProfessorModal(false);
+          setSelectedCourseForProfessor(null);
+        }}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <ThemedText style={styles.modalTitle}>
+                {selectedCourseForProfessor
+                  ? 'Select Professor'
+                  : 'Select Course'}
+              </ThemedText>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowProfessorModal(false);
+                  setSelectedCourseForProfessor(null);
+                }}
+                style={styles.modalCloseButton}>
+                <MaterialIcons name="close" size={24} color="#1A1A1A" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalOptions}>
+              {!selectedCourseForProfessor ? (
+                // Show available courses
+                getAvailableCourses().map((courseId) => (
+                  <TouchableOpacity
+                    key={courseId}
+                    style={styles.modalOption}
+                    onPress={() => handleSelectCourse(courseId)}>
+                    <View style={styles.modalOptionContent}>
+                      <ThemedText style={styles.modalOptionText}>{courseId}</ThemedText>
+                      <ThemedText style={styles.modalOptionSubtext}>
+                        {courseData[courseId]?.name || 'Course'}
+                      </ThemedText>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={24} color="#9B9B9B" />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                // Show professors for selected course
+                <>
+                  <TouchableOpacity
+                    style={styles.modalBackButton}
+                    onPress={() => setSelectedCourseForProfessor(null)}>
+                    <MaterialIcons name="arrow-back" size={20} color="#5B4C9D" />
+                    <ThemedText style={styles.modalBackText}>
+                      {selectedCourseForProfessor} - {courseData[selectedCourseForProfessor]?.name}
+                    </ThemedText>
+                  </TouchableOpacity>
+                  {(professorsByCourse[selectedCourseForProfessor] || []).length > 0 ? (
+                    (professorsByCourse[selectedCourseForProfessor] || []).map((professor) => (
+                      <TouchableOpacity
+                        key={professor}
+                        style={[
+                          styles.modalOption,
+                          professorPreferences.get(selectedCourseForProfessor) === professor &&
+                            styles.modalOptionSelected,
+                        ]}
+                        onPress={() => handleSelectProfessor(professor)}>
+                        <ThemedText
+                          style={[
+                            styles.modalOptionText,
+                            professorPreferences.get(selectedCourseForProfessor) === professor &&
+                              styles.modalOptionTextSelected,
+                          ]}>
+                          {professor}
+                        </ThemedText>
+                        {professorPreferences.get(selectedCourseForProfessor) === professor && (
+                          <MaterialIcons name="check" size={20} color="#5B4C9D" />
+                        )}
+                      </TouchableOpacity>
+                    ))
+                  ) : (
+                    <View style={styles.emptyModalContent}>
+                      <ThemedText style={styles.emptyText}>
+                        No professors available for this course
+                      </ThemedText>
+                    </View>
+                  )}
+                </>
+              )}
             </ScrollView>
           </View>
         </View>
@@ -471,6 +653,84 @@ const styles = StyleSheet.create({
   modalOptionTextSelected: {
     color: '#5B4C9D',
     fontWeight: '600',
+  },
+  preferenceItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  preferenceInfo: {
+    flex: 1,
+  },
+  preferenceCourse: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  preferenceProfessor: {
+    fontSize: 14,
+    color: '#5B4C9D',
+  },
+  removeButton: {
+    padding: 4,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderStyle: 'dashed',
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5B4C9D',
+    marginLeft: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#9B9B9B',
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
+  modalBackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    marginBottom: 8,
+  },
+  modalBackText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5B4C9D',
+    marginLeft: 8,
+  },
+  modalOptionContent: {
+    flex: 1,
+  },
+  modalOptionSubtext: {
+    fontSize: 12,
+    color: '#9B9B9B',
+    marginTop: 2,
+  },
+  emptyModalContent: {
+    paddingVertical: 32,
+    alignItems: 'center',
   },
 });
 

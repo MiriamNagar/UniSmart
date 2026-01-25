@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useState } from 'react';
 
 interface SavedPlan {
   id: string;
@@ -51,6 +51,8 @@ interface SelectionContextType {
   setUserInfo: (info: UserInfo) => void;
   lastPlannerFlowRoute: string | null;
   setLastPlannerFlowRoute: (route: string | null) => void;
+  professorPreferences: Map<string, string>;
+  setProfessorPreferences: (prefs: Map<string, string> | ((prev: Map<string, string>) => Map<string, string>)) => void;
 }
 
 const SelectionContext = createContext<SelectionContextType | undefined>(undefined);
@@ -86,6 +88,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     userType: undefined,
   });
   const [lastPlannerFlowRoute, setLastPlannerFlowRoute] = useState<string | null>(null);
+  const [professorPreferences, setProfessorPreferencesState] = useState<Map<string, string>>(new Map());
 
   const setUserInfo = (info: UserInfo) => {
     setUserInfoState(info);
@@ -135,6 +138,16 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const setProfessorPreferences = (
+    prefs: Map<string, string> | ((prev: Map<string, string>) => Map<string, string>)
+  ) => {
+    if (typeof prefs === 'function') {
+      setProfessorPreferencesState((prev) => new Map(prefs(prev)));
+    } else {
+      setProfessorPreferencesState(new Map(prefs));
+    }
+  };
+
   return (
     <SelectionContext.Provider
       value={{
@@ -158,6 +171,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       setUserInfo,
       lastPlannerFlowRoute,
       setLastPlannerFlowRoute,
+      professorPreferences,
+      setProfessorPreferences,
     }}>
       {children}
     </SelectionContext.Provider>

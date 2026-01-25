@@ -15,6 +15,7 @@ export default function GeneratedOptionsScreen() {
     savedPlans,
     setSavedPlans,
     setLastPlannerFlowRoute,
+    professorPreferences,
   } = useSelection();
 
   // Save this route as the last visited planner flow route
@@ -28,6 +29,7 @@ export default function GeneratedOptionsScreen() {
     if (selectedDays.size > 0) count += selectedDays.size; // Each selected day is a constraint
     if (startHour !== 'Any') count += 1; // Start hour constraint
     if (endHour !== 'Any') count += 1; // End hour constraint
+    count += professorPreferences.size; // Each professor preference is a constraint
     return count;
   };
 
