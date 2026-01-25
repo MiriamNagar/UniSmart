@@ -1,5 +1,17 @@
 """
-Quick test script to verify the /courses endpoint returns data correctly
+Quick test script to verify the /courses endpoint returns data correctly.
+
+This script tests the backend API endpoints to ensure they are working properly.
+It can be used for development and debugging purposes.
+
+Usage:
+    python test_endpoint.py
+
+Prerequisites:
+    - Backend server must be running on http://localhost:8080
+    - requests library must be installed
+
+Author: UniSmart Development Team
 """
 import requests
 import json

@@ -1,3 +1,19 @@
+/**
+ * Splash Screen Component.
+ * 
+ * The initial screen shown when the app launches. Displays the UniSmart
+ * logo and tagline with fade-in animation, then automatically navigates
+ * to the student session screen after 2 seconds (or on user tap).
+ * 
+ * Features:
+ * - Animated logo and text fade-in
+ * - Auto-navigation after 2 seconds
+ * - Tap-to-skip functionality
+ * - Smooth fade-out transition
+ * 
+ * @module app/index
+ */
+
 import { StyleSheet, View, TouchableOpacity, Animated } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -6,6 +22,11 @@ import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { ROUTES } from '@/constants/routes';
 
+/**
+ * Splash screen component with animated logo and auto-navigation.
+ * 
+ * @returns {JSX.Element} Splash screen with logo, title, and tagline
+ */
 export default function SplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;

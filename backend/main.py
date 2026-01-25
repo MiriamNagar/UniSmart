@@ -1,5 +1,19 @@
 """
 FastAPI application for University Schedule Generator.
+
+This module provides the REST API endpoints for the UniSmart application,
+handling course retrieval and schedule generation requests. The API uses
+Google OR-Tools CP-SAT solver to generate optimal schedule options based
+on user preferences and course selections.
+
+Endpoints:
+    GET /courses - Retrieve available courses
+    POST /generate-schedules - Generate optimal schedule options
+    GET / - Root endpoint with API information
+    GET /health - Health check endpoint
+
+Author: UniSmart Development Team
+Version: 1.0.0
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +21,7 @@ from typing import List
 from models import ScheduleRequest, ScheduleResponse, ScheduleOption, ScheduleItem, Meeting
 from scheduler_logic import generate_schedules
 from mock_db import COURSES, SECTIONS, SECTION_TIMES, INSTRUCTORS
+import uvicorn
 
 app = FastAPI(title="University Schedule Generator", version="1.0.0")
 
@@ -24,6 +39,27 @@ app.add_middleware(
 async def get_courses(semester: str = None):
     """
     Get list of available courses, optionally filtered by semester.
+    
+    This endpoint retrieves all available courses from the database. If a semester
+    filter is provided, only courses for that semester are returned.
+    
+    Args:
+        semester (str, optional): Semester filter (e.g., "A" for semester A).
+            If None, returns all courses regardless of semester.
+    
+    Returns:
+        dict: A dictionary containing a "courses" key with a list of course objects.
+            Each course object contains:
+            - id (str): Course identifier (e.g., "CS101")
+            - name (str): Full course name
+            - semester (str): Semester code (e.g., "A")
+    
+    Example:
+        >>> GET /courses
+        {"courses": [{"id": "CS101", "name": "Introduction to Computer Science", "semester": "A"}]}
+        
+        >>> GET /courses?semester=A
+        {"courses": [{"id": "CS101", "name": "Introduction to Computer Science", "semester": "A"}]}
     """
     courses_list = []
     for course_id, course_data in COURSES.items():
@@ -41,6 +77,72 @@ async def get_courses(semester: str = None):
 async def generate_schedules_endpoint(request: ScheduleRequest):
     """
     Generate optimal schedule options based on selected courses and preferences.
+    
+    This endpoint uses constraint programming (CP-SAT solver) to generate multiple
+    optimal schedule options that satisfy hard constraints (no time conflicts,
+    required sections) while maximizing soft constraints (preferred times, instructors,
+    day-off requests).
+    
+    The algorithm:
+    1. Validates all selected course IDs exist
+    2. Filters out full sections (enrolled_count >= capacity)
+    3. Builds conflict graph for time overlaps
+    4. Uses CP-SAT solver to find valid combinations
+    5. Scores each solution based on preferences
+    6. Returns top N solutions sorted by score
+    
+    Args:
+        request (ScheduleRequest): Request object containing:
+            - selected_course_ids (List[str]): List of course IDs to include
+            - preferences (Preferences): User preferences including:
+                - preferred_start_time (str): Preferred start time in HH:MM format
+                - preferred_end_time (str): Preferred end time in HH:MM format
+                - day_off_requested (int, optional): Day to avoid (0=Sunday, 5=Friday)
+                - course_preferences (List[CoursePreference]): Per-course instructor preferences
+            - max_options (int): Maximum number of schedule options to return (1-20)
+    
+    Returns:
+        ScheduleResponse: Response containing:
+            - status (str): "success" if generation succeeded
+            - options (List[ScheduleOption]): List of schedule options, each containing:
+                - score (int): Fit score (0-100 percentage)
+                - schedule (List[ScheduleItem]): List of course sections with:
+                    - course_name (str): Full course name
+                    - section_id (str): Section identifier
+                    - type (str): "Lecture" or "Recitation"
+                    - instructor (str): Instructor name
+                    - meetings (List[Meeting]): Meeting times with day, start, end
+    
+    Raises:
+        HTTPException: 
+            - 400 (Bad Request): Invalid course IDs or no valid sections available
+            - 500 (Internal Server Error): Server error during schedule generation
+    
+    Example:
+        Request:
+        {
+            "selected_course_ids": ["CS101", "MATH101"],
+            "preferences": {
+                "preferred_start_time": "09:00",
+                "preferred_end_time": "17:00",
+                "day_off_requested": 5,
+                "course_preferences": [
+                    {"course_id": "CS101", "preferred_instructor_id": "inst-1"}
+                ]
+            },
+            "max_options": 5
+        }
+        
+        Response:
+        {
+            "status": "success",
+            "options": [
+                {
+                    "score": 85,
+                    "schedule": [...]
+                }
+            ]
+        }
     """
     try:
         # Convert Pydantic preferences to dict for scheduler
@@ -132,16 +234,30 @@ async def generate_schedules_endpoint(request: ScheduleRequest):
 
 @app.get("/")
 async def root():
-    """Root endpoint."""
+    """
+    Root endpoint providing API information.
+    
+    Returns:
+        dict: API metadata including:
+            - message (str): API name
+            - version (str): API version number
+    """
     return {"message": "University Schedule Generator API", "version": "1.0.0"}
 
 
 @app.get("/health")
 async def health():
-    """Health check endpoint."""
+    """
+    Health check endpoint for monitoring and load balancers.
+    
+    This endpoint can be used by monitoring systems to verify the API is
+    running and responsive. Returns a simple status indicator.
+    
+    Returns:
+        dict: Health status with "status" key set to "healthy"
+    """
     return {"status": "healthy"}
 
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080)

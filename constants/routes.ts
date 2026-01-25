@@ -1,3 +1,26 @@
+/**
+ * Application route constants.
+ * 
+ * Centralized route definitions for the entire application using Expo Router.
+ * All routes are defined here to ensure consistency and enable easy refactoring.
+ * 
+ * Route Structure:
+ * - Auth routes: Authentication and session management
+ * - Onboarding routes: New user setup flow
+ * - Student routes: Main student application features
+ * - Admin routes: Administrative dashboard and features
+ * 
+ * @module constants/routes
+ */
+
+/**
+ * Route constants object containing all application routes organized by feature.
+ * 
+ * Routes use Expo Router's file-based routing convention with parentheses
+ * for route groups (e.g., "(auth)" creates a route group without affecting URL).
+ * 
+ * @constant {Object} ROUTES
+ */
 export const ROUTES = {
   AUTH: {
     WELCOME: '/(auth)/welcome',

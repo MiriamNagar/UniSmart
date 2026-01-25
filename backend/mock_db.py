@@ -1,6 +1,37 @@
 """
-Mock Database for University Schedule Generator
-Contains sample data for courses, instructors, sections, and section times.
+Mock Database for University Schedule Generator.
+
+This module contains sample data structures that simulate a database for the
+UniSmart application. In a production environment, this would be replaced with
+actual database queries.
+
+Data Structures:
+    COURSES: Dictionary mapping course IDs to course information
+    INSTRUCTORS: Dictionary mapping instructor IDs to instructor names
+    INSTRUCTOR_NAME_TO_ID: Reverse mapping from instructor names to IDs
+    DAY_NAME_TO_INT: Mapping from day names to integer codes
+    SECTIONS: Dictionary mapping section IDs to section information
+    SECTION_TIMES: Dictionary mapping section IDs to meeting times
+
+Day Encoding:
+    0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday,
+    4 = Thursday, 5 = Friday, 6 = Saturday
+
+Section Types:
+    - "Lecture": Main lecture sections
+    - "Recitation": Tutorial/recitation sections
+
+Section Capacity:
+    - capacity: Maximum number of students
+    - enrolled_count: Current number of enrolled students
+    - Section is full if enrolled_count >= capacity
+
+Lecture-Recitation Linkage:
+    - Lectures have a "linked_recitations" list containing recitation IDs
+    - Recitations have "linked_recitations" set to None
+    - A recitation can only be selected with a lecture that links to it
+
+Author: UniSmart Development Team
 """
 
 # Courses dictionary: {course_id: {"name": str, "semester": str}}

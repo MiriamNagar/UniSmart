@@ -1,5 +1,23 @@
 """
 CP-SAT solver logic for schedule generation using Google OR-Tools.
+
+This module implements the core scheduling algorithm using constraint programming
+(CP-SAT) to generate optimal course schedules. The algorithm ensures:
+- Hard constraints: No time conflicts, required sections selected, proper lecture-recitation linkage
+- Soft constraints: Preferred times, instructor preferences, day-off requests
+
+The solver uses Google OR-Tools CP-SAT which is a constraint programming solver
+that finds optimal solutions to combinatorial optimization problems.
+
+Algorithm Overview:
+1. Filter valid sections (exclude full sections)
+2. Build conflict graph for time overlaps
+3. Create CP-SAT model with hard constraints
+4. Add soft constraints to objective function
+5. Solve iteratively to find top N unique solutions
+6. Score each solution based on preferences
+
+Author: UniSmart Development Team
 """
 from typing import List, Dict, Set, Tuple, Optional
 from ortools.sat.python import cp_model
@@ -7,13 +25,50 @@ from mock_db import COURSES, SECTIONS, SECTION_TIMES, INSTRUCTORS
 
 
 def time_to_minutes(time_str: str) -> int:
-    """Convert time string (HH:MM) to minutes since midnight."""
+    """
+    Convert time string (HH:MM) to minutes since midnight.
+    
+    Utility function to convert 24-hour time format to minutes for easier
+    time calculations and comparisons.
+    
+    Args:
+        time_str (str): Time in HH:MM format (e.g., "09:00", "17:30")
+    
+    Returns:
+        int: Minutes since midnight (e.g., "09:00" -> 540, "17:30" -> 1050)
+    
+    Example:
+        >>> time_to_minutes("09:00")
+        540
+        >>> time_to_minutes("17:30")
+        1050
+    """
     hours, minutes = map(int, time_str.split(":"))
     return hours * 60 + minutes
 
 
 def times_overlap(start1: str, end1: str, start2: str, end2: str) -> bool:
-    """Check if two time ranges overlap."""
+    """
+    Check if two time ranges overlap.
+    
+    Determines whether two time intervals have any overlap. Used to detect
+    scheduling conflicts between sections.
+    
+    Args:
+        start1 (str): Start time of first interval in HH:MM format
+        end1 (str): End time of first interval in HH:MM format
+        start2 (str): Start time of second interval in HH:MM format
+        end2 (str): End time of second interval in HH:MM format
+    
+    Returns:
+        bool: True if the time ranges overlap, False otherwise
+    
+    Example:
+        >>> times_overlap("09:00", "11:00", "10:00", "12:00")
+        True  # Overlaps from 10:00 to 11:00
+        >>> times_overlap("09:00", "11:00", "11:00", "13:00")
+        False  # No overlap (touching at boundary)
+    """
     start1_min = time_to_minutes(start1)
     end1_min = time_to_minutes(end1)
     start2_min = time_to_minutes(start2)
@@ -23,7 +78,26 @@ def times_overlap(start1: str, end1: str, start2: str, end2: str) -> bool:
 
 
 def sections_conflict(section_id1: str, section_id2: str) -> bool:
-    """Check if two sections have conflicting meeting times."""
+    """
+    Check if two sections have conflicting meeting times.
+    
+    Two sections conflict if they have any meetings on the same day with
+    overlapping time ranges. This is a hard constraint - conflicting sections
+    cannot be in the same schedule.
+    
+    Args:
+        section_id1 (str): ID of the first section
+        section_id2 (str): ID of the second section
+    
+    Returns:
+        bool: True if sections have time conflicts, False otherwise
+    
+    Example:
+        >>> sections_conflict("intro_l1", "calc1_l1")
+        False  # Different days, no conflict
+        >>> sections_conflict("intro_l1", "intro_t2")
+        True  # Same day, overlapping times
+    """
     times1 = SECTION_TIMES.get(section_id1, [])
     times2 = SECTION_TIMES.get(section_id2, [])
     
@@ -40,8 +114,31 @@ def get_valid_sections_for_courses(course_ids: List[str]) -> Dict[str, Dict[str,
     """
     Get valid sections for each course, separated by type (excluding full sections).
     
+    Filters sections from the database to only include those with available seats
+    (enrolled_count < capacity). Organizes sections by course and type for easier
+    constraint modeling in the CP-SAT solver.
+    
+    Args:
+        course_ids (List[str]): List of course IDs to get sections for
+    
     Returns:
-        {course_id: {"lectures": [L1, L2, ...], "recitations": [R1, R2, ...]}}
+        Dict[str, Dict[str, List[str]]]: Nested dictionary mapping:
+            {
+                course_id: {
+                    "lectures": [section_id1, section_id2, ...],
+                    "recitations": [section_id3, section_id4, ...]
+                }
+            }
+        Sections are filtered to exclude full sections (enrolled_count >= capacity).
+    
+    Example:
+        >>> get_valid_sections_for_courses(["CS101"])
+        {
+            "CS101": {
+                "lectures": ["intro_l1", "intro_l2"],
+                "recitations": ["intro_t2", "intro_t3"]
+            }
+        }
     """
     course_to_sections: Dict[str, Dict[str, List[str]]] = {
         course_id: {"lectures": [], "recitations": []} 
@@ -67,7 +164,42 @@ def calculate_schedule_score(
     preferences: Dict,
     course_preferences_map: Dict[str, str]
 ) -> int:
-    """Calculate score for a schedule based on soft constraints."""
+    """
+    Calculate score for a schedule based on soft constraints.
+    
+    Scores a generated schedule based on how well it matches user preferences.
+    The score is a percentage (0-100) where 100 means perfect match to all preferences.
+    
+    Scoring Components (weights sum to 100):
+        - Preferred start time: 50 points
+            - Checks if first lesson of each day starts within preferred time range
+            - Points distributed evenly across days with classes
+        - Instructor preferences: 30 points
+            - Awards points for matching preferred instructors
+            - Points distributed evenly across course preferences
+        - Day off bonus: 20 points
+            - Full bonus if requested day has no classes
+            - Zero if requested day has any classes
+    
+    Args:
+        selected_sections (List[str]): List of section IDs in the schedule
+        preferences (Dict): User preferences dictionary containing:
+            - preferred_start_time (str): Preferred start time in HH:MM
+            - preferred_end_time (str): Preferred end time in HH:MM
+            - day_off_requested (Optional[int]): Day to avoid (0-6)
+        course_preferences_map (Dict[str, str]): Mapping of course_id to preferred_instructor_id
+    
+    Returns:
+        int: Score as percentage (0-100). Higher is better.
+    
+    Example:
+        >>> calculate_schedule_score(
+        ...     ["intro_l1", "intro_t2"],
+        ...     {"preferred_start_time": "09:00", "preferred_end_time": "17:00", "day_off_requested": 5},
+        ...     {"CS101": "inst-1"}
+        ... )
+        85  # Example score based on how well preferences are met
+    """
     score = 0
     
     # Get all meetings for selected sections
@@ -169,8 +301,63 @@ def generate_schedules(
     """
     Generate top N unique schedules using CP-SAT solver.
     
+    This is the main scheduling function that uses constraint programming to find
+    optimal schedule combinations. The algorithm:
+    
+    1. Validates all course IDs exist
+    2. Filters valid sections (excludes full sections)
+    3. Builds conflict graph for time overlaps
+    4. Iteratively solves CP-SAT model to find unique solutions:
+       - Hard constraints: Course requirements, no conflicts, lecture-recitation linkage
+       - Soft constraints: Instructor preferences (others calculated post-solve)
+    5. Scores each solution based on all preferences
+    6. Returns top N solutions sorted by score
+    
+    Hard Constraints:
+        - Each course must have exactly one lecture (if available)
+        - Each course must have exactly one recitation (if available)
+        - Selected recitation must be linked to selected lecture
+        - No time conflicts between any selected sections
+    
+    Soft Constraints (scored after solving):
+        - Preferred start/end times
+        - Instructor preferences
+        - Day-off requests
+    
+    Args:
+        selected_course_ids (List[str]): List of course IDs to include in schedules.
+            Must all exist in COURSES database.
+        preferences (Dict): User preferences dictionary. See calculate_schedule_score
+            for expected structure.
+        max_options (int, optional): Maximum number of schedule options to generate.
+            Default is 5. Must be between 1 and 20.
+    
     Returns:
-        List of tuples (selected_section_ids, score) sorted by score descending.
+        List[Tuple[List[str], int]]: List of (selected_section_ids, score) tuples.
+            - selected_section_ids: List of section IDs in the schedule
+            - score: Fit score (0-100 percentage)
+            Sorted by score in descending order (best first).
+            May contain fewer than max_options if fewer valid solutions exist.
+    
+    Raises:
+        ValueError: If any course ID is invalid or has no available sections.
+    
+    Example:
+        >>> generate_schedules(
+        ...     ["CS101", "MATH101"],
+        ...     {
+        ...         "preferred_start_time": "09:00",
+        ...         "preferred_end_time": "17:00",
+        ...         "day_off_requested": 5,
+        ...         "course_preferences": [{"course_id": "CS101", "preferred_instructor_id": "inst-1"}]
+        ...     },
+        ...     max_options=3
+        ... )
+        [
+            (["intro_l1", "intro_t2", "calc1_l1", "calc1_t2"], 90),
+            (["intro_l1", "intro_t3", "calc1_l1", "calc1_t3"], 85),
+            (["intro_l2", "intro_t2", "calc1_l1", "calc1_t4"], 80)
+        ]
     """
     # Validate course IDs
     for course_id in selected_course_ids:

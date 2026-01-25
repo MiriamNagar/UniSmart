@@ -1,10 +1,43 @@
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ThemedText } from '@/components/themed-text';
-import { router, useSegments } from 'expo-router';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
+/**
+ * Bottom Navigation Components.
+ * 
+ * Provides bottom navigation bars for both student and admin interfaces.
+ * The navigation bars allow users to quickly switch between main app sections.
+ * 
+ * Features:
+ * - Active route highlighting
+ * - Unread alert badge
+ * - Smart navigation with route memory
+ * - Platform-optimized styling
+ * 
+ * @module components/bottom-navigation
+ */
 
+import { ThemedText } from '@/components/themed-text';
+import { ROUTES } from '@/constants/routes';
+import { useSelection } from '@/contexts/selection-context';
+import { MaterialIcons } from '@expo/vector-icons';
+import { router, useSegments } from 'expo-router';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+
+/**
+ * Bottom navigation component for student interface.
+ * 
+ * Displays navigation tabs for:
+ * - PLANNER: Course selection and schedule generation
+ * - SAVED: Saved schedule plans
+ * - NOTES: User notes and folders
+ * - ALERTS: Notifications (with unread badge)
+ * - ACCOUNT: User profile and settings
+ * 
+ * Features:
+ * - Highlights active route
+ * - Shows unread alert count badge
+ * - Remembers last planner flow route for smart navigation
+ * - Handles nested routes (e.g., planner-flow routes)
+ * 
+ * @returns {JSX.Element} Bottom navigation bar component
+ */
 export function StudentBottomNavigation() {
   const segments = useSegments();
   const { alerts, lastPlannerFlowRoute } = useSelection();
@@ -141,6 +174,21 @@ export function StudentBottomNavigation() {
   );
 }
 
+/**
+ * Bottom navigation component for admin interface.
+ * 
+ * Displays navigation tabs for:
+ * - ANALYSIS: Administrative dashboard and analytics
+ * - NOTES: Notes and folders (shared with student interface)
+ * - ACCOUNT: Admin profile and settings
+ * 
+ * Features:
+ * - Highlights active route
+ * - Simplified navigation compared to student interface
+ * - Shares some routes with student interface (notes, account)
+ * 
+ * @returns {JSX.Element} Bottom navigation bar component
+ */
 export function AdminBottomNavigation() {
   const segments = useSegments();
 
