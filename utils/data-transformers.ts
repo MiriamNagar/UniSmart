@@ -1,37 +1,11 @@
 /**
- * Utility functions to transform frontend data format to/from API format.
- * 
- * This module provides conversion functions between the frontend's user-friendly
- * format (12-hour time, day names) and the backend API's format (24-hour time,
- * day numbers). These transformations ensure data compatibility between the
- * React Native frontend and the FastAPI backend.
- * 
- * @module utils/data-transformers
+ * Utility functions to transform frontend data format to/from API format
  */
 
 import { ScheduleRequest, Preferences } from "@/types/api";
 
 /**
- * Convert 12-hour time format ("9:00 AM") to 24-hour format ("09:00").
- * 
- * Converts user-friendly 12-hour time strings with AM/PM to 24-hour format
- * required by the backend API. Handles edge cases like "12:00 AM" (midnight)
- * and "12:00 PM" (noon).
- * 
- * @param {string} timeStr - Time string in 12-hour format (e.g., "9:00 AM", "6:00 PM")
- *   Special case: "Any" returns "00:00" as default
- * 
- * @returns {string} Time string in 24-hour format (e.g., "09:00", "18:00")
- *   Returns "00:00" if input is "Any" or cannot be parsed
- * 
- * @example
- * ```typescript
- * convertTimeTo24Hour("9:00 AM")  // "09:00"
- * convertTimeTo24Hour("6:00 PM")  // "18:00"
- * convertTimeTo24Hour("12:00 AM") // "00:00"
- * convertTimeTo24Hour("12:00 PM") // "12:00"
- * convertTimeTo24Hour("Any")       // "00:00"
- * ```
+ * Convert 12-hour time format ("9:00 AM") to 24-hour format ("09:00")
  */
 export function convertTimeTo24Hour(timeStr: string): string {
   if (timeStr === "Any") {
@@ -58,21 +32,7 @@ export function convertTimeTo24Hour(timeStr: string): string {
 }
 
 /**
- * Convert end time, handling "Any" as end of day.
- * 
- * Similar to convertTimeTo24Hour, but treats "Any" as "23:59" (end of day)
- * instead of "00:00". This is used for preferred end time preferences.
- * 
- * @param {string} timeStr - Time string in 12-hour format or "Any"
- * 
- * @returns {string} Time string in 24-hour format.
- *   Returns "23:59" if input is "Any", otherwise same as convertTimeTo24Hour
- * 
- * @example
- * ```typescript
- * convertEndTimeTo24Hour("6:00 PM") // "18:00"
- * convertEndTimeTo24Hour("Any")      // "23:59"
- * ```
+ * Convert end time ("Any" means end of day)
  */
 export function convertEndTimeTo24Hour(timeStr: string): string {
   if (timeStr === "Any") {
@@ -82,10 +42,9 @@ export function convertEndTimeTo24Hour(timeStr: string): string {
 }
 
 /**
- * Mapping from frontend day names to backend day numbers.
- * 
- * Frontend uses abbreviated day names (MON, TUE, etc.) while backend uses
- * integers (0=Sunday, 1=Monday, ..., 6=Saturday).
+ * Map frontend day names to backend day numbers
+ * Frontend: "MON", "TUE", "WED", "THU", "FRI", "SAT"
+ * Backend: 1, 2, 3, 4, 5, 6 (Monday=1, Sunday=0)
  */
 const DAY_NAME_TO_NUMBER: Record<string, number> = {
   "MON": 1,
@@ -98,22 +57,8 @@ const DAY_NAME_TO_NUMBER: Record<string, number> = {
 };
 
 /**
- * Convert frontend selected days to backend day_off_requested format.
- * 
- * Converts a set of selected day names to a single day number for the
- * backend API. Currently uses the first selected day if multiple are selected.
- * 
- * @param {Set<string>} selectedDays - Set of day name strings (e.g., "MON", "FRI")
- * 
- * @returns {number | undefined} Day number (0-6) for backend, or undefined if no days selected.
- *   0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
- * 
- * @example
- * ```typescript
- * convertSelectedDaysToDayOff(new Set(["FRI"]))     // 5
- * convertSelectedDaysToDayOff(new Set(["MON", "FRI"])) // 1 (uses first)
- * convertSelectedDaysToDayOff(new Set())            // undefined
- * ```
+ * Convert frontend selected days to day_off_requested
+ * If multiple days selected, use the first one (or could be enhanced)
  */
 export function convertSelectedDaysToDayOff(
   selectedDays: Set<string>
@@ -128,21 +73,8 @@ export function convertSelectedDaysToDayOff(
 }
 
 /**
- * Map frontend semester string to backend semester code.
- * 
- * Converts user-friendly semester names to backend semester codes.
- * Currently only handles "Sem 1" -> "A", but can be extended for other semesters.
- * 
- * @param {string} semester - Frontend semester string (e.g., "Sem 1", "Sem 2")
- * 
- * @returns {string} Backend semester code (e.g., "A", "B")
- *   Defaults to "A" if no mapping exists
- * 
- * @example
- * ```typescript
- * mapSemesterToBackend("Sem 1") // "A"
- * mapSemesterToBackend("Sem 2") // "A" (default, can be extended)
- * ```
+ * Map semester string to backend semester
+ * "Sem 1" -> "A", "Sem 2" -> "B" (if needed)
  */
 export function mapSemesterToBackend(semester: string): string {
   if (semester === "Sem 1") {
@@ -153,32 +85,7 @@ export function mapSemesterToBackend(semester: string): string {
 }
 
 /**
- * Create API request object from frontend selection context.
- * 
- * Combines all user selections and preferences into a properly formatted
- * ScheduleRequest object that can be sent to the backend API. Handles all
- * necessary format conversions (time, days, etc.).
- * 
- * @param {string[]} selectedCourseIds - Array of course IDs selected by user
- * @param {string} startHour - Preferred start time in 12-hour format (e.g., "9:00 AM")
- * @param {string} endHour - Preferred end time in 12-hour format (e.g., "6:00 PM")
- * @param {Set<string>} selectedDays - Set of day names to avoid (e.g., Set(["FRI"]))
- * @param {Array<{course_id: string, preferred_instructor_id: string}>} coursePreferences - 
- *   Optional array of instructor preferences per course. Defaults to empty array.
- * 
- * @returns {ScheduleRequest} Fully formatted request object ready for API call
- * 
- * @example
- * ```typescript
- * const request = createScheduleRequest(
- *   ["CS101", "MATH101"],
- *   "9:00 AM",
- *   "6:00 PM",
- *   new Set(["FRI"]),
- *   [{ course_id: "CS101", preferred_instructor_id: "inst-1" }]
- * );
- * // Returns ScheduleRequest with all fields properly formatted
- * ```
+ * Create API request from frontend selection context
  */
 export function createScheduleRequest(
   selectedCourseIds: string[],

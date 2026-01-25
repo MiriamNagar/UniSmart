@@ -1,14 +1,5 @@
 /**
- * Transform API response format to frontend display format.
- * 
- * This module converts the backend API's schedule response format into
- * a format optimized for frontend display. The transformation includes:
- * - Grouping meetings by day of week
- * - Extracting course codes from section IDs
- * - Formatting times for display
- * - Adding display-friendly metadata
- * 
- * @module utils/schedule-transformer
+ * Transform API response format to frontend display format
  */
 
 import { ScheduleOption, ScheduleItem } from "@/types/api";
@@ -50,24 +41,9 @@ const DAY_NUMBER_TO_NAME: Record<number, keyof FrontendSchedule> = {
 };
 
 /**
- * Extract course code from section ID.
- * 
- * Attempts to extract a short course code (e.g., "CS101") from a section ID
- * (e.g., "intro_l1") using known prefix patterns. Falls back to extracting
- * from course name if pattern matching fails.
- * 
- * @param {string} sectionId - Section identifier (e.g., "intro_l1", "calc1_t2")
- * @param {string} courseName - Full course name as fallback
- * 
- * @returns {string} Short course code (e.g., "CS101", "MATH101")
- * 
- * @private
- * 
- * @example
- * ```typescript
- * extractCourseCode("intro_l1", "Introduction to Computer Science") // "CS101"
- * extractCourseCode("calc1_t2", "Infinitesimal Calculus 1")          // "MATH101"
- * ```
+ * Extract course code from section_id
+ * Examples: "intro_l1" -> "CS101", "calc1_t2" -> "MATH101"
+ * For now, we'll try to map from known patterns or use the first part
  */
 function extractCourseCode(sectionId: string, courseName: string): string {
   // Try to extract from section_id patterns
@@ -93,29 +69,7 @@ function extractCourseCode(sectionId: string, courseName: string): string {
 }
 
 /**
- * Transform a single API schedule option to frontend display format.
- * 
- * Converts one schedule option from the backend API format into a format
- * optimized for frontend rendering. Groups meetings by day, extracts course
- * codes, and formats all data for display.
- * 
- * @param {ScheduleOption} apiOption - Schedule option from API response
- * @param {number} index - Zero-based index of this option (used for ID generation)
- * 
- * @returns {FrontendProposal} Transformed schedule option with:
- *   - id: Sequential ID (index + 1)
- *   - fitScore: Score percentage (0-100)
- *   - schedule: Object with day keys (SUN, MON, TUE, etc.) containing arrays of courses
- * 
- * @example
- * ```typescript
- * const apiOption = {
- *   score: 85,
- *   schedule: [/* schedule items *\/]
- * };
- * const frontendOption = transformScheduleOption(apiOption, 0);
- * // Returns: { id: 1, fitScore: 85, schedule: { SUN: [...], MON: [...], ... } }
- * ```
+ * Transform API schedule option to frontend format
  */
 export function transformScheduleOption(
   apiOption: ScheduleOption,
@@ -166,25 +120,7 @@ export function transformScheduleOption(
 }
 
 /**
- * Transform full API response to frontend proposals array.
- * 
- * Converts the complete API response into an array of frontend-friendly
- * schedule proposals. Handles error cases and empty responses gracefully.
- * 
- * @param {{status: string, options: ScheduleOption[]}} response - Complete API response
- * 
- * @returns {FrontendProposal[]} Array of transformed schedule proposals.
- *   Returns empty array if status is not "success" or options are missing.
- * 
- * @example
- * ```typescript
- * const apiResponse = {
- *   status: "success",
- *   options: [/* schedule options *\/]
- * };
- * const proposals = transformScheduleResponse(apiResponse);
- * // Returns array of FrontendProposal objects ready for display
- * ```
+ * Transform full API response to frontend proposals array
  */
 export function transformScheduleResponse(
   response: { status: string; options: ScheduleOption[] }

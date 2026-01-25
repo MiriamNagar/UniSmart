@@ -1,46 +1,13 @@
 /**
- * Theme constants for the UniSmart application.
- * 
- * This module defines all color schemes and font configurations for both
- * light and dark modes. The theme system supports platform-specific
- * font configurations for iOS, Android, and Web.
- * 
- * Color System:
- * - Light mode: Light background with dark text
- * - Dark mode: Dark background with light text
- * 
- * Font System:
- * - Platform-specific font stacks for optimal rendering
- * - Supports sans, serif, rounded, and monospace variants
- * 
- * Alternative styling solutions:
- * - [Nativewind](https://www.nativewind.dev/)
- * - [Tamagui](https://tamagui.dev/)
- * - [unistyles](https://reactnativeunistyles.vercel.app)
- * 
- * @module constants/theme
+ * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
+ * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
  */
 
 import { Platform } from 'react-native';
 
-/** Tint color for light mode (used for links, active states) */
 const tintColorLight = '#0a7ea4';
-/** Tint color for dark mode (used for links, active states) */
 const tintColorDark = '#fff';
 
-/**
- * Color palette for light and dark themes.
- * 
- * Each theme defines colors for:
- * - text: Primary text color
- * - background: Main background color
- * - tint: Accent color for links and active elements
- * - icon: Default icon color
- * - tabIconDefault: Inactive tab icon color
- * - tabIconSelected: Active tab icon color
- * 
- * @constant {Object} Colors
- */
 export const Colors = {
   light: {
     text: '#11181C',
@@ -60,22 +27,6 @@ export const Colors = {
   },
 };
 
-/**
- * Platform-specific font configurations.
- * 
- * Provides optimized font stacks for each platform:
- * - iOS: Uses system font descriptors
- * - Web: Uses web-safe font stacks
- * - Default (Android): Uses generic font families
- * 
- * Font variants:
- * - sans: Default sans-serif font
- * - serif: Serif font for emphasis
- * - rounded: Rounded sans-serif for friendly UI
- * - mono: Monospace font for code/data
- * 
- * @constant {Object} Fonts
- */
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
