@@ -3,6 +3,8 @@ import { ThemedView } from '@/components/themed-view';
 import { useSelection } from '@/contexts/selection-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { router } from 'expo-router';
+import { ROUTES } from '@/constants/routes';
 
 export default function SavedScreen() {
   const { savedPlans, setSavedPlans } = useSelection();
@@ -67,6 +69,12 @@ export default function SavedScreen() {
         {savedPlans.length === 0 ? (
           <View style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>No saved plans.</ThemedText>
+			<TouchableOpacity
+              style={styles.createButton}
+              activeOpacity={0.8}
+              onPress={() => router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION)}>
+              <ThemedText style={styles.createButtonText}>CREATE NEW PLAN</ThemedText>
+            </TouchableOpacity>
           </View>
         ) : (
           savedPlans.map((plan) => (
@@ -266,6 +274,21 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 16,
     color: '#9B9B9B',
+  },
+  createButton: {
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    backgroundColor: '#5B4C9D',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  createButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   planCard: {
     backgroundColor: '#F5F5F5',
