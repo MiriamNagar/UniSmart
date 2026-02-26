@@ -41,3 +41,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+packer.py
+project_bundle.txt
