@@ -204,6 +204,14 @@ export default function SavedScreen() {
           ))
         )}
       </ScrollView>
+		{savedPlans.length > 0 && (
+			<TouchableOpacity
+				style={styles.floatingButton}
+				activeOpacity={0.8}
+				onPress={() => router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION)}>
+				<MaterialIcons name="add" size={32} color="#FFFFFF" />
+				</TouchableOpacity>
+		)}
     </ThemedView>
   );
 }
@@ -464,6 +472,24 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#9B9B9B',
     fontWeight: '400',
+  },
+  floatingButton: {
+    position: 'absolute', // מנתק את הכפתור מהזרימה הרגילה של העמוד וגורם לו לרחף
+    bottom: 30, // מרחק של 30 פיקסלים מהתחתית
+    alignSelf: 'center', // ממרכז אותו אופקית על המסך
+    width: 64, // רוחב הכפתור
+    height: 64, // גובה הכפתור (זהה לרוחב כדי ליצור ריבוע שיהפוך לעיגול)
+    borderRadius: 32, // הגדרת הרדיוס כמחצית מהגודל הופכת את הריבוע לעיגול מושלם
+    backgroundColor: '#5B4C9D', // הצבע הסגול המרכזי של האפליקציה
+    justifyContent: 'center', // ממרכז את אייקון הפלוס אנכית
+    alignItems: 'center', // ממרכז את אייקון הפלוס אופקית
+    
+    // קוד להצללה שנותן תחושה אמיתית של ריחוף (מתאים גם ל-iOS וגם לאנדרואיד)
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
 
