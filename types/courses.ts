@@ -5,7 +5,6 @@ export enum Days {
 	Wed = 'Wed',
 	Thu = 'Thu',
 	Fri = 'Fri',
-	Sat = 'Sat',
 }
 
 //There are 2 types of information here: 1. necessery info for the algorithm, 2. additional info for the user (like lecturer name, location, etc.). The algorithm only needs the first type, but we want to keep the second type for display purposes. marked as ADD for "Additional Data".
