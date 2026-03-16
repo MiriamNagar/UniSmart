@@ -52,7 +52,7 @@ describe('Schedule Solver Engine', () => {
 
   it('should generate multiple valid schedules and print them', () => {
 	const preferences = {
-		blockedDays: [],
+		blockedDays: [Days.Wed],
 		startHour: 'Any',
 		endHour: 'Any'
 	};

@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
+import { Days } from '@/types/courses';
+
 export default function CustomRulesScreen() {
   const {
     selectedDays,
@@ -54,7 +56,7 @@ export default function CustomRulesScreen() {
     return ['Any', ...hourOptions.slice(startIndex + 1)];
   };
 
-  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const days = [Days.Mon, Days.Tue, Days.Wed, Days.Thu, Days.Fri];
 
   const toggleDay = (day: string) => {
     const newSelected = new Set(selectedDays);
@@ -108,7 +110,7 @@ export default function CustomRulesScreen() {
                       styles.dayButtonText,
                       isSelected && styles.dayButtonTextSelected,
                     ]}>
-                    {day}
+                    {day.toUpperCase()}
                   </ThemedText>
                 </TouchableOpacity>
               );

@@ -73,8 +73,7 @@ export default function CourseSelectionScreen() {
                   <View style={styles.courseInfo}>
                     <ThemedText style={styles.courseCode}>{course.courseID}</ThemedText>
                     <ThemedText style={styles.courseName}>{course.courseName}</ThemedText>
-                    {/* הערה: אם הוספת credits למודל הקורס, זה יופיע כאן. אם לא, אפשר לשים מספר קבוע בינתיים */}
-                    <ThemedText style={styles.courseCredits}>{(course as any).credits || 3} Credits</ThemedText>
+                    <ThemedText style={styles.courseCredits}>{(course as any).credits} Credits</ThemedText>
                   </View>
                   <View
                     style={[
