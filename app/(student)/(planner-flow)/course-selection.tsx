@@ -7,22 +7,20 @@ import { useEffect } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
+//TODO: Replace with real courses from backend
+import { mockCourses } from '@/mockData/mock-courses';
+
 export default function CourseSelectionScreen() {
-  const { selectedCourses, setSelectedCourses, setLastPlannerFlowRoute } = useSelection();
+  const { selectedCourses, setSelectedCourses, setLastPlannerFlowRoute, userInfo, selectedSemester } = useSelection();
 
   // Save this route as the last visited planner flow route
   useEffect(() => {
     setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
   }, [setLastPlannerFlowRoute]);
 
-  const courses = [
-    {
-      id: 'CS101',
-      name: 'Intro to Programming',
-      credits: 4,
-    },
-    // Add more courses as needed
-  ];
+  const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
+
+  const courses = mockCourses.filter(c => c.semester === semesterKey);
 
   const toggleCourse = (courseId: string) => {
     const newSelected = new Set(selectedCourses);
@@ -49,29 +47,33 @@ export default function CourseSelectionScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
+        
         {/* Curriculum Filter */}
         <View style={styles.curriculumFilter}>
           <ThemedText style={styles.filterLabel}>CURRICULUM FILTER</ThemedText>
-          <ThemedText style={styles.filterTitle}>Software Engineering - Freshman</ThemedText>
-          <ThemedText style={styles.filterSemester}>Active Semester: 1</ThemedText>
+          <ThemedText style={styles.filterTitle}>
+            {userInfo.major || 'Software Engineering'} - {userInfo.academicLevel || 'Freshman'}
+          </ThemedText>
+          <ThemedText style={styles.filterSemester}>Active Semester: {selectedSemester}</ThemedText>
         </View>
+
 
         {/* Course List */}
         <View style={styles.courseListSection}>
           <ThemedText style={styles.sectionLabel}>COURSE LIST</ThemedText>
           {courses.map((course) => {
-            const isSelected = selectedCourses.has(course.id);
+            const isSelected = selectedCourses.has(course.courseID);
             return (
               <TouchableOpacity
-                key={course.id}
+                key={course.courseID}
                 style={styles.courseCard}
-                onPress={() => toggleCourse(course.id)}
+                onPress={() => toggleCourse(course.courseID)}
                 activeOpacity={0.7}>
                 <View style={styles.courseCardContent}>
                   <View style={styles.courseInfo}>
-                    <ThemedText style={styles.courseCode}>{course.id}</ThemedText>
-                    <ThemedText style={styles.courseName}>{course.name}</ThemedText>
-                    <ThemedText style={styles.courseCredits}>{course.credits} Credits</ThemedText>
+                    <ThemedText style={styles.courseCode}>{course.courseID}</ThemedText>
+                    <ThemedText style={styles.courseName}>{course.courseName}</ThemedText>
+                    <ThemedText style={styles.courseCredits}>{(course as any).credits} Credits</ThemedText>
                   </View>
                   <View
                     style={[
