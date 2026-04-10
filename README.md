@@ -25,5 +25,44 @@ This project is built using Expo and React Native. To run the project locally on
    npx expo start
    ```
 
+### Firebase (client config)
+
+UniSmart uses the **Firebase JS SDK** with a **single module** at `lib/firebase.ts`. Screens and features must import `auth` and `db` from there only; do **not** call `initializeApp` elsewhere. The schedule **solver** under `logic/solver/` must stay Firebase-free.
+
+**What goes in the app:** only the public Web API key and related fields from the Firebase console (the same values as a web app). **Service accounts, private keys, and Admin SDK credentials must never** be committed or shipped in the client.
+
+**Local development**
+
+1. Copy the sample env file and fill in values from your Firebase project (Project settings → Your apps → Web app config):
+
+   ```bash
+   copy .env.example .env
+   ```
+
+   On macOS/Linux, use `cp .env.example .env`.
+
+2. `app.config.ts` reads `EXPO_PUBLIC_FIREBASE_*` at build/start time and passes them to the app under `expo.extra.firebase`, which `lib/firebase.ts` reads via `expo-constants`.
+
+**Variable names**
+
+| Variable | Maps to `extra.firebase` |
+|----------|----------------------------|
+| `EXPO_PUBLIC_FIREBASE_API_KEY` | `apiKey` |
+| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | `authDomain` |
+| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `projectId` |
+| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | `storageBucket` |
+| `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` |
+| `EXPO_PUBLIC_FIREBASE_APP_ID` | `appId` |
+| `EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID` | `measurementId` (optional; used for Analytics on **web**) |
+
+**Analytics:** `import { analytics } from '@/lib/firebase'` — on **web**, this is the result of `getAnalytics(app)` when config is present; on **iOS/Android** it is `undefined` because the Firebase JS Analytics SDK targets the browser.
+
+**EAS Build:** define the same `EXPO_PUBLIC_FIREBASE_*` variables in [EAS environment variables](https://docs.expo.dev/build-reference/variables/) or the EAS dashboard so production builds receive config without committing secrets.
+
+**If config is missing:** the app still **starts**; in development you will see a console warning and `app` / `auth` / `db` will be `undefined` until valid public config is supplied. Call sites that need Firebase should treat that as “not configured” or guard with `isFirebaseConfigured()` from `@/lib/firebase`.
+
+References: [Expo: Using Firebase](https://docs.expo.dev/guides/using-firebase), [Firebase JS Auth on React Native (Expo)](https://github.com/expo/fyi/blob/main/firebase-js-auth-setup.md).
+
+---
 
 Hope the app will ease your scheduling process!
