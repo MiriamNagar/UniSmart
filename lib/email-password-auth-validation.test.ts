@@ -1,7 +1,9 @@
 import {
   isEmailPasswordAuthFormValid,
+  isEmailPasswordRegistrationFormValid,
   isValidAuthEmail,
   isValidAuthPassword,
+  passwordsMatch,
 } from './email-password-auth-validation';
 
 describe('email-password-auth-validation', () => {
@@ -37,6 +39,27 @@ describe('email-password-auth-validation', () => {
       expect(isEmailPasswordAuthFormValid('bad', '123456')).toBe(false);
       expect(isEmailPasswordAuthFormValid('good@uni.edu', '12345')).toBe(false);
       expect(isEmailPasswordAuthFormValid('good@uni.edu', '123456')).toBe(true);
+    });
+  });
+
+  describe('passwordsMatch', () => {
+    it('requires exact string equality', () => {
+      expect(passwordsMatch('secret1', 'secret1')).toBe(true);
+      expect(passwordsMatch('secret1', 'secret2')).toBe(false);
+      expect(passwordsMatch('abc', 'abc ')).toBe(false);
+    });
+  });
+
+  describe('isEmailPasswordRegistrationFormValid', () => {
+    it('requires confirmation non-empty and matching password', () => {
+      expect(isEmailPasswordRegistrationFormValid('u@uni.edu', '123456', '')).toBe(false);
+      expect(isEmailPasswordRegistrationFormValid('u@uni.edu', '123456', '12345')).toBe(false);
+      expect(isEmailPasswordRegistrationFormValid('u@uni.edu', '123456', '123456')).toBe(true);
+    });
+
+    it('reuses base email/password rules', () => {
+      expect(isEmailPasswordRegistrationFormValid('bad', '123456', '123456')).toBe(false);
+      expect(isEmailPasswordRegistrationFormValid('good@uni.edu', '12345', '12345')).toBe(false);
     });
   });
 });

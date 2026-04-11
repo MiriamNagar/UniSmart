@@ -20,3 +20,21 @@ export function isValidAuthPassword(password: string): boolean {
 export function isEmailPasswordAuthFormValid(email: string, password: string): boolean {
   return isValidAuthEmail(email) && isValidAuthPassword(password);
 }
+
+/** True when the confirmation field matches the password (same string as sent to Firebase). */
+export function passwordsMatch(password: string, confirmPassword: string): boolean {
+  return password === confirmPassword;
+}
+
+/**
+ * Email/password registration: valid email and password, non-empty confirmation that matches password.
+ */
+export function isEmailPasswordRegistrationFormValid(
+  email: string,
+  password: string,
+  confirmPassword: string,
+): boolean {
+  if (!isEmailPasswordAuthFormValid(email, password)) return false;
+  if (confirmPassword.length === 0) return false;
+  return passwordsMatch(password, confirmPassword);
+}

@@ -16,9 +16,10 @@ import { useSelection } from '@/contexts/selection-context';
 import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { mapFirebaseAuthErrorToMessage } from '@/lib/firebase-auth-error-message';
 import {
-  isEmailPasswordAuthFormValid,
+  isEmailPasswordRegistrationFormValid,
   isValidAuthEmail,
   isValidAuthPassword,
+  passwordsMatch,
 } from '@/lib/email-password-auth-validation';
 import { googleSignInUnavailableReason, isGoogleSignInAvailableOnThisRuntime } from '@/lib/google-sign-in-config';
 import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-message';
@@ -32,12 +33,13 @@ export default function NewMemberScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
 
-  /** Same rules as Firebase email/password sign-in (valid email + 6+ chars). */
-  const formValid = isEmailPasswordAuthFormValid(email, password);
+  /** Registration: valid email + password + matching confirmation (student and admin). */
+  const formValid = isEmailPasswordRegistrationFormValid(email, password, confirmPassword);
   const configOk = isFirebaseConfigured() && auth !== undefined;
   const canSubmit = configOk && formValid && !isRegistering && !isGoogleSigningIn;
   const googleHint = configOk ? googleSignInUnavailableReason() : null;
@@ -51,6 +53,10 @@ export default function NewMemberScreen() {
   const passwordHint =
     password.length > 0 && !isValidAuthPassword(password)
       ? 'Password must be at least 6 characters.'
+      : null;
+  const confirmPasswordHint =
+    confirmPassword.length > 0 && !passwordsMatch(password, confirmPassword)
+      ? 'Passwords do not match. Re-enter to match the field above.'
       : null;
 
   const handleGoogleContinue = async () => {
@@ -231,6 +237,31 @@ export default function NewMemberScreen() {
           {passwordHint ? (
             <ThemedText style={styles.fieldHint} accessibilityLiveRegion="polite">
               {passwordHint}
+            </ThemedText>
+          ) : null}
+        </View>
+
+        <View style={styles.inputContainer}>
+          <ThemedText style={styles.label}>CONFIRM PASSWORD</ThemedText>
+          <TextInput
+            style={styles.passwordInput}
+            value={confirmPassword}
+            onChangeText={(t) => {
+              setConfirmPassword(t);
+              setSubmitError(null);
+            }}
+            placeholder="...."
+            placeholderTextColor="#9B9B9B"
+            secureTextEntry
+            autoCapitalize="none"
+            autoComplete="password-new"
+            textContentType="newPassword"
+            editable={!isRegistering && !isGoogleSigningIn}
+            accessibilityLabel="Confirm password"
+          />
+          {confirmPasswordHint ? (
+            <ThemedText style={styles.fieldHint} accessibilityLiveRegion="polite">
+              {confirmPasswordHint}
             </ThemedText>
           ) : null}
         </View>

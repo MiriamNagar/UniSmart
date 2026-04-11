@@ -59,4 +59,17 @@ describe('mapFirebaseAuthErrorToMessage', () => {
     );
     expect(mapFirebaseAuthErrorToMessage(authError('auth/weak-password'), { flow: 'sign-up' })).toMatch(/6 characters/i);
   });
+
+  it('maps sign-up–relevant codes for email/password registration', () => {
+    expect(mapFirebaseAuthErrorToMessage(authError('auth/invalid-email'), { flow: 'sign-up' })).toMatch(/email/i);
+    expect(mapFirebaseAuthErrorToMessage(authError('auth/network-request-failed'), { flow: 'sign-up' })).toMatch(
+      /Network/i,
+    );
+    expect(mapFirebaseAuthErrorToMessage(authError('auth/operation-not-allowed'), { flow: 'sign-up' })).toMatch(
+      /Email\/Password|Google/i,
+    );
+    expect(mapFirebaseAuthErrorToMessage(new Error('no code'), { flow: 'sign-up' })).toMatch(
+      /Registration could not complete/i,
+    );
+  });
 });
