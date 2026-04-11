@@ -1,4 +1,11 @@
-import { StyleSheet, TextInput, TouchableOpacity, View, Image } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -6,132 +13,282 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { ROUTES } from '@/constants/routes';
 import { useSelection } from '@/contexts/selection-context';
+import { auth, isFirebaseConfigured } from '@/lib/firebase';
+import { mapFirebaseAuthErrorToMessage } from '@/lib/firebase-auth-error-message';
+import {
+  isEmailPasswordAuthFormValid,
+  isValidAuthEmail,
+  isValidAuthPassword,
+} from '@/lib/email-password-auth-validation';
+import { googleSignInUnavailableReason, isGoogleSignInAvailableOnThisRuntime } from '@/lib/google-sign-in-config';
+import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-message';
+import { signInWithGoogle } from '@/lib/google-sign-in';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function StudentLoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
   const { setUserInfo, userInfo } = useSelection();
 
-  const isFormValid = email.trim().length > 0 && password.trim().length > 0;
+  const configOk = isFirebaseConfigured() && auth !== undefined;
+  const formValid = isEmailPasswordAuthFormValid(email, password);
+  const canSubmit = configOk && formValid && !isSigningIn && !isGoogleSigningIn;
+  const googleHint = configOk ? googleSignInUnavailableReason() : null;
+  const canUseGoogle = configOk && isGoogleSignInAvailableOnThisRuntime() && !isSigningIn && !isGoogleSigningIn;
 
-  const handleAuthenticate = () => {
-    if (isFormValid) {
-      // Set userInfo to indicate authentication (preserve existing data if available)
-      if (!userInfo.fullName) {
-        // Extract name from email as a placeholder, or use a default
-        const nameFromEmail = email.split('@')[0] || 'Student';
+  const emailHint =
+    email.length > 0 && !isValidAuthEmail(email)
+      ? 'Use your full institutional email (check @ and domain).'
+      : null;
+  const passwordHint =
+    password.length > 0 && !isValidAuthPassword(password)
+      ? 'Password must be at least 6 characters.'
+      : null;
+
+  const handleGoogleSignIn = async () => {
+    if (isGoogleSigningIn || isSigningIn) return;
+    setSubmitError(null);
+
+    if (!configOk) {
+      setSubmitError(
+        'Sign-in is not available until Firebase is configured. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
+      );
+      return;
+    }
+
+    if (!auth) {
+      setSubmitError(
+        'Sign-in is not available until Firebase is configured. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
+      );
+      return;
+    }
+
+    if (!isGoogleSignInAvailableOnThisRuntime()) {
+      setSubmitError(
+        googleSignInUnavailableReason() ??
+          'Google sign-in is not available. Check configuration (see README).',
+      );
+      return;
+    }
+
+    setIsGoogleSigningIn(true);
+    try {
+      const cred = await signInWithGoogle(auth);
+      const u = cred.user;
+      const display =
+        u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || 'Student';
+
+      try {
         setUserInfo({
           ...userInfo,
-          fullName: nameFromEmail,
+          fullName: userInfo.fullName || display,
           userType: 'student',
         });
-      } else if (!userInfo.userType) {
-        // Ensure userType is set even if fullName already exists
-        setUserInfo({
-          ...userInfo,
-          userType: 'student',
-        });
+        router.replace(ROUTES.STUDENT.PLANNER);
+      } catch {
+        setSubmitError('Could not open the next screen. Please try again.');
       }
-      // Navigate to planner after successful login
-      router.replace(ROUTES.STUDENT.PLANNER);
+    } catch (e: unknown) {
+      setSubmitError(mapGoogleSignInFlowErrorToMessage(e));
+    } finally {
+      setIsGoogleSigningIn(false);
+    }
+  };
+
+  const handleAuthenticate = async () => {
+    if (isSigningIn || isGoogleSigningIn) return;
+    setSubmitError(null);
+
+    if (!configOk) {
+      setSubmitError(
+        'Sign-in is not available until Firebase is configured. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
+      );
+      return;
+    }
+
+    if (!formValid) {
+      return;
+    }
+
+    if (!auth) {
+      setSubmitError(
+        'Sign-in is not available until Firebase is configured. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
+      );
+      return;
+    }
+
+    setIsSigningIn(true);
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+
+      const trimmed = email.trim();
+      const nameFromEmail = trimmed.split('@')[0] || 'Student';
+      try {
+        setUserInfo({
+          ...userInfo,
+          fullName: userInfo.fullName || nameFromEmail,
+          userType: 'student',
+        });
+        router.replace(ROUTES.STUDENT.PLANNER);
+      } catch {
+        setSubmitError('Could not open the next screen. Please try again.');
+      }
+    } catch (e: unknown) {
+      setSubmitError(mapFirebaseAuthErrorToMessage(e));
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
   return (
     <ThemedView style={styles.container}>
-      {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.back()}
-        activeOpacity={0.7}>
+        activeOpacity={0.7}
+        accessibilityLabel="Go back">
         <MaterialIcons name="chevron-left" size={28} color="#9B9B9B" />
       </TouchableOpacity>
 
-      {/* Content Container */}
       <View style={styles.contentContainer}>
-        {/* Title */}
-        <ThemedText style={styles.title}>Welcome Back</ThemedText>
+        <ThemedText style={styles.title} accessibilityRole="header">
+          Welcome Back
+        </ThemedText>
 
-        {/* Subtitle */}
         <ThemedText style={styles.subtitle}>Enter your credentials.</ThemedText>
 
-        {/* University Email Input */}
+        {!configOk ? (
+          <ThemedText
+            style={styles.configBanner}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite">
+            Sign-in requires Firebase configuration. Add EXPO_PUBLIC_FIREBASE_* values (see README). The Authenticate
+            button stays disabled until then.
+          </ThemedText>
+        ) : null}
+
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>UNIVERSITY EMAIL</ThemedText>
           <TextInput
             style={styles.input}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(t) => {
+              setEmail(t);
+              setSubmitError(null);
+            }}
             placeholder="student@university.edu"
             placeholderTextColor="#9B9B9B"
             autoCapitalize="none"
             keyboardType="email-address"
+            autoComplete="email"
+            textContentType="username"
+            editable={!isSigningIn && !isGoogleSigningIn}
+            accessibilityLabel="University email"
           />
+          {emailHint ? (
+            <ThemedText style={styles.fieldHint} accessibilityLiveRegion="polite">
+              {emailHint}
+            </ThemedText>
+          ) : null}
         </View>
 
-        {/* Password Input */}
         <View style={styles.inputContainer}>
           <ThemedText style={styles.label}>PASSWORD</ThemedText>
           <TextInput
             style={styles.input}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(t) => {
+              setPassword(t);
+              setSubmitError(null);
+            }}
             placeholder="........"
             placeholderTextColor="#9B9B9B"
             secureTextEntry
             autoCapitalize="none"
+            autoComplete="password"
+            textContentType="password"
+            editable={!isSigningIn && !isGoogleSigningIn}
+            accessibilityLabel="Password"
           />
+          {passwordHint ? (
+            <ThemedText style={styles.fieldHint} accessibilityLiveRegion="polite">
+              {passwordHint}
+            </ThemedText>
+          ) : null}
         </View>
 
-        {/* Authenticate Button */}
-        <TouchableOpacity
-          style={[styles.authenticateButton, !isFormValid && styles.authenticateButtonDisabled]}
-          activeOpacity={isFormValid ? 0.8 : 1}
-          onPress={handleAuthenticate}
-          disabled={!isFormValid}>
+        {submitError ? (
           <ThemedText
-            style={[
-              styles.authenticateButtonText,
-              !isFormValid && styles.authenticateButtonTextDisabled,
-            ]}>
-            AUTHENTICATE
+            style={styles.submitError}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite">
+            {submitError}
           </ThemedText>
+        ) : null}
+
+        <TouchableOpacity
+          style={[styles.authenticateButton, (!canSubmit || isSigningIn) && styles.authenticateButtonDisabled]}
+          activeOpacity={canSubmit && !isSigningIn ? 0.8 : 1}
+          onPress={() => {
+            void handleAuthenticate();
+          }}
+          disabled={!canSubmit || isSigningIn}
+          accessibilityLabel="Authenticate"
+          accessibilityState={{ disabled: !canSubmit || isSigningIn }}>
+          {isSigningIn ? (
+            <ActivityIndicator color="#FFFFFF" accessibilityLabel="Signing in" />
+          ) : (
+            <ThemedText
+              style={[
+                styles.authenticateButtonText,
+                (!canSubmit || isSigningIn) && styles.authenticateButtonTextDisabled,
+              ]}>
+              AUTHENTICATE
+            </ThemedText>
+          )}
         </TouchableOpacity>
 
-        {/* Divider */}
         <View style={styles.dividerContainer}>
           <View style={styles.dividerLine} />
           <ThemedText style={styles.dividerText}>OR</ThemedText>
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Google Auth Button */}
+        {googleHint ? (
+          <ThemedText
+            style={styles.googleConfigHint}
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite">
+            {googleHint}
+          </ThemedText>
+        ) : null}
+
         <TouchableOpacity
-          style={styles.googleButton}
-          activeOpacity={0.8}
+          style={[styles.googleButton, !canUseGoogle && styles.googleButtonDisabled]}
+          activeOpacity={canUseGoogle ? 0.8 : 1}
+          disabled={!canUseGoogle}
           onPress={() => {
-            // TODO: Implement Google authentication
-            // Set userInfo to indicate authentication
-            if (!userInfo.fullName) {
-              setUserInfo({
-                ...userInfo,
-                fullName: 'Student',
-                userType: 'student',
-              });
-            } else if (!userInfo.userType) {
-              setUserInfo({
-                ...userInfo,
-                userType: 'student',
-              });
-            }
-            router.replace(ROUTES.STUDENT.PLANNER);
-          }}>
-          <Image
-            source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
-            style={styles.googleIcon}
-            resizeMode="contain"
-          />
-          <ThemedText style={styles.googleButtonText}>Continue with Google</ThemedText>
+            void handleGoogleSignIn();
+          }}
+          accessibilityLabel="Continue with Google"
+          accessibilityState={{ disabled: !canUseGoogle }}>
+          {isGoogleSigningIn ? (
+            <ActivityIndicator color="#1A1A1A" accessibilityLabel="Signing in with Google" />
+          ) : (
+            <>
+              <Image
+                source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                style={styles.googleIcon}
+                resizeMode="contain"
+              />
+              <ThemedText style={!canUseGoogle ? styles.googleButtonTextMuted : styles.googleButtonText}>
+                Continue with Google
+              </ThemedText>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </ThemedView>
@@ -167,14 +324,22 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#9B9B9B',
-    marginBottom: 48,
+    marginBottom: 24,
     textAlign: 'center',
     width: '100%',
+  },
+  configBanner: {
+    width: '100%',
+    maxWidth: 320,
+    marginBottom: 16,
+    fontSize: 14,
+    color: '#B45309',
+    textAlign: 'center',
   },
   inputContainer: {
     width: '100%',
     maxWidth: 320,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   label: {
     fontSize: 12,
@@ -192,6 +357,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     color: '#1A1A1A',
+  },
+  fieldHint: {
+    marginTop: 6,
+    fontSize: 12,
+    color: '#9B9B9B',
+  },
+  submitError: {
+    width: '100%',
+    maxWidth: 320,
+    marginBottom: 12,
+    fontSize: 14,
+    color: '#B91C1C',
+    textAlign: 'center',
   },
   authenticateButton: {
     width: '100%',
@@ -247,14 +425,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  googleButtonDisabled: {
+    opacity: 0.55,
+  },
+  googleConfigHint: {
+    width: '100%',
+    maxWidth: 320,
+    marginBottom: 12,
+    fontSize: 13,
+    color: '#B45309',
+    textAlign: 'center',
+  },
   googleIcon: {
     width: 24,
     height: 24,
   },
+  googleButtonTextMuted: {
+    color: '#9B9B9B',
+    fontSize: 15,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
   googleButtonText: {
     color: '#1A1A1A',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
+    flexShrink: 1,
   },
 });
-

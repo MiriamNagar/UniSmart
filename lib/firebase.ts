@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import {
+  FirebaseError,
   getApp,
   getApps,
   initializeApp,
@@ -79,8 +80,11 @@ function getOrInitAuth(firebaseApp: FirebaseApp): Auth {
     return initializeAuth(firebaseApp, {
       persistence: getReactNativePersistence(AsyncStorage),
     });
-  } catch {
-    return getAuth(firebaseApp);
+  } catch (e: unknown) {
+    if (e instanceof FirebaseError && e.code === 'auth/already-initialized') {
+      return getAuth(firebaseApp);
+    }
+    throw e;
   }
 }
 

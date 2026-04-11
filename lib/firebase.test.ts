@@ -120,4 +120,64 @@ describe('lib/firebase', () => {
     expect(db).toBeUndefined();
     expect(initializeApp).not.toHaveBeenCalled();
   });
+
+  it('uses initializeAuth with React Native persistence on iOS when config is complete', () => {
+    const initializeApp = jest.fn(() => ({ name: '[DEFAULT]' }));
+    const getApps = jest.fn(() => [] as { name: string }[]);
+    const getApp = jest.fn(() => ({ name: '[DEFAULT]' }));
+    const initializeAuth = jest.fn(() => ({}));
+    const getReactNativePersistence = jest.fn(() => ({}));
+
+    jest.doMock('firebase/app', () => ({
+      getApp,
+      getApps,
+      initializeApp,
+    }));
+
+    jest.doMock('firebase/auth', () => ({
+      getAuth: jest.fn(),
+      getReactNativePersistence,
+      initializeAuth,
+    }));
+
+    jest.doMock('firebase/firestore', () => ({
+      getFirestore: jest.fn(() => ({})),
+    }));
+
+    jest.doMock('firebase/analytics', () => ({
+      getAnalytics: jest.fn(),
+    }));
+
+    jest.doMock('@react-native-async-storage/async-storage', () => ({
+      __esModule: true,
+      default: {},
+    }));
+
+    jest.doMock('expo-constants', () => ({
+      __esModule: true,
+      default: {
+        expoConfig: {
+          extra: {
+            firebase: fullFirebaseExtra,
+          },
+        },
+      },
+    }));
+
+    jest.doMock('react-native', () => ({
+      Platform: { OS: 'ios' },
+    }));
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('./firebase');
+
+    expect(initializeAuth).toHaveBeenCalledTimes(1);
+    expect(initializeAuth).toHaveBeenCalledWith(
+      expect.objectContaining({ name: '[DEFAULT]' }),
+      expect.objectContaining({
+        persistence: expect.anything(),
+      }),
+    );
+    expect(getReactNativePersistence).toHaveBeenCalled();
+  });
 });
