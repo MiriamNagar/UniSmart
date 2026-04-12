@@ -1,11 +1,11 @@
 import { StyleSheet, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { useSelection } from '@/contexts/selection-context';
 import { auth } from '@/lib/firebase';
+import { beforeFirebaseSignOut } from '@/lib/sign-out-side-effects';
 import { ROUTES } from '@/constants/routes';
 
 export default function AccountScreen() {
@@ -35,15 +35,16 @@ export default function AccountScreen() {
     return levelMap[level] || level;
   };
 
-  const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+  const handleSignOutPress = () => {
+    Alert.alert('Sign out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Logout',
+        text: 'Sign out',
         style: 'destructive',
         onPress: () => {
           void (async () => {
             try {
+              await beforeFirebaseSignOut();
               if (auth) {
                 await signOut(auth);
               }
@@ -128,9 +129,9 @@ export default function AccountScreen() {
           </View>
         )}
 
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
-          <ThemedText style={styles.logoutText}>LOGOUT</ThemedText>
+        {/* Sign out — confirmation required (Story 1.7); cancel leaves session intact */}
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOutPress} activeOpacity={0.7}>
+          <ThemedText style={styles.signOutText}>SIGN OUT</ThemedText>
         </TouchableOpacity>
       </ScrollView>
     </ThemedView>
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1A1A1A',
   },
-  logoutButton: {
+  signOutButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoutText: {
+  signOutText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#FF4444',
