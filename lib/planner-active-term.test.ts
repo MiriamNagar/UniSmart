@@ -1,4 +1,4 @@
-import { filterCoursesForPlannerTerm } from './planner-active-term';
+import { catalogLetterForDegreeTier, filterCoursesForPlannerTerm } from './planner-active-term';
 import type { Course } from '@/types/courses';
 
 const base = (partial: Partial<Course> & Pick<Course, 'courseID' | 'courseName' | 'semester'>): Course =>
@@ -8,6 +8,15 @@ const base = (partial: Partial<Course> & Pick<Course, 'courseID' | 'courseName' 
 		availableSections: [],
 		...partial,
 	}) as Course;
+
+describe('catalogLetterForDegreeTier', () => {
+	it('maps tiers to catalog Hebrew letters', () => {
+		expect(catalogLetterForDegreeTier('1')).toBe('א');
+		expect(catalogLetterForDegreeTier('2')).toBe('ב');
+		expect(catalogLetterForDegreeTier('3')).toBe('ג');
+		expect(catalogLetterForDegreeTier('unknown')).toBe('א');
+	});
+});
 
 describe('filterCoursesForPlannerTerm', () => {
 	it('keeps same semester and degree year', () => {

@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 
-import { BGU_DEGREE_YEAR_OPTIONS } from '@/lib/planner-active-term';
+import type { DegreeYearTier } from '@/lib/planner-active-term';
 
 interface SavedPlan {
   id: string;
@@ -43,9 +43,9 @@ interface SelectionContextType {
   setEndHour: (hour: string) => void;
   selectedSemester: string;
   setSelectedSemester: (semester: string) => void;
-  /** BGU catalog degree year (Hebrew letter א–ד). Drives catalog filtering with `selectedSemester`. */
-  activeDegreeYear: string;
-  setActiveDegreeYear: (year: string) => void;
+  /** Planner degree year (Year 1–3); mapped to catalog Hebrew letters for filtering. */
+  activeDegreeYearTier: DegreeYearTier;
+  setActiveDegreeYearTier: (tier: DegreeYearTier) => void;
   savedPlans: SavedPlan[];
   setSavedPlans: (plans: SavedPlan[] | ((prev: SavedPlan[]) => SavedPlan[])) => void;
   customFolders: string[];
@@ -68,14 +68,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const [startHour, setStartHour] = useState('Any');
   const [endHour, setEndHour] = useState('Any');
   const [selectedSemester, setSelectedSemester] = useState('Sem 1');
-  const [activeDegreeYear, setActiveDegreeYearState] = useState<(typeof BGU_DEGREE_YEAR_OPTIONS)[number]>(
-    'א',
-  );
-
-  const setActiveDegreeYear = (year: string) => {
-    if (!(BGU_DEGREE_YEAR_OPTIONS as readonly string[]).includes(year)) return;
-    setActiveDegreeYearState(year as (typeof BGU_DEGREE_YEAR_OPTIONS)[number]);
-  };
+  const [activeDegreeYearTier, setActiveDegreeYearTier] = useState<DegreeYearTier>('1');
   const [savedPlans, setSavedPlansState] = useState<SavedPlan[]>([]);
   const [customFolders, setCustomFoldersState] = useState<string[]>([]);
   const [alerts, setAlertsState] = useState<Alert[]>([
@@ -174,8 +167,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         setEndHour,
         selectedSemester,
         setSelectedSemester,
-        activeDegreeYear,
-        setActiveDegreeYear,
+        activeDegreeYearTier,
+        setActiveDegreeYearTier,
         savedPlans,
         setSavedPlans,
         customFolders,

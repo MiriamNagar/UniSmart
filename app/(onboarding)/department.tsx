@@ -56,7 +56,7 @@ export default function DepartmentScreen() {
           return;
         }
       }
-      router.push(ROUTES.ONBOARDING.ACADEMIC_LEVEL);
+      router.push(ROUTES.ONBOARDING.SETUP_COMPLETE);
     })();
   };
 

@@ -8,9 +8,12 @@ import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
 import { generateSchedules } from '@/logic/solver';
-import { bguPlannerCourses } from '@/mockData/bgu-planner-courses';
-import { isCourseEligibleForSemester } from '@/lib/planner-prerequisite-eligibility';
-import { filterCoursesForPlannerTerm } from '@/lib/planner-active-term';
+import { usePlannerCatalog } from '@/contexts/bgu-planner-catalog-context';
+import {
+  isCourseEligibleForSemester,
+  virtualCompletedCourseNamesForDegreeTier,
+} from '@/lib/planner-prerequisite-eligibility';
+import { catalogLetterForDegreeTier, filterCoursesForPlannerTerm } from '@/lib/planner-active-term';
 import { Days } from '@/types/courses';
 
 export default function GeneratedOptionsScreen() {
@@ -23,8 +26,15 @@ export default function GeneratedOptionsScreen() {
     setLastPlannerFlowRoute,
     professorPreferences,
     selectedSemester,
-    activeDegreeYear,
+    activeDegreeYearTier,
   } = useSelection();
+
+  const { allCourses: catalogCourses } = usePlannerCatalog();
+
+  const virtualCompletedCourseNames = useMemo(
+    () => virtualCompletedCourseNamesForDegreeTier(catalogCourses, activeDegreeYearTier),
+    [catalogCourses, activeDegreeYearTier],
+  );
 
   // מצב למעקב אחרי ריחוף עכבר 
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
@@ -41,13 +51,14 @@ export default function GeneratedOptionsScreen() {
     };
 
     const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
+    const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
 
-    const inTerm = filterCoursesForPlannerTerm(bguPlannerCourses, semesterKey, activeDegreeYear);
+    const inTerm = filterCoursesForPlannerTerm(catalogCourses, semesterKey, catalogYearLetter);
     const coursesToSchedule = inTerm.filter(
       (course) =>
         selectedCourses.has(course.courseID) &&
-        isCourseEligibleForSemester(course, semesterKey, inTerm, {
-          completedCourseNames: new Set(),
+        isCourseEligibleForSemester(course, semesterKey, catalogCourses, {
+          completedCourseNames: virtualCompletedCourseNames,
         }),
     );
 
@@ -56,7 +67,7 @@ export default function GeneratedOptionsScreen() {
     return solverResult.proposals.map((proposal) => {
       const transformedSchedule: any = { SUN: [], MON: [], TUE: [], WED: [], THU: [], FRI: [] };
       proposal.sections.forEach(section => {
-        const parentCourse = bguPlannerCourses.find(c => 
+        const parentCourse = catalogCourses.find(c => 
           c.availableSections.some(s => s.sectionID === section.sectionID)
         );
 
@@ -83,7 +94,16 @@ export default function GeneratedOptionsScreen() {
         schedule: transformedSchedule,
       };
     });
-  }, [selectedCourses, selectedDays, startHour, endHour, selectedSemester, activeDegreeYear]);
+  }, [
+    selectedCourses,
+    selectedDays,
+    startHour,
+    endHour,
+    selectedSemester,
+    activeDegreeYearTier,
+    catalogCourses,
+    virtualCompletedCourseNames,
+  ]);
 
   const constraintCount = (selectedDays.size) + (startHour !== 'Any' ? 1 : 0) + (endHour !== 'Any' ? 1 : 0);
 

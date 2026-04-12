@@ -6,14 +6,14 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
-import { BGU_DEGREE_YEAR_OPTIONS } from '@/lib/planner-active-term';
+import { DEGREE_YEAR_PLANNER_OPTIONS } from '@/lib/planner-active-term';
 
 export default function PlannerScreen() {
   const {
     selectedSemester,
     setSelectedSemester,
-    activeDegreeYear,
-    setActiveDegreeYear,
+    activeDegreeYearTier,
+    setActiveDegreeYearTier,
     lastPlannerFlowRoute,
     setLastPlannerFlowRoute,
     setSelectedCourses,
@@ -64,7 +64,7 @@ export default function PlannerScreen() {
           <ThemedText style={styles.descriptionText}>
             Courses filtered for{' '}
             <ThemedText style={styles.highlightedText}>
-              {userInfo.major || 'Software Engineering'}
+              {userInfo.major || 'Computer Science'}
             </ThemedText>
             {userInfo.academicLevel ? (
               <>
@@ -72,34 +72,40 @@ export default function PlannerScreen() {
                 <ThemedText style={styles.highlightedText}>{userInfo.academicLevel}</ThemedText>
               </>
             ) : null}
-            . Active term: degree year <ThemedText style={styles.highlightedText}>{activeDegreeYear}</ThemedText>
+            . Active term:{' '}
+            <ThemedText style={styles.highlightedText}>
+              {DEGREE_YEAR_PLANNER_OPTIONS.find((o) => o.tier === activeDegreeYearTier)?.label ?? 'Year 1'}
+            </ThemedText>
             {' · '}
-            <ThemedText style={styles.highlightedText}>{selectedSemester}</ThemedText>.
+            <ThemedText style={styles.highlightedText}>
+              {selectedSemester === 'Sem 1' ? 'Semester A' : 'Semester B'}
+            </ThemedText>
+            .
           </ThemedText>
         </View>
 
         {/* Degree year (catalog) — drives which offerings appear with the semester */}
         <View style={styles.semesterSection}>
-          <ThemedText style={styles.sectionLabel}>SELECT DEGREE YEAR (CATALOG)</ThemedText>
+          <ThemedText style={styles.sectionLabel}>SELECT DEGREE YEAR</ThemedText>
           <View style={styles.degreeYearGrid}>
-            {BGU_DEGREE_YEAR_OPTIONS.map((y) => (
+            {DEGREE_YEAR_PLANNER_OPTIONS.map((opt) => (
               <TouchableOpacity
-                key={y}
+                key={opt.tier}
                 style={[
                   styles.degreeYearButton,
-                  activeDegreeYear === y && styles.semesterButtonSelected,
+                  activeDegreeYearTier === opt.tier && styles.semesterButtonSelected,
                 ]}
                 onPress={() => {
-                  setActiveDegreeYear(y);
+                  setActiveDegreeYearTier(opt.tier);
                   resetPlannerSelectionsForTermChange();
                 }}
                 activeOpacity={0.7}>
                 <ThemedText
                   style={[
                     styles.degreeYearButtonText,
-                    activeDegreeYear === y && styles.semesterButtonTextSelected,
+                    activeDegreeYearTier === opt.tier && styles.semesterButtonTextSelected,
                   ]}>
-                  {y}
+                  {opt.label}
                 </ThemedText>
               </TouchableOpacity>
             ))}
@@ -108,7 +114,7 @@ export default function PlannerScreen() {
 
         {/* Semester Selection */}
         <View style={styles.semesterSection}>
-          <ThemedText style={styles.sectionLabel}>SELECT SEMESTER</ThemedText>
+          <ThemedText style={styles.sectionLabel}>SELECT SEMESTER (A = FIRST, B = SECOND)</ThemedText>
           <View style={styles.semesterButtons}>
             <TouchableOpacity
               style={[
@@ -125,7 +131,7 @@ export default function PlannerScreen() {
                   styles.semesterButtonText,
                   selectedSemester === 'Sem 1' && styles.semesterButtonTextSelected,
                 ]}>
-                Sem 1
+                Semester A
               </ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
@@ -143,7 +149,7 @@ export default function PlannerScreen() {
                   styles.semesterButtonText,
                   selectedSemester === 'Sem 2' && styles.semesterButtonTextSelected,
                 ]}>
-                Sem 2
+                Semester B
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -246,8 +252,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   degreeYearButton: {
-    width: '22%',
-    minWidth: 72,
+    flexBasis: '30%',
+    minWidth: 100,
     flexGrow: 1,
     height: 52,
     backgroundColor: '#FFFFFF',
@@ -258,9 +264,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   degreeYearButtonText: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: '600',
     color: '#9B9B9B',
+    textAlign: 'center',
   },
   semesterButtons: {
     flexDirection: 'row',

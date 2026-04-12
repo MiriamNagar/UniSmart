@@ -12,10 +12,14 @@
  * Setup:
  *   1. Firebase Console → Project settings → Service accounts → Generate new private key (JSON).
  *   2. Save outside the repo (e.g. ../secrets/bgu-firebase-adminsdk.json) — never commit.
- *   3. Set:  set GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\that.json   (Windows)
- *      or:   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/that.json   (macOS/Linux)
+ *   3. Point Node at the key file (same shell session as `node`):
+ *      PowerShell:  $env:GOOGLE_APPLICATION_CREDENTIALS = "C:\path\to\that.json"
+ *      cmd.exe:     set GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\that.json
+ *      bash/zsh:    export GOOGLE_APPLICATION_CREDENTIALS=/path/to/that.json
  *   4. Enable Firestore (Native mode) in the same Firebase project as the app.
  *   5. Run:  node scripts/seed-firestore-3nf.mjs
+ *      Full replace:  node scripts/seed-firestore-3nf.mjs --wipe
+ *      (deletes all docs in bgu_cs_courses, bgu_cs_offerings, bgu_cs_prerequisite_edges, then seeds)
  *
  * Optional: FIRESTORE_CATALOG_PATH=mockData/bgu-cs-catalog.json
  */
@@ -58,10 +62,32 @@ function stableOfferingId(courseId, offeringIndex) {
 	return `o_${courseId}_${offeringIndex}`;
 }
 
+/** Delete documents in chunks (Firestore batch max 500 ops). */
+async function wipeCollection(db, collectionId) {
+	const col = db.collection(collectionId);
+	let total = 0;
+	for (;;) {
+		const snap = await col.limit(500).get();
+		if (snap.empty) break;
+		const b = db.batch();
+		for (const d of snap.docs) {
+			b.delete(d.ref);
+		}
+		await b.commit();
+		total += snap.size;
+		if (snap.size < 500) break;
+	}
+	return total;
+}
+
 async function main() {
+	const argv = process.argv.slice(2);
+	const wipe = argv.includes('--wipe') || argv.includes('-w');
 	if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
 		console.error(
-			'Set GOOGLE_APPLICATION_CREDENTIALS to the path of your Firebase service account JSON.\n',
+			'Missing GOOGLE_APPLICATION_CREDENTIALS.\n' +
+				'  PowerShell: $env:GOOGLE_APPLICATION_CREDENTIALS = "C:\\path\\to\\service-account.json"\n' +
+				'  cmd.exe:    set GOOGLE_APPLICATION_CREDENTIALS=C:\\path\\to\\service-account.json\n',
 		);
 		process.exit(1);
 	}
@@ -76,6 +102,18 @@ async function main() {
 		admin.initializeApp();
 	}
 	const db = admin.firestore();
+
+	if (wipe) {
+		console.log('Wiping bgu_cs_* collections…');
+		for (const id of [
+			'bgu_cs_prerequisite_edges',
+			'bgu_cs_offerings',
+			'bgu_cs_courses',
+		]) {
+			const n = await wipeCollection(db, id);
+			console.log(`  ${id}: removed ${n} doc(s)`);
+		}
+	}
 
 	const colCourses = db.collection('bgu_cs_courses');
 	const colOfferings = db.collection('bgu_cs_offerings');

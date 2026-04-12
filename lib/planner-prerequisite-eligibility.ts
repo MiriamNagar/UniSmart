@@ -1,4 +1,8 @@
 import type { Course } from '@/types/courses';
+import type { DegreeYearTier } from './planner-active-term';
+
+/** BGU catalog degree-year letters in planner order (year 1 → year 3). */
+const DEGREE_CATALOG_YEAR_ORDER = ['א', 'ב', 'ג'] as const;
 
 /** Semester ordering within an academic year: א < ב < (קיץ / קיץ מקוצר). */
 export function semesterRank(semester: Course['semester']): number {
@@ -19,6 +23,30 @@ export function minSemesterRankAmongOfferings(
 	const matches = allCourses.filter((c) => c.courseName === courseName);
 	if (matches.length === 0) return undefined;
 	return Math.min(...matches.map((c) => semesterRank(c.semester)));
+}
+
+/**
+ * Without a transcript, treat every course that appears in earlier catalog years as already passed
+ * when the student selects Year 2 or Year 3 in the planner (so year-2 lists are not empty).
+ */
+export function virtualCompletedCourseNamesForDegreeTier(
+	allCourses: Course[],
+	tier: DegreeYearTier | string,
+): Set<string> {
+	const n = Number.parseInt(String(tier), 10);
+	if (!Number.isFinite(n) || n <= 1) {
+		return new Set();
+	}
+	const completedLetters = DEGREE_CATALOG_YEAR_ORDER.slice(0, n - 1);
+	const letters = new Set<string>(completedLetters);
+	const out = new Set<string>();
+	for (const c of allCourses) {
+		const y = c.degreeCatalogYear?.trim();
+		if (y && letters.has(y)) {
+			out.add(c.courseName);
+		}
+	}
+	return out;
 }
 
 export interface PrerequisiteEligibilityOptions {

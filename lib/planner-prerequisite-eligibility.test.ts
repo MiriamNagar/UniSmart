@@ -4,6 +4,7 @@ import {
 	isCourseEligibleForSemester,
 	minSemesterRankAmongOfferings,
 	semesterRank,
+	virtualCompletedCourseNamesForDegreeTier,
 } from './planner-prerequisite-eligibility';
 
 const mk = (partial: Partial<Course> & Pick<Course, 'courseID' | 'courseName' | 'semester'>): Course => ({
@@ -80,6 +81,25 @@ describe('filterCoursesEligibleForSemester', () => {
 			completedCourseNames: new Set(),
 		});
 		expect(out.map((c) => c.courseID)).toEqual(['x']);
+	});
+});
+
+describe('virtualCompletedCourseNamesForDegreeTier', () => {
+	it('is empty for year 1', () => {
+		const all = [
+			mk({ courseID: '1', courseName: 'Intro', semester: 'A', degreeCatalogYear: 'א' }),
+		];
+		expect(virtualCompletedCourseNamesForDegreeTier(all, '1').size).toBe(0);
+	});
+
+	it('includes all year-א names when planning year 2', () => {
+		const all = [
+			mk({ courseID: '1', courseName: 'Intro', semester: 'A', degreeCatalogYear: 'א' }),
+			mk({ courseID: '2', courseName: 'Algo', semester: 'A', degreeCatalogYear: 'ב' }),
+		];
+		const s = virtualCompletedCourseNamesForDegreeTier(all, '2');
+		expect(s.has('Intro')).toBe(true);
+		expect(s.has('Algo')).toBe(false);
 	});
 });
 

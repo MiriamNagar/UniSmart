@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,9 +7,16 @@ import { useEffect, useMemo } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
-import { bguPlannerCourses } from '@/mockData/bgu-planner-courses';
-import { filterCoursesEligibleForSemester } from '@/lib/planner-prerequisite-eligibility';
-import { filterCoursesForPlannerTerm } from '@/lib/planner-active-term';
+import { usePlannerCatalog } from '@/contexts/bgu-planner-catalog-context';
+import {
+  filterCoursesEligibleForSemester,
+  virtualCompletedCourseNamesForDegreeTier,
+} from '@/lib/planner-prerequisite-eligibility';
+import {
+  catalogLetterForDegreeTier,
+  DEGREE_YEAR_PLANNER_OPTIONS,
+  filterCoursesForPlannerTerm,
+} from '@/lib/planner-active-term';
 
 export default function CourseSelectionScreen() {
   const {
@@ -18,8 +25,11 @@ export default function CourseSelectionScreen() {
     setLastPlannerFlowRoute,
     userInfo,
     selectedSemester,
-    activeDegreeYear,
+    activeDegreeYearTier,
   } = useSelection();
+
+  const { allCourses: catalogCourses, loading: catalogLoading, source: catalogSource, loadError: catalogLoadError } =
+    usePlannerCatalog();
 
   // Save this route as the last visited planner flow route
   useEffect(() => {
@@ -27,13 +37,19 @@ export default function CourseSelectionScreen() {
   }, [setLastPlannerFlowRoute]);
 
   const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
+  const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
+
+  const virtualCompletedCourseNames = useMemo(
+    () => virtualCompletedCourseNamesForDegreeTier(catalogCourses, activeDegreeYearTier),
+    [catalogCourses, activeDegreeYearTier],
+  );
 
   const courses = useMemo(() => {
-    const inTerm = filterCoursesForPlannerTerm(bguPlannerCourses, semesterKey, activeDegreeYear);
-    return filterCoursesEligibleForSemester(inTerm, semesterKey, inTerm, {
-      completedCourseNames: new Set(),
+    const inTerm = filterCoursesForPlannerTerm(catalogCourses, semesterKey, catalogYearLetter);
+    return filterCoursesEligibleForSemester(inTerm, semesterKey, catalogCourses, {
+      completedCourseNames: virtualCompletedCourseNames,
     });
-  }, [semesterKey, activeDegreeYear]);
+  }, [semesterKey, catalogYearLetter, catalogCourses, virtualCompletedCourseNames]);
 
   const toggleCourse = (courseId: string) => {
     const newSelected = new Set(selectedCourses);
@@ -65,11 +81,33 @@ export default function CourseSelectionScreen() {
         <View style={styles.curriculumFilter}>
           <ThemedText style={styles.filterLabel}>CURRICULUM FILTER</ThemedText>
           <ThemedText style={styles.filterTitle}>
-            {userInfo.major || 'Software Engineering'} - {userInfo.academicLevel || 'Freshman'}
+            {userInfo.major || 'Computer Science'}
+            {userInfo.academicLevel ? ` — ${userInfo.academicLevel}` : ''}
           </ThemedText>
           <ThemedText style={styles.filterSemester}>
-            Active term: year {activeDegreeYear} · {selectedSemester}
+            Active term:{' '}
+            {DEGREE_YEAR_PLANNER_OPTIONS.find((o) => o.tier === activeDegreeYearTier)?.label ?? 'Year 1'} ·{' '}
+            {selectedSemester === 'Sem 1' ? 'Semester A' : 'Semester B'}
           </ThemedText>
+          {catalogLoading ? (
+            <View style={styles.catalogLoadingRow}>
+              <ActivityIndicator color="#5B4C9D" />
+              <ThemedText style={styles.catalogHint}>Loading catalog…</ThemedText>
+            </View>
+          ) : (
+            <>
+              <ThemedText
+                style={
+                  catalogSource === 'firestore' ? styles.catalogSourceLive : styles.catalogSourceOffline
+                }>
+                {catalogSource === 'firestore'
+                  ? 'Catalog source: Firestore (live)'
+                  : catalogLoadError
+                    ? `Catalog source: bundled file (Firestore failed — ${catalogLoadError})`
+                    : 'Catalog source: bundled file (Firebase not configured in this build, or offline)'}
+              </ThemedText>
+            </>
+          )}
         </View>
 
 
@@ -199,6 +237,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFFFFF',
     opacity: 0.9,
+  },
+  catalogLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+  },
+  catalogHint: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    opacity: 0.85,
+    marginTop: 8,
+  },
+  catalogSourceLive: {
+    fontSize: 12,
+    color: '#C8E6C9',
+    marginTop: 10,
+    lineHeight: 18,
+  },
+  catalogSourceOffline: {
+    fontSize: 12,
+    color: '#FFE082',
+    marginTop: 10,
+    lineHeight: 18,
   },
   courseListSection: {
     marginBottom: 32,
