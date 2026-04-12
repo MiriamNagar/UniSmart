@@ -10,6 +10,8 @@ export default function AuthLayout() {
         headerShown: false,
       }}>
       <Stack.Screen name="welcome" />
+      <Stack.Screen name="sign-in" />
+      <Stack.Screen name="create-account" />
       <Stack.Screen name="student-session" />
       <Stack.Screen name="student-login" />
       <Stack.Screen name="admin-login" />

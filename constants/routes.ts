@@ -1,6 +1,8 @@
 export const ROUTES = {
   AUTH: {
     WELCOME: '/(auth)/welcome',
+    SIGN_IN: '/(auth)/sign-in',
+    CREATE_ACCOUNT: '/(auth)/create-account',
     STUDENT_SESSION: '/(auth)/student-session',
     STUDENT_LOGIN: '/(auth)/student-login',
     ADMIN_LOGIN: '/(auth)/admin-login',

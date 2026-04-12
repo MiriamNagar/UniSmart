@@ -51,7 +51,7 @@ export default function AccountScreen() {
             } catch {
               // Still clear local shell state below.
             }
-            router.replace(ROUTES.AUTH.STUDENT_SESSION);
+            router.replace(ROUTES.AUTH.WELCOME);
             setTimeout(() => {
               setUserInfo({
                 fullName: '',

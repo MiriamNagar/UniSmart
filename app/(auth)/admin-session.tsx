@@ -16,18 +16,18 @@ export default function AdminSessionScreen() {
         <ThemedText style={styles.subtitle}>How would you like to continue?</ThemedText>
 
         {/* Sign In Button */}
-        <TouchableOpacity 
-          style={styles.signInButton} 
+        <TouchableOpacity
+          style={styles.signInButton}
           activeOpacity={0.8}
-          onPress={() => router.push(ROUTES.AUTH.ADMIN_LOGIN)}>
+          onPress={() => router.push(ROUTES.AUTH.SIGN_IN)}>
           <ThemedText style={styles.signInButtonText}>SIGN IN</ThemedText>
         </TouchableOpacity>
 
         {/* Create Account Button */}
-        <TouchableOpacity 
-          style={styles.createAccountButton} 
+        <TouchableOpacity
+          style={styles.createAccountButton}
           activeOpacity={0.8}
-          onPress={() => router.push({ pathname: ROUTES.AUTH.NEW_MEMBER, params: { userType: 'admin' } })}>
+          onPress={() => router.push(ROUTES.AUTH.CREATE_ACCOUNT)}>
           <ThemedText style={styles.createAccountButtonText}>CREATE ACCOUNT</ThemedText>
         </TouchableOpacity>
       </View>

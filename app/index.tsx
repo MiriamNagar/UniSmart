@@ -25,7 +25,7 @@ export default function SplashScreen() {
         duration: 500,
         useNativeDriver: true,
       }).start(() => {
-        router.replace(ROUTES.AUTH.STUDENT_SESSION);
+        router.replace(ROUTES.AUTH.WELCOME);
       });
     }, 2000);
 
@@ -39,7 +39,7 @@ export default function SplashScreen() {
       duration: 500,
       useNativeDriver: true,
     }).start(() => {
-      router.replace(ROUTES.AUTH.STUDENT_SESSION);
+      router.replace(ROUTES.AUTH.WELCOME);
     });
   };
 
