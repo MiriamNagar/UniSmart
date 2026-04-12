@@ -23,6 +23,7 @@ import {
 import { googleSignInUnavailableReason, isGoogleSignInAvailableOnThisRuntime } from '@/lib/google-sign-in-config';
 import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-message';
 import { signInWithGoogle } from '@/lib/google-sign-in';
+import { resolvePostSignInNavigation } from '@/lib/auth-post-sign-in';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function StudentLoginScreen() {
@@ -82,12 +83,13 @@ export default function StudentLoginScreen() {
         u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || 'Student';
 
       try {
+        const nav = await resolvePostSignInNavigation({ firebaseUser: u, entry: 'student-login' });
         setUserInfo({
           ...userInfo,
           fullName: userInfo.fullName || display,
-          userType: 'student',
+          userType: nav.userType,
         });
-        router.replace(ROUTES.STUDENT.PLANNER);
+        router.replace(nav.home);
       } catch {
         setSubmitError('Could not open the next screen. Please try again.');
       }
@@ -122,17 +124,21 @@ export default function StudentLoginScreen() {
 
     setIsSigningIn(true);
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
 
       const trimmed = email.trim();
       const nameFromEmail = trimmed.split('@')[0] || 'Student';
       try {
+        const nav = await resolvePostSignInNavigation({
+          firebaseUser: cred.user,
+          entry: 'student-login',
+        });
         setUserInfo({
           ...userInfo,
           fullName: userInfo.fullName || nameFromEmail,
-          userType: 'student',
+          userType: nav.userType,
         });
-        router.replace(ROUTES.STUDENT.PLANNER);
+        router.replace(nav.home);
       } catch {
         setSubmitError('Could not open the next screen. Please try again.');
       }

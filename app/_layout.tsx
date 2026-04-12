@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import '@/lib/firebase';
+import { AuthProfileSync } from '@/components/auth-profile-sync';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SelectionProvider } from '@/contexts/selection-context';
 
@@ -12,6 +13,7 @@ export default function RootLayout() {
 
   return (
     <SelectionProvider>
+      <AuthProfileSync>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -23,6 +25,7 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
+      </AuthProfileSync>
     </SelectionProvider>
   );
 }

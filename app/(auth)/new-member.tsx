@@ -26,6 +26,7 @@ import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-me
 import { signInWithGoogle } from '@/lib/google-sign-in';
 import {
   ensureAdminProfile,
+  ensureStudentProfile,
   mapUserProfileWriteErrorToMessage,
 } from '@/lib/user-profile-firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -99,6 +100,13 @@ export default function NewMemberScreen() {
           setSubmitError(mapUserProfileWriteErrorToMessage(e));
           return;
         }
+      } else {
+        try {
+          await ensureStudentProfile(u.uid);
+        } catch (e: unknown) {
+          setSubmitError(mapUserProfileWriteErrorToMessage(e));
+          return;
+        }
       }
       const display =
         u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || (isAdmin ? 'Admin' : 'Student');
@@ -118,6 +126,13 @@ export default function NewMemberScreen() {
       if (isAdmin) {
         try {
           await ensureAdminProfile(u.uid);
+        } catch (e: unknown) {
+          setSubmitError(mapUserProfileWriteErrorToMessage(e));
+          return;
+        }
+      } else {
+        try {
+          await ensureStudentProfile(u.uid);
         } catch (e: unknown) {
           setSubmitError(mapUserProfileWriteErrorToMessage(e));
           return;
@@ -164,12 +179,21 @@ export default function NewMemberScreen() {
     try {
       await createUserWithEmailAndPassword(auth, email.trim(), password);
 
-      if (isAdmin && auth.currentUser) {
-        try {
-          await ensureAdminProfile(auth.currentUser.uid);
-        } catch (e: unknown) {
-          setSubmitError(mapUserProfileWriteErrorToMessage(e));
-          return;
+      if (auth.currentUser) {
+        if (isAdmin) {
+          try {
+            await ensureAdminProfile(auth.currentUser.uid);
+          } catch (e: unknown) {
+            setSubmitError(mapUserProfileWriteErrorToMessage(e));
+            return;
+          }
+        } else {
+          try {
+            await ensureStudentProfile(auth.currentUser.uid);
+          } catch (e: unknown) {
+            setSubmitError(mapUserProfileWriteErrorToMessage(e));
+            return;
+          }
         }
       }
 

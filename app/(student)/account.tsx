@@ -3,7 +3,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
+import { signOut } from 'firebase/auth';
 import { useSelection } from '@/contexts/selection-context';
+import { auth } from '@/lib/firebase';
 import { ROUTES } from '@/constants/routes';
 
 export default function AccountScreen() {
@@ -40,21 +42,26 @@ export default function AccountScreen() {
         text: 'Logout',
         style: 'destructive',
         onPress: () => {
-          // Navigate first to get to auth route before layouts check
-          router.replace(ROUTES.AUTH.STUDENT_SESSION);
-          
-          // Clear userInfo after navigation has completed
-          // This prevents student/admin layouts from redirecting
-          setTimeout(() => {
-            setUserInfo({
-              fullName: '',
-              age: '',
-              faculty: '',
-              major: '',
-              academicLevel: '',
-              userType: undefined,
-            });
-          }, 200);
+          void (async () => {
+            try {
+              if (auth) {
+                await signOut(auth);
+              }
+            } catch {
+              // Still clear local shell state below.
+            }
+            router.replace(ROUTES.AUTH.STUDENT_SESSION);
+            setTimeout(() => {
+              setUserInfo({
+                fullName: '',
+                age: '',
+                faculty: '',
+                major: '',
+                academicLevel: '',
+                userType: undefined,
+              });
+            }, 200);
+          })();
         },
       },
     ]);

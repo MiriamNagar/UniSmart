@@ -23,6 +23,7 @@ import {
 import { googleSignInUnavailableReason, isGoogleSignInAvailableOnThisRuntime } from '@/lib/google-sign-in-config';
 import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-message';
 import { signInWithGoogle } from '@/lib/google-sign-in';
+import { resolvePostSignInNavigation } from '@/lib/auth-post-sign-in';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function AdminLoginScreen() {
@@ -82,12 +83,13 @@ export default function AdminLoginScreen() {
         u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || 'Admin';
 
       try {
+        const nav = await resolvePostSignInNavigation({ firebaseUser: u, entry: 'admin-login' });
         setUserInfo({
           ...userInfo,
           fullName: userInfo.fullName || display,
-          userType: 'admin',
+          userType: nav.userType,
         });
-        router.replace(ROUTES.ADMIN.DASHBOARD);
+        router.replace(nav.home);
       } catch {
         setSubmitError('Could not open the next screen. Please try again.');
       }
@@ -122,17 +124,21 @@ export default function AdminLoginScreen() {
 
     setIsSigningIn(true);
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
 
       const trimmed = email.trim();
       const nameFromEmail = trimmed.split('@')[0] || 'Admin';
       try {
+        const nav = await resolvePostSignInNavigation({
+          firebaseUser: cred.user,
+          entry: 'admin-login',
+        });
         setUserInfo({
           ...userInfo,
           fullName: userInfo.fullName || nameFromEmail,
-          userType: 'admin',
+          userType: nav.userType,
         });
-        router.replace(ROUTES.ADMIN.DASHBOARD);
+        router.replace(nav.home);
       } catch {
         setSubmitError('Could not open the next screen. Please try again.');
       }
