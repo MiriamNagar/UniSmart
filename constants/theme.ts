@@ -5,6 +5,9 @@
 
 import { Platform } from 'react-native';
 
+/** Shell design tokens (nav, surfaces); see `design-tokens.ts` */
+export { designTokens } from './design-tokens';
+
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
