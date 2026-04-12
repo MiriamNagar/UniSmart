@@ -259,8 +259,9 @@ export function bguCatalogToCourses(
 		}
 
 		for (const [semYearKey, groupRows] of byGroup) {
-			const [semHeb] = semYearKey.split('|');
+			const [semHeb, yearHeb] = semYearKey.split('|');
 			const semester = mapSemester(semHeb);
+			const degreeCatalogYear = (yearHeb ?? '').trim();
 			const sections = buildSectionsForGroup(groupRows, rng, randomizeZero);
 			if (sections.length === 0) continue;
 
@@ -278,6 +279,7 @@ export function bguCatalogToCourses(
 				isMandatory,
 				credits: courseCreditsForGroup(groupRows),
 				semester,
+				degreeCatalogYear,
 				prerequisiteNames: [...course.prerequisites],
 				availableSections: sections.map((s, i) => ({
 					...s,

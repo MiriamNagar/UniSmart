@@ -29,6 +29,8 @@ export interface Course {
 	isMandatory: boolean;
 	credits: number;
 	semester: 'A' | 'B' | 'summer'; // ADD
+	/** BGU catalog degree year (Hebrew letter: א–ד). Present for catalog-derived courses. */
+	degreeCatalogYear?: string;
 	availableSections: CourseSection[];
 	/** Catalog prerequisite course names (same language as in the catalog). Used for eligibility before scheduling. */
 	prerequisiteNames?: string[];

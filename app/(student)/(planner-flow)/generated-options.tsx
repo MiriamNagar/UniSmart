@@ -10,6 +10,7 @@ import { ROUTES } from '@/constants/routes';
 import { generateSchedules } from '@/logic/solver';
 import { bguPlannerCourses } from '@/mockData/bgu-planner-courses';
 import { isCourseEligibleForSemester } from '@/lib/planner-prerequisite-eligibility';
+import { filterCoursesForPlannerTerm } from '@/lib/planner-active-term';
 import { Days } from '@/types/courses';
 
 export default function GeneratedOptionsScreen() {
@@ -22,6 +23,7 @@ export default function GeneratedOptionsScreen() {
     setLastPlannerFlowRoute,
     professorPreferences,
     selectedSemester,
+    activeDegreeYear,
   } = useSelection();
 
   // מצב למעקב אחרי ריחוף עכבר 
@@ -40,11 +42,11 @@ export default function GeneratedOptionsScreen() {
 
     const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
 
-    const coursesToSchedule = bguPlannerCourses.filter(
+    const inTerm = filterCoursesForPlannerTerm(bguPlannerCourses, semesterKey, activeDegreeYear);
+    const coursesToSchedule = inTerm.filter(
       (course) =>
         selectedCourses.has(course.courseID) &&
-        course.semester === semesterKey &&
-        isCourseEligibleForSemester(course, semesterKey, bguPlannerCourses, {
+        isCourseEligibleForSemester(course, semesterKey, inTerm, {
           completedCourseNames: new Set(),
         }),
     );
@@ -81,7 +83,7 @@ export default function GeneratedOptionsScreen() {
         schedule: transformedSchedule,
       };
     });
-  }, [selectedCourses, selectedDays, startHour, endHour, selectedSemester]);
+  }, [selectedCourses, selectedDays, startHour, endHour, selectedSemester, activeDegreeYear]);
 
   const constraintCount = (selectedDays.size) + (startHour !== 'Any' ? 1 : 0) + (endHour !== 'Any' ? 1 : 0);
 

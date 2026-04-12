@@ -9,9 +9,17 @@ import { ROUTES } from '@/constants/routes';
 
 import { bguPlannerCourses } from '@/mockData/bgu-planner-courses';
 import { filterCoursesEligibleForSemester } from '@/lib/planner-prerequisite-eligibility';
+import { filterCoursesForPlannerTerm } from '@/lib/planner-active-term';
 
 export default function CourseSelectionScreen() {
-  const { selectedCourses, setSelectedCourses, setLastPlannerFlowRoute, userInfo, selectedSemester } = useSelection();
+  const {
+    selectedCourses,
+    setSelectedCourses,
+    setLastPlannerFlowRoute,
+    userInfo,
+    selectedSemester,
+    activeDegreeYear,
+  } = useSelection();
 
   // Save this route as the last visited planner flow route
   useEffect(() => {
@@ -21,11 +29,11 @@ export default function CourseSelectionScreen() {
   const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
 
   const courses = useMemo(() => {
-    const inSem = bguPlannerCourses.filter((c) => c.semester === semesterKey);
-    return filterCoursesEligibleForSemester(inSem, semesterKey, bguPlannerCourses, {
+    const inTerm = filterCoursesForPlannerTerm(bguPlannerCourses, semesterKey, activeDegreeYear);
+    return filterCoursesEligibleForSemester(inTerm, semesterKey, inTerm, {
       completedCourseNames: new Set(),
     });
-  }, [semesterKey]);
+  }, [semesterKey, activeDegreeYear]);
 
   const toggleCourse = (courseId: string) => {
     const newSelected = new Set(selectedCourses);
@@ -59,7 +67,9 @@ export default function CourseSelectionScreen() {
           <ThemedText style={styles.filterTitle}>
             {userInfo.major || 'Software Engineering'} - {userInfo.academicLevel || 'Freshman'}
           </ThemedText>
-          <ThemedText style={styles.filterSemester}>Active Semester: {selectedSemester}</ThemedText>
+          <ThemedText style={styles.filterSemester}>
+            Active term: year {activeDegreeYear} · {selectedSemester}
+          </ThemedText>
         </View>
 
 

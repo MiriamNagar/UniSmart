@@ -6,9 +6,23 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
+import { BGU_DEGREE_YEAR_OPTIONS } from '@/lib/planner-active-term';
 
 export default function PlannerScreen() {
-  const { selectedSemester, setSelectedSemester, lastPlannerFlowRoute, setLastPlannerFlowRoute } = useSelection();
+  const {
+    selectedSemester,
+    setSelectedSemester,
+    activeDegreeYear,
+    setActiveDegreeYear,
+    lastPlannerFlowRoute,
+    setLastPlannerFlowRoute,
+    setSelectedCourses,
+    userInfo,
+  } = useSelection();
+
+  const resetPlannerSelectionsForTermChange = () => {
+    setSelectedCourses(new Set());
+  };
 
   // Clear saved route when explicitly navigating to main planner screen
   // This allows users to start fresh when they come back to main planner
@@ -49,9 +63,47 @@ export default function PlannerScreen() {
         <View style={styles.descriptionContainer}>
           <ThemedText style={styles.descriptionText}>
             Courses filtered for{' '}
-            <ThemedText style={styles.highlightedText}>Software Engineering</ThemedText>
-            , Year <ThemedText style={styles.highlightedText}>Freshman</ThemedText>.
+            <ThemedText style={styles.highlightedText}>
+              {userInfo.major || 'Software Engineering'}
+            </ThemedText>
+            {userInfo.academicLevel ? (
+              <>
+                {', '}
+                <ThemedText style={styles.highlightedText}>{userInfo.academicLevel}</ThemedText>
+              </>
+            ) : null}
+            . Active term: degree year <ThemedText style={styles.highlightedText}>{activeDegreeYear}</ThemedText>
+            {' · '}
+            <ThemedText style={styles.highlightedText}>{selectedSemester}</ThemedText>.
           </ThemedText>
+        </View>
+
+        {/* Degree year (catalog) — drives which offerings appear with the semester */}
+        <View style={styles.semesterSection}>
+          <ThemedText style={styles.sectionLabel}>SELECT DEGREE YEAR (CATALOG)</ThemedText>
+          <View style={styles.degreeYearGrid}>
+            {BGU_DEGREE_YEAR_OPTIONS.map((y) => (
+              <TouchableOpacity
+                key={y}
+                style={[
+                  styles.degreeYearButton,
+                  activeDegreeYear === y && styles.semesterButtonSelected,
+                ]}
+                onPress={() => {
+                  setActiveDegreeYear(y);
+                  resetPlannerSelectionsForTermChange();
+                }}
+                activeOpacity={0.7}>
+                <ThemedText
+                  style={[
+                    styles.degreeYearButtonText,
+                    activeDegreeYear === y && styles.semesterButtonTextSelected,
+                  ]}>
+                  {y}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Semester Selection */}
@@ -63,7 +115,10 @@ export default function PlannerScreen() {
                 styles.semesterButton,
                 selectedSemester === 'Sem 1' && styles.semesterButtonSelected,
               ]}
-              onPress={() => setSelectedSemester('Sem 1')}
+              onPress={() => {
+                setSelectedSemester('Sem 1');
+                resetPlannerSelectionsForTermChange();
+              }}
               activeOpacity={0.7}>
               <ThemedText
                 style={[
@@ -78,7 +133,10 @@ export default function PlannerScreen() {
                 styles.semesterButton,
                 selectedSemester === 'Sem 2' && styles.semesterButtonSelected,
               ]}
-              onPress={() => setSelectedSemester('Sem 2')}
+              onPress={() => {
+                setSelectedSemester('Sem 2');
+                resetPlannerSelectionsForTermChange();
+              }}
               activeOpacity={0.7}>
               <ThemedText
                 style={[
@@ -181,6 +239,28 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+  degreeYearGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  degreeYearButton: {
+    width: '22%',
+    minWidth: 72,
+    flexGrow: 1,
+    height: 52,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  degreeYearButtonText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#9B9B9B',
   },
   semesterButtons: {
     flexDirection: 'row',

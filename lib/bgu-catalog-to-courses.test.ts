@@ -52,6 +52,7 @@ describe('bguCatalogToCourses', () => {
 		const courses = bguCatalogToCourses(catalog, { seed: 1 });
 		expect(courses.length).toBe(1);
 		expect(courses[0].semester).toBe('A');
+		expect(courses[0].degreeCatalogYear).toBe('א');
 		expect(courses[0].availableSections.length).toBe(1);
 		expect(courses[0].availableSections[0].lessons.length).toBe(2);
 		expect(courses[0].availableSections[0].lessons[0].type).toBe('Lecture');
