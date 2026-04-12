@@ -1,0 +1,1512 @@
+{
+  "schemaVersion": 1,
+  "program": "bgu_computer_science",
+  "courses": {
+    "אלגוריתמים 1": {
+      "name": "אלגוריתמים 1",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר גולן שי",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ג 10:00-13:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 3
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר ניבש גבריאל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ב 10:00-13:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 10
+        },
+        {
+          "type": "שיעור (מצטיינים)",
+          "lecturer": "ד\"ר ניבש גבריאל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 09:00-12:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 18
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר שור תומר",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ג 14:00-16:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 4
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר צדיק דניאל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 17:00-19:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 2
+        },
+        {
+          "type": "תרגיל (מצטיינים)",
+          "lecturer": "מר צדיק דניאל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ב 09:00-11:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 17
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר שור תומר",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ג 16:00-18:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 4
+        }
+      ],
+      "prerequisites": [
+        "מבנים דיסקרטיים למדעי המחשב",
+        "מבנה נתונים",
+        "אלגברה לינארית 1 למדעי המחשב",
+        "חשבון אינפיניטסימלי 1 למדעי המחשב"
+      ]
+    },
+    "אלגוריתמים 2": {
+      "name": "אלגוריתמים 2",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "מר טרושקין מיכאל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ג 09:00-12:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 0
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "מר רוזנברג דניאל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ה 12:00-15:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 2
+        },
+        {
+          "type": "שיעור (מצטיינים)",
+          "lecturer": "מר טרושקין מיכאל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 15:00-18:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 25
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר דנינו דותן",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 6
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר רוזנברג דניאל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 15:00-17:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        },
+        {
+          "type": "תרגיל (מצטיינים)",
+          "lecturer": "מר דנינו דותן",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ד 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 15
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר רוזנברג דניאל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 17:00-19:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר דנינו דותן",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ה 15:00-17:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 2
+        }
+      ],
+      "prerequisites": [
+        "אלגוריתמים 1",
+        "אלגברה לינארית 2 למדעי המחשב",
+        "הסתברות למדעי המחשב"
+      ]
+    },
+    "מבנה נתונים": {
+      "name": "מבנה נתונים",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר גולן שי",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "א",
+          "time": "יום ג 11:00-13:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 26
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' גוטליב ליעד",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "א",
+          "time": "יום ב 09:00-13:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 8
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר צדיק דניאל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "א",
+          "time": "יום ד 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 10
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר אבן-חן ידידיה",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "א",
+          "time": "יום ב 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר צדיק דניאל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "א",
+          "time": "יום ד 15:00-17:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 10
+        }
+      ],
+      "prerequisites": [
+        "מבוא לחישוב",
+        "לוגיקה ותורת הקבוצות למדעי המחשב"
+      ]
+    },
+    "מערכות הפעלה": {
+      "name": "מערכות הפעלה",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר וויסברג פנחס",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום ד 13:00-16:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 2
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר וויסברג פנחס",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום ה 09:00-12:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 17
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "גב' ליסק בר",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 18:00-20:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 14
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "גב' ליסק בר",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ג 17:00-19:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "גב' ליסק בר",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ד 15:00-17:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 9
+        }
+      ],
+      "prerequisites": [
+        "מבוא למחשבים ושפת C",
+        "תכנות מערכות 1",
+        "מבוא לתכנות מונחה עצמים",
+        "מבוא לחישוב",
+        "מבנה נתונים",
+        "תקשורת ומחשוב"
+      ]
+    },
+    "רשתות תקשורת": {
+      "name": "רשתות תקשורת",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר מרבלי רויטל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום א 12:00-15:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 0
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' דביר עמית זאב",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 15:00-18:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 31
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "גב' ליסק בר",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 17:00-19:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 8
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר דילברי נתן",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ג 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 14
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "גב' פרבר אנה",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ב 17:00-19:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר דילברי נתן",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ג 15:00-17:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 14
+        }
+      ],
+      "prerequisites": [
+        "מבוא לחישוב",
+        "מבנה נתונים"
+      ]
+    },
+    "הסתברות למדעי המחשב": {
+      "name": "הסתברות למדעי המחשב",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' חפץ דן",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום א 11:00-15:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 39
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' חפץ דן",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ב 11:00-15:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 16
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' חפץ דן",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 10:00-12:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 39
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' חפץ דן",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 11:00-15:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 16
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "גב' שוב שני",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 7
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר טרושקין מיכאל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר טרושקין מיכאל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 15:00-17:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 11
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "גב' שוב שני",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ג 11:00-13:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 16
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר מור דורון",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ג 12:00-14:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 19
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "ד\"ר חורב אלעד",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום ד 17:00-19:00",
+          "credits": 4,
+          "weekly_hours": 2,
+          "places": 21
+        }
+      ],
+      "prerequisites": [
+        "חשבון אינפיניטסימלי 1",
+        "חשבון אינפיניטסימלי 2",
+        "מבנים דיסקרטיים למדעי המחשב"
+      ]
+    },
+    "תכנות מערכות 2": {
+      "name": "תכנות מערכות 2",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' סגל הלוי דוד אראל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 09:00-12:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 0
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר אופלינסקי אלינה",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום א 09:00-12:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר צרפתי שחר",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ה 17:00-18:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 5
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר צרפתי שחר",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 15:00-16:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        },
+        {
+          "type": "מעבדה",
+          "lecturer": "מר צרפתי שחר",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 19:00-20:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 2
+        },
+        {
+          "type": "מעבדה",
+          "lecturer": "גב' סטרמן חרות",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ג 14:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        },
+        {
+          "type": "מעבדה",
+          "lecturer": "גב' סטרמן חרות",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ה 10:00-11:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        },
+        {
+          "type": "מעבדה",
+          "lecturer": "מר צרפתי שחר",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ג 20:00-21:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        }
+      ],
+      "prerequisites": [
+        "מבנה נתונים",
+        "תכנות מונחה עצמים",
+        "תכנות מערכות 1"
+      ]
+    },
+    "אוטומטים ושפות פורמליות": {
+      "name": "אוטומטים ושפות פורמליות",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "גב' בן דוד תמר",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ג 12:00-15:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 2
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר פסקין ענת",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ב 12:00-15:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר מור דורון",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום א 14:00-16:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר מור דורון",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום א 16:00-18:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        }
+      ],
+      "prerequisites": [
+        "מבוא לחישוב",
+        "אלגוריתמים 1",
+        "לוגיקה ותורת הקבוצות",
+        "מבנים דיסקרטיים למדעי המחשב"
+      ]
+    },
+    "חישוביות": {
+      "name": "חישוביות",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר פסקין ענת",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום א 09:00-12:00",
+          "credits": 3.5,
+          "weekly_hours": 2,
+          "places": 8
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' הירש אדוארד",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ב 15:00-18:00",
+          "credits": 3.5,
+          "weekly_hours": 2,
+          "places": 24
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' הירש אדוארד",
+          "language": "עברית",
+          "semester": "ק",
+          "year": "ג",
+          "time": "יום א 09:00-13:30",
+          "credits": 3.5,
+          "weekly_hours": 2,
+          "places": 13
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר רוזנברג דניאל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ב 17:00-18:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 3
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר פסח עדי",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ב 16:00-17:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 2
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר פסח עדי",
+          "language": "עברית",
+          "semester": "ק",
+          "year": "ג",
+          "time": "יום ג 13:30-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר פסח עדי",
+          "language": "עברית",
+          "semester": "ק",
+          "year": "ג",
+          "time": "יום ג 15:00-16:30",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 13
+        }
+      ],
+      "prerequisites": [
+        "אוטומטים ושפות פורמליות",
+        "אלגוריתמים 2",
+        "הסתברות למדעי המחשב"
+      ]
+    },
+    "הנדסת תוכנה": {
+      "name": "הנדסת תוכנה",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר שקרון מירב",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום א 12:00-15:00",
+          "credits": 3.5,
+          "weekly_hours": 2,
+          "places": 23
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר שקרון מירב",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ה 12:00-15:00",
+          "credits": 3.5,
+          "weekly_hours": 2,
+          "places": 38
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר מיכאל שקד",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ד 13:00-14:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 19
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר מיכאל שקד",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ד 14:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 7
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר בן טובים דביר",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ד 13:00-14:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 33
+        }
+      ],
+      "prerequisites": [
+        "תכנות מונחה עצמים",
+        "מסדי נתונים"
+      ]
+    },
+    "תכנות מונחה עצמים": {
+      "name": "תכנות מונחה עצמים",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר קליין איל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ג 10:00-14:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 0
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר אנידג'ר אור חיים",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 09:00-13:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "גב' סטרמן חרות",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ג 09:00-11:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 2
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר עופר משה",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ב",
+          "time": "יום ד 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        }
+      ],
+      "prerequisites": [
+        "מבוא לחישוב",
+        "מבנה נתונים"
+      ]
+    },
+    "מסדי נתונים": {
+      "name": "מסדי נתונים",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר קליין איל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום ג 12:00-15:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 28
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "מר טרם נקבע",
+          "language": "עברית",
+          "semester": "ק",
+          "year": "ב",
+          "time": "02:00-",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 35
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר קליין מתן",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ב",
+          "time": "יום א 12:00-14:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 3
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר טרם נקבע",
+          "language": "עברית",
+          "semester": "ק",
+          "year": "ב",
+          "time": "02:00-",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 5
+        }
+      ],
+      "prerequisites": [
+        "מבוא לחישוב",
+        "מבנה נתונים",
+        "תכנות מונחה עצמים",
+        "הסתברות למדעי המחשב"
+      ]
+    },
+    "מבוא לחישוב": {
+      "name": "מבוא לחישוב",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' בן משה בועז",
+          "language": "עברית",
+          "semester": "א",
+          "year": "א",
+          "time": "יום ג 09:00-11:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 5
+        },
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' בן משה בועז",
+          "language": "עברית",
+          "semester": "א",
+          "year": "א",
+          "time": "יום א 15:00-17:00",
+          "credits": 5,
+          "weekly_hours": 3,
+          "places": 21
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר אבן-חן ידידיה",
+          "language": "עברית",
+          "semester": "א",
+          "year": "א",
+          "time": "יום ד 18:00-20:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 0
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר צדיק דניאל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "א",
+          "time": "יום ד 13:00-15:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 2
+        }
+      ],
+      "prerequisites": []
+    },
+    "Undergraduate final project workshop": {
+      "name": "Undergraduate final project workshop",
+      "offerings": [
+        {
+          "type": "סדנה",
+          "lecturer": "ד\"ר ברגר הראל",
+          "language": "אנגלית",
+          "semester": "ש",
+          "year": "ג",
+          "time": "02:00-",
+          "credits": 4,
+          "weekly_hours": 2,
+          "places": 0
+        },
+        {
+          "type": "סדנה",
+          "lecturer": "ד\"ר דובין רן",
+          "language": "אנגלית",
+          "semester": "ש",
+          "year": "ג",
+          "time": "02:00-",
+          "credits": 4,
+          "weekly_hours": 2,
+          "places": 0
+        },
+        {
+          "type": "סדנה",
+          "lecturer": "ד\"ר חוגי אסף",
+          "language": "אנגלית",
+          "semester": "ש",
+          "year": "ג",
+          "time": "02:00-",
+          "credits": 4,
+          "weekly_hours": 2,
+          "places": 19
+        },
+        {
+          "type": "סדנה",
+          "lecturer": "מר טרם נקבע",
+          "language": "אנגלית",
+          "semester": "ש",
+          "year": "ג",
+          "time": "02:00-",
+          "credits": 4,
+          "weekly_hours": 2,
+          "places": 197
+        }
+      ],
+      "prerequisites": [
+        "תכנות מונחה עצמים"
+      ]
+    },
+    "Undergraduate seminar in Computer Science": {
+      "name": "Undergraduate seminar in Computer Science",
+      "offerings": [
+        {
+          "type": "סמינריון",
+          "lecturer": "ד\"ר ניבש גבריאל",
+          "language": "אנגלית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ד 15:00-17:00",
+          "credits": 2,
+          "weekly_hours": 1,
+          "places": 0
+        },
+        {
+          "type": "סמינריון",
+          "lecturer": "פרופ' הירש אדוארד",
+          "language": "אנגלית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום א 20:00-22:00",
+          "credits": 2,
+          "weekly_hours": 1,
+          "places": 6
+        },
+        {
+          "type": "סמינריון",
+          "lecturer": "ד\"ר גולן שי",
+          "language": "אנגלית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום ד 15:00-17:00",
+          "credits": 2,
+          "weekly_hours": 1,
+          "places": 10
+        }
+      ],
+      "prerequisites": []
+    },
+    "ראייה ממוחשבת ועיבוד תמונה": {
+      "name": "ראייה ממוחשבת ועיבוד תמונה",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר בן ארצי גיל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום ד 15:00-18:00",
+          "credits": 3.5,
+          "weekly_hours": 2,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר אילוק אליאן",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום א 18:00-19:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 6
+        }
+      ],
+      "prerequisites": [
+        "אלגברה לינארית 2"
+      ]
+    },
+    "פיתוח משחקי מחשב": {
+      "name": "פיתוח משחקי מחשב",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' סגל הלוי דוד אראל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ד 15:00-18:00",
+          "credits": 4,
+          "weekly_hours": 2.5,
+          "places": 8
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר קושניר ויקטור",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ב 20:00-22:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 5
+        }
+      ],
+      "prerequisites": [
+        "תכנות מונחה עצמים",
+        "אלגוריתמים 1",
+        "תכנות מערכות 2",
+        "הסתברות למדעי המחשב"
+      ]
+    },
+    "הסקה סטטיסטית": {
+      "name": "הסקה סטטיסטית",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר וייס רועי",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום ד 09:00-12:00",
+          "credits": 3.5,
+          "weekly_hours": 2,
+          "places": 0
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר רוזנברג דניאל",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום ג 15:00-16:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 5
+        }
+      ],
+      "prerequisites": [
+        "הסתברות למדעי המחשב"
+      ]
+    },
+    "פיתוח יישומים לענן": {
+      "name": "פיתוח יישומים לענן",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "מר מאיר גד יוסף",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ד",
+          "time": "יום א 14:00-17:00",
+          "credits": 3.5,
+          "weekly_hours": 2,
+          "places": 1
+        },
+        {
+          "type": "תרגיל",
+          "lecturer": "מר מאיר גד יוסף",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ד",
+          "time": "יום א 17:00-18:00",
+          "credits": 0,
+          "weekly_hours": 0,
+          "places": 1
+        }
+      ],
+      "prerequisites": [
+        "תכנות מונחה עצמים",
+        "מסדי נתונים",
+        "ארכיטקטורה של מחשבים",
+        "מערכות הפעלה"
+      ]
+    },
+    "אלגוריתמים כלכליים": {
+      "name": "אלגוריתמים כלכליים",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' סגל הלוי דוד אראל",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ב 12:00-15:00",
+          "credits": 3,
+          "weekly_hours": 1.5,
+          "places": 0
+        }
+      ],
+      "prerequisites": [
+        "הסתברות למדעי המחשב",
+        "אלגוריתמים 2"
+      ]
+    },
+    "דחיסת נתונים": {
+      "name": "דחיסת נתונים",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "פרופ' שפירא דנה",
+          "language": "עברית",
+          "semester": "א",
+          "year": "ג",
+          "time": "יום ב 12:00-15:00",
+          "credits": 3,
+          "weekly_hours": 1.5,
+          "places": 0
+        }
+      ],
+      "prerequisites": [
+        "אלגוריתמים 1"
+      ]
+    },
+    "סיבוכיות תקשורת": {
+      "name": "סיבוכיות תקשורת",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר פסקין ענת",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום א 09:00-12:00",
+          "credits": 3,
+          "weekly_hours": 1.5,
+          "places": 1
+        }
+      ],
+      "prerequisites": [
+        "אלגוריתמים 2",
+        "הסתברות למדעי המחשב"
+      ]
+    },
+    "מבנה נתונים תיאורטיים": {
+      "name": "מבנה נתונים תיאורטיים",
+      "offerings": [
+        {
+          "type": "שיעור",
+          "lecturer": "ד\"ר חורב אלעד",
+          "language": "עברית",
+          "semester": "ב",
+          "year": "ג",
+          "time": "יום ב 15:00-18:00",
+          "credits": 3,
+          "weekly_hours": 1.5,
+          "places": 5
+        }
+      ],
+      "prerequisites": []
+    },
+    "חשבון אינפיניטסימלי 2": {
+      "name": "חשבון אינפיניטסימלי 2",
+      "offerings": [],
+      "prerequisites": [
+        "חשבון אינפיניטסימלי 1",
+        "אלגברה לינארית 1",
+        "לוגיקה ותורת הקבוצות"
+      ]
+    },
+    "ארכיטקטורה של מחשבים": {
+      "name": "ארכיטקטורה של מחשבים",
+      "offerings": [],
+      "prerequisites": [
+        "מבוא לחישוב",
+        "מערכות ספרתיות"
+      ]
+    },
+    "אלגברה לינארית 2": {
+      "name": "אלגברה לינארית 2",
+      "offerings": [],
+      "prerequisites": [
+        "אלגברה לינארית 1 למדעי המחשב",
+        "לוגיקה ותורת הקבוצות למדעי המחשב"
+      ]
+    },
+    "תכנות מערכות 1": {
+      "name": "תכנות מערכות 1",
+      "offerings": [],
+      "prerequisites": [
+        "מבוא לחישוב",
+        "מבנה נתונים"
+      ]
+    },
+    "אלגוריתמים בבינה מלאכותית": {
+      "name": "אלגוריתמים בבינה מלאכותית",
+      "offerings": [],
+      "prerequisites": [
+        "תכנות מונחה עצמים",
+        "אלגוריתמים 1"
+      ]
+    },
+    "הגנת פרוטוקולי תקשורת": {
+      "name": "הגנת פרוטוקולי תקשורת",
+      "offerings": [],
+      "prerequisites": [
+        "רשתות תקשורת",
+        "תכנות מונחה עצמים"
+      ]
+    },
+    "למידה עמוקה ועיבוד שפות טבעיות": {
+      "name": "למידה עמוקה ועיבוד שפות טבעיות",
+      "offerings": [],
+      "prerequisites": [
+        "תכנות מונחה עצמים",
+        "אלגוריתמים 1"
+      ]
+    },
+    "מבוא לקריפטוגרפיה": {
+      "name": "מבוא לקריפטוגרפיה",
+      "offerings": [],
+      "prerequisites": [
+        "הסתברות למדעי המחשב",
+        "אלגוריתמים 1"
+      ]
+    },
+    "פתרון בעיות באמצעות חיפוש": {
+      "name": "פתרון בעיות באמצעות חיפוש",
+      "offerings": [],
+      "prerequisites": [
+        "מבנה נתונים",
+        "אלגוריתמים 2",
+        "הסתברות למדעי המחשב",
+        "תכנות מונחה עצמים"
+      ]
+    },
+    "למידה יישומית בראייה ממוחשבת": {
+      "name": "למידה יישומית בראייה ממוחשבת",
+      "offerings": [],
+      "prerequisites": [
+        "אלגברה לינארית 2"
+      ]
+    },
+    "נושאים מתקדמים בראייה ממוחשבת עם יישומים בהדמייה רפואית": {
+      "name": "נושאים מתקדמים בראייה ממוחשבת עם יישומים בהדמייה רפואית",
+      "offerings": [],
+      "prerequisites": [
+        "תכנות מונחה עצמים",
+        "הסתברות למדעי המחשב",
+        "אלגברה לינארית 2 למדעי המחשב"
+      ]
+    },
+    "תכנות אלגוריתמים מחקריים": {
+      "name": "תכנות אלגוריתמים מחקריים",
+      "offerings": [],
+      "prerequisites": [
+        "חישוביות",
+        "הנדסת תוכנה",
+        "אלגוריתמים 2",
+        "תכנות מערכות 2"
+      ]
+    },
+    "Boolean Satisfiability": {
+      "name": "Boolean Satisfiability",
+      "offerings": [],
+      "prerequisites": [
+        "אלגוריתמים 2"
+      ]
+    },
+    "שיטות טופולוגיות במדעי הנתונים": {
+      "name": "שיטות טופולוגיות במדעי הנתונים",
+      "offerings": [],
+      "prerequisites": [
+        "אלגברה לינארית 2"
+      ]
+    },
+    "מדעי הנתונים התיאורטיים": {
+      "name": "מדעי הנתונים התיאורטיים",
+      "offerings": [],
+      "prerequisites": [
+        "אלגוריתמים 1",
+        "הסתברות למדעי המחשב"
+      ]
+    },
+    "הסברה בבינה מלאכותית": {
+      "name": "הסברה בבינה מלאכותית",
+      "offerings": [],
+      "prerequisites": [
+        "למידה עמוקה ועיבוד שפות טבעיות",
+        "נושאים מתקדמים בראייה ממוחשבת עם יישומים בהדמייה רפואית"
+      ]
+    },
+    "מודלים מתקדמים של הבנת השפה": {
+      "name": "מודלים מתקדמים של הבנת השפה",
+      "offerings": [],
+      "prerequisites": [
+        "למידה עמוקה ועיבוד שפות טבעיות"
+      ]
+    },
+    "שיכונים מטריים ואלוריתמים": {
+      "name": "שיכונים מטריים ואלוריתמים",
+      "offerings": [],
+      "prerequisites": [
+        "אלגברה לינארית 1",
+        "הסתברות למדעי המחשב",
+        "אלגוריתמים 1"
+      ]
+    },
+    "מבוא לחישוב קוונטי": {
+      "name": "מבוא לחישוב קוונטי",
+      "offerings": [],
+      "prerequisites": [
+        "הסתברות למדעי המחשב",
+        "אלגוריתמים 2"
+      ]
+    },
+    "הסתברות רב- מימדית למדעי המחשב": {
+      "name": "הסתברות רב- מימדית למדעי המחשב",
+      "offerings": [],
+      "prerequisites": [
+        "אלגוריתמים 2",
+        "הסתברות למדעי המחשב"
+      ]
+    },
+    "אלגוריתמי ניווט ושיערוך מיקום": {
+      "name": "אלגוריתמי ניווט ושיערוך מיקום",
+      "offerings": [],
+      "prerequisites": [
+        "תכנות מונחה עצמים",
+        "אלגוריתמים 1"
+      ]
+    },
+    "Undergraduate final project workshop in Computer Science": {
+      "name": "Undergraduate final project workshop in Computer Science",
+      "offerings": [],
+      "prerequisites": [
+        "תכנות מונחה עצמים"
+      ]
+    },
+    "חשבון אינפיניטסימלי 1": {
+      "name": "חשבון אינפיניטסימלי 1",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "אלגברה לינארית 1": {
+      "name": "אלגברה לינארית 1",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "לוגיקה ותורת הקבוצות": {
+      "name": "לוגיקה ותורת הקבוצות",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "לוגיקה ותורת הקבוצות למדעי המחשב": {
+      "name": "לוגיקה ותורת הקבוצות למדעי המחשב",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "מערכות ספרתיות": {
+      "name": "מערכות ספרתיות",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "אלגברה לינארית 1 למדעי המחשב": {
+      "name": "אלגברה לינארית 1 למדעי המחשב",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "מבנים דיסקרטיים למדעי המחשב": {
+      "name": "מבנים דיסקרטיים למדעי המחשב",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "מבוא למחשבים ושפת C": {
+      "name": "מבוא למחשבים ושפת C",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "מבוא לתכנות מונחה עצמים": {
+      "name": "מבוא לתכנות מונחה עצמים",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "תקשורת ומחשוב": {
+      "name": "תקשורת ומחשוב",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "חשבון אינפיניטסימלי 1 למדעי המחשב": {
+      "name": "חשבון אינפיניטסימלי 1 למדעי המחשב",
+      "offerings": [],
+      "prerequisites": []
+    },
+    "אלגברה לינארית 2 למדעי המחשב": {
+      "name": "אלגברה לינארית 2 למדעי המחשב",
+      "offerings": [],
+      "prerequisites": []
+    }
+  }
+}

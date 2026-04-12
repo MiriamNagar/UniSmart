@@ -3,12 +3,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
-//TODO: Replace with real courses from backend
-import { mockCourses } from '@/mockData/mock-courses';
+import { bguPlannerCourses } from '@/mockData/bgu-planner-courses';
+import { filterCoursesEligibleForSemester } from '@/lib/planner-prerequisite-eligibility';
 
 export default function CourseSelectionScreen() {
   const { selectedCourses, setSelectedCourses, setLastPlannerFlowRoute, userInfo, selectedSemester } = useSelection();
@@ -20,7 +20,12 @@ export default function CourseSelectionScreen() {
 
   const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
 
-  const courses = mockCourses.filter(c => c.semester === semesterKey);
+  const courses = useMemo(() => {
+    const inSem = bguPlannerCourses.filter((c) => c.semester === semesterKey);
+    return filterCoursesEligibleForSemester(inSem, semesterKey, bguPlannerCourses, {
+      completedCourseNames: new Set(),
+    });
+  }, [semesterKey]);
 
   const toggleCourse = (courseId: string) => {
     const newSelected = new Set(selectedCourses);

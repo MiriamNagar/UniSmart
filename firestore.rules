@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // BGU CS catalog (seeded by scripts/seed-firestore-3nf.mjs). Reads only from clients; writes via Admin SDK.
+    match /bgu_cs_courses/{courseId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /bgu_cs_offerings/{offeringId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /bgu_cs_prerequisite_edges/{edgeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

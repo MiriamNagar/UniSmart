@@ -30,4 +30,6 @@ export interface Course {
 	credits: number;
 	semester: 'A' | 'B' | 'summer'; // ADD
 	availableSections: CourseSection[];
+	/** Catalog prerequisite course names (same language as in the catalog). Used for eligibility before scheduling. */
+	prerequisiteNames?: string[];
 }

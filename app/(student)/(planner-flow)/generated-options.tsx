@@ -8,8 +8,8 @@ import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
 import { generateSchedules } from '@/logic/solver';
-//TODO: Replace with real courses from backend
-import { mockCourses } from '@/mockData/mock-courses'; 
+import { bguPlannerCourses } from '@/mockData/bgu-planner-courses';
+import { isCourseEligibleForSemester } from '@/lib/planner-prerequisite-eligibility';
 import { Days } from '@/types/courses';
 
 export default function GeneratedOptionsScreen() {
@@ -21,6 +21,7 @@ export default function GeneratedOptionsScreen() {
     setSavedPlans,
     setLastPlannerFlowRoute,
     professorPreferences,
+    selectedSemester,
   } = useSelection();
 
   // מצב למעקב אחרי ריחוף עכבר 
@@ -37,8 +38,15 @@ export default function GeneratedOptionsScreen() {
       endHour,
     };
 
-    const coursesToSchedule = mockCourses.filter(course => 
-      selectedCourses.has(course.courseID)
+    const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
+
+    const coursesToSchedule = bguPlannerCourses.filter(
+      (course) =>
+        selectedCourses.has(course.courseID) &&
+        course.semester === semesterKey &&
+        isCourseEligibleForSemester(course, semesterKey, bguPlannerCourses, {
+          completedCourseNames: new Set(),
+        }),
     );
 
     const solverResult = generateSchedules(coursesToSchedule, preferences);
@@ -46,7 +54,7 @@ export default function GeneratedOptionsScreen() {
     return solverResult.proposals.map((proposal) => {
       const transformedSchedule: any = { SUN: [], MON: [], TUE: [], WED: [], THU: [], FRI: [] };
       proposal.sections.forEach(section => {
-        const parentCourse = mockCourses.find(c => 
+        const parentCourse = bguPlannerCourses.find(c => 
           c.availableSections.some(s => s.sectionID === section.sectionID)
         );
 
@@ -73,7 +81,7 @@ export default function GeneratedOptionsScreen() {
         schedule: transformedSchedule,
       };
     });
-  }, [selectedCourses, selectedDays, startHour, endHour]);
+  }, [selectedCourses, selectedDays, startHour, endHour, selectedSemester]);
 
   const constraintCount = (selectedDays.size) + (startHour !== 'Any' ? 1 : 0) + (endHour !== 'Any' ? 1 : 0);
 
