@@ -13,7 +13,8 @@ import {
   isCourseEligibleForSemester,
   virtualCompletedCourseNamesForDegreeTier,
 } from '@/lib/planner-prerequisite-eligibility';
-import { catalogLetterForDegreeTier, filterCoursesForPlannerTerm } from '@/lib/planner-active-term';
+import { catalogLetterForDegreeTier, DEGREE_YEAR_PLANNER_OPTIONS, filterCoursesForPlannerTerm } from '@/lib/planner-active-term';
+import { buildPlannerCatalogUiModel } from '@/lib/planner-catalog-ui-messages';
 import { Days } from '@/types/courses';
 
 export default function GeneratedOptionsScreen() {
@@ -29,7 +30,14 @@ export default function GeneratedOptionsScreen() {
     activeDegreeYearTier,
   } = useSelection();
 
-  const { allCourses: catalogCourses } = usePlannerCatalog();
+  const {
+    allCourses: catalogCourses,
+    loading: catalogLoading,
+    source: catalogSource,
+    loadError: catalogLoadError,
+    hasFirebaseDb,
+    refresh: refreshCatalog,
+  } = usePlannerCatalog();
 
   const virtualCompletedCourseNames = useMemo(
     () => virtualCompletedCourseNamesForDegreeTier(catalogCourses, activeDegreeYearTier),
@@ -42,6 +50,24 @@ export default function GeneratedOptionsScreen() {
   useEffect(() => {
     setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS);
   }, [setLastPlannerFlowRoute]);
+
+  const activeTermSummary = useMemo(() => {
+    const yearLabel = DEGREE_YEAR_PLANNER_OPTIONS.find((o) => o.tier === activeDegreeYearTier)?.label ?? 'Year 1';
+    const semLabel = selectedSemester === 'Sem 1' ? 'Semester A' : 'Semester B';
+    return `${yearLabel} · ${semLabel}`;
+  }, [activeDegreeYearTier, selectedSemester]);
+
+  const catalogUi = useMemo(
+    () =>
+      buildPlannerCatalogUiModel({
+        hasFirebaseDb,
+        source: catalogSource,
+        loadError: catalogLoadError,
+        loading: catalogLoading,
+        activeTermSummary,
+      }),
+    [hasFirebaseDb, catalogSource, catalogLoadError, catalogLoading, activeTermSummary],
+  );
 
   const proposals = useMemo(() => {
     const preferences = {
@@ -154,6 +180,37 @@ export default function GeneratedOptionsScreen() {
           <ThemedText style={styles.subtitle}>
             BASED ON {constraintCount} {constraintCount === 1 ? 'CONSTRAINT' : 'CONSTRAINTS'}
           </ThemedText>
+        </View>
+
+        <View style={styles.catalogNotice} accessibilityRole="text">
+          <ThemedText style={styles.catalogNoticeTitle}>{catalogUi.headline}</ThemedText>
+          {catalogUi.bodyLines.map((line, i) => (
+            <ThemedText
+              key={`catalog-body-${i}`}
+              style={[styles.catalogNoticeBody, i > 0 ? styles.catalogNoticeBodyFollow : null]}>
+              {line}
+            </ThemedText>
+          ))}
+          {catalogLoading ? (
+            <ThemedText style={[styles.catalogNoticeBody, styles.catalogNoticeBodyFollow]}>
+              {catalogUi.compactNonEnrollmentNote}
+            </ThemedText>
+          ) : null}
+          {catalogUi.showRetry ? (
+            <TouchableOpacity
+              style={[styles.catalogRetry, catalogLoading ? styles.catalogRetryDisabled : null]}
+              onPress={() => {
+                if (catalogLoading) return;
+                void refreshCatalog();
+              }}
+              disabled={catalogLoading}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading catalog from Firestore"
+              accessibilityState={{ disabled: catalogLoading }}>
+              <ThemedText style={styles.catalogRetryText}>Retry Firestore</ThemedText>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {proposals.length === 0 ? (
@@ -353,6 +410,44 @@ const styles = StyleSheet.create({
     color: '#9B9B9B',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
+  },
+  catalogNotice: {
+    backgroundColor: '#F5F3FF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8E0FF',
+    padding: 14,
+    marginBottom: 20,
+  },
+  catalogNoticeTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#5B4C9D',
+    marginBottom: 8,
+  },
+  catalogNoticeBody: {
+    fontSize: 12,
+    color: '#444444',
+    lineHeight: 17,
+  },
+  catalogNoticeBodyFollow: {
+    marginTop: 8,
+  },
+  catalogRetry: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    backgroundColor: '#5B4C9D',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  catalogRetryDisabled: {
+    opacity: 0.55,
+  },
+  catalogRetryText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 13,
   },
   proposalContainer: {
     marginBottom: 32,

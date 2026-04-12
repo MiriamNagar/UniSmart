@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -7,6 +7,7 @@ import { useEffect, useMemo } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 
+import { PlannerCatalogStatusBanner } from '@/components/planner-catalog-status-banner';
 import { usePlannerCatalog } from '@/contexts/bgu-planner-catalog-context';
 import {
   filterCoursesEligibleForSemester,
@@ -17,6 +18,7 @@ import {
   DEGREE_YEAR_PLANNER_OPTIONS,
   filterCoursesForPlannerTerm,
 } from '@/lib/planner-active-term';
+import { buildPlannerCatalogUiModel } from '@/lib/planner-catalog-ui-messages';
 
 export default function CourseSelectionScreen() {
   const {
@@ -28,8 +30,14 @@ export default function CourseSelectionScreen() {
     activeDegreeYearTier,
   } = useSelection();
 
-  const { allCourses: catalogCourses, loading: catalogLoading, source: catalogSource, loadError: catalogLoadError } =
-    usePlannerCatalog();
+  const {
+    allCourses: catalogCourses,
+    loading: catalogLoading,
+    source: catalogSource,
+    loadError: catalogLoadError,
+    hasFirebaseDb,
+    refresh: refreshCatalog,
+  } = usePlannerCatalog();
 
   // Save this route as the last visited planner flow route
   useEffect(() => {
@@ -50,6 +58,24 @@ export default function CourseSelectionScreen() {
       completedCourseNames: virtualCompletedCourseNames,
     });
   }, [semesterKey, catalogYearLetter, catalogCourses, virtualCompletedCourseNames]);
+
+  const activeTermSummary = useMemo(() => {
+    const yearLabel = DEGREE_YEAR_PLANNER_OPTIONS.find((o) => o.tier === activeDegreeYearTier)?.label ?? 'Year 1';
+    const semLabel = selectedSemester === 'Sem 1' ? 'Semester A' : 'Semester B';
+    return `${yearLabel} · ${semLabel}`;
+  }, [activeDegreeYearTier, selectedSemester]);
+
+  const catalogUi = useMemo(
+    () =>
+      buildPlannerCatalogUiModel({
+        hasFirebaseDb,
+        source: catalogSource,
+        loadError: catalogLoadError,
+        loading: catalogLoading,
+        activeTermSummary,
+      }),
+    [hasFirebaseDb, catalogSource, catalogLoadError, catalogLoading, activeTermSummary],
+  );
 
   const toggleCourse = (courseId: string) => {
     const newSelected = new Set(selectedCourses);
@@ -84,36 +110,43 @@ export default function CourseSelectionScreen() {
             {userInfo.major || 'Computer Science'}
             {userInfo.academicLevel ? ` — ${userInfo.academicLevel}` : ''}
           </ThemedText>
-          <ThemedText style={styles.filterSemester}>
-            Active term:{' '}
-            {DEGREE_YEAR_PLANNER_OPTIONS.find((o) => o.tier === activeDegreeYearTier)?.label ?? 'Year 1'} ·{' '}
-            {selectedSemester === 'Sem 1' ? 'Semester A' : 'Semester B'}
-          </ThemedText>
-          {catalogLoading ? (
-            <View style={styles.catalogLoadingRow}>
-              <ActivityIndicator color="#5B4C9D" />
-              <ThemedText style={styles.catalogHint}>Loading catalog…</ThemedText>
-            </View>
-          ) : (
-            <>
-              <ThemedText
-                style={
-                  catalogSource === 'firestore' ? styles.catalogSourceLive : styles.catalogSourceOffline
-                }>
-                {catalogSource === 'firestore'
-                  ? 'Catalog source: Firestore (live)'
-                  : catalogLoadError
-                    ? `Catalog source: bundled file (Firestore failed — ${catalogLoadError})`
-                    : 'Catalog source: bundled file (Firebase not configured in this build, or offline)'}
-              </ThemedText>
-            </>
-          )}
+          <ThemedText style={styles.filterSemester}>Active term: {activeTermSummary}</ThemedText>
+          <PlannerCatalogStatusBanner
+            ui={catalogUi}
+            loading={catalogLoading}
+            onRetry={refreshCatalog}
+          />
         </View>
 
 
         {/* Course List */}
         <View style={styles.courseListSection}>
           <ThemedText style={styles.sectionLabel}>COURSE LIST</ThemedText>
+          {!catalogLoading && courses.length === 0 ? (
+            <View style={styles.emptyCatalog}>
+              <ThemedText style={styles.emptyCatalogTitle}>No courses for this term</ThemedText>
+              <ThemedText style={styles.emptyCatalogBody}>
+                {catalogUi.showRetry
+                  ? `No courses in the loaded catalog match ${activeTermSummary}. If you expected classes here, try another degree year or semester on the planner home screen, or retry loading the catalog from Firestore.`
+                  : `No courses in the loaded catalog match ${activeTermSummary}. Try another degree year or semester on the planner home screen.`}
+              </ThemedText>
+              {catalogUi.showRetry ? (
+                <TouchableOpacity
+                  style={[styles.emptyRetry, catalogLoading ? styles.emptyRetryDisabled : null]}
+                  onPress={() => {
+                    if (catalogLoading) return;
+                    void refreshCatalog();
+                  }}
+                  disabled={catalogLoading}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry loading catalog from Firestore"
+                  accessibilityState={{ disabled: catalogLoading }}>
+                  <ThemedText style={styles.emptyRetryText}>Retry Firestore</ThemedText>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
           {courses.map((course) => {
             const isSelected = selectedCourses.has(course.courseID);
             return (
@@ -238,29 +271,36 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.9,
   },
-  catalogLoadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 10,
+  emptyCatalog: {
+    paddingVertical: 20,
+    paddingHorizontal: 4,
   },
-  catalogHint: {
-    fontSize: 12,
+  emptyCatalogTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  emptyCatalogBody: {
+    fontSize: 14,
+    color: '#666666',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  emptyRetry: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#5B4C9D',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  emptyRetryDisabled: {
+    opacity: 0.55,
+  },
+  emptyRetryText: {
     color: '#FFFFFF',
-    opacity: 0.85,
-    marginTop: 8,
-  },
-  catalogSourceLive: {
-    fontSize: 12,
-    color: '#C8E6C9',
-    marginTop: 10,
-    lineHeight: 18,
-  },
-  catalogSourceOffline: {
-    fontSize: 12,
-    color: '#FFE082',
-    marginTop: 10,
-    lineHeight: 18,
+    fontWeight: '700',
+    fontSize: 14,
   },
   courseListSection: {
     marginBottom: 32,

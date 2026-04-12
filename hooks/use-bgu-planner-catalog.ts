@@ -17,6 +17,8 @@ export interface UseBguPlannerCatalogResult {
 	loading: boolean;
 	source: PlannerCatalogSource;
 	loadError: string | null;
+	/** True when Firebase app is configured with Firestore (fetch attempted or possible). */
+	hasFirebaseDb: boolean;
 	refresh: () => Promise<void>;
 }
 
@@ -77,5 +79,12 @@ export function useBguPlannerCatalog(): UseBguPlannerCatalogResult {
 		void refresh();
 	}, [refresh]);
 
-	return { allCourses, loading, source, loadError, refresh };
+	return {
+		allCourses,
+		loading,
+		source,
+		loadError,
+		hasFirebaseDb: Boolean(db),
+		refresh,
+	};
 }
