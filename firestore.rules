@@ -2,6 +2,21 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function userProfileRoleValid() {
+      return !('role' in request.resource.data)
+        || request.resource.data.role == 'student'
+        || request.resource.data.role == 'admin';
+    }
+
+    // User profile: self only; optional role must be student or admin when present.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && userProfileRoleValid();
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
     // BGU CS catalog (seeded by scripts/seed-firestore-3nf.mjs). Reads only from clients; writes via Admin SDK.
     match /bgu_cs_courses/{courseId} {
       allow read: if true;

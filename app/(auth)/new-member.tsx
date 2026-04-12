@@ -24,6 +24,10 @@ import {
 import { googleSignInUnavailableReason, isGoogleSignInAvailableOnThisRuntime } from '@/lib/google-sign-in-config';
 import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-message';
 import { signInWithGoogle } from '@/lib/google-sign-in';
+import {
+  ensureAdminProfile,
+  mapUserProfileWriteErrorToMessage,
+} from '@/lib/user-profile-firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function NewMemberScreen() {
@@ -88,6 +92,14 @@ export default function NewMemberScreen() {
     /** Already signed in (e.g. just registered with email/password). Do not call Google again — it conflicts and yields a generic Firebase error. */
     if (auth.currentUser) {
       const u = auth.currentUser;
+      if (isAdmin) {
+        try {
+          await ensureAdminProfile(u.uid);
+        } catch (e: unknown) {
+          setSubmitError(mapUserProfileWriteErrorToMessage(e));
+          return;
+        }
+      }
       const display =
         u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || (isAdmin ? 'Admin' : 'Student');
       setUserInfo({
@@ -103,6 +115,14 @@ export default function NewMemberScreen() {
     try {
       const cred = await signInWithGoogle(auth);
       const u = cred.user;
+      if (isAdmin) {
+        try {
+          await ensureAdminProfile(u.uid);
+        } catch (e: unknown) {
+          setSubmitError(mapUserProfileWriteErrorToMessage(e));
+          return;
+        }
+      }
       const display =
         u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || (isAdmin ? 'Admin' : 'Student');
 
@@ -143,6 +163,15 @@ export default function NewMemberScreen() {
     setIsRegistering(true);
     try {
       await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+      if (isAdmin && auth.currentUser) {
+        try {
+          await ensureAdminProfile(auth.currentUser.uid);
+        } catch (e: unknown) {
+          setSubmitError(mapUserProfileWriteErrorToMessage(e));
+          return;
+        }
+      }
 
       const trimmed = email.trim();
       const nameFromEmail = trimmed.split('@')[0] || (isAdmin ? 'Admin' : 'Student');
