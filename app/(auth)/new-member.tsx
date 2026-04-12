@@ -24,6 +24,7 @@ import {
 import { googleSignInUnavailableReason, isGoogleSignInAvailableOnThisRuntime } from '@/lib/google-sign-in-config';
 import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-message';
 import { signInWithGoogle } from '@/lib/google-sign-in';
+import { normalizeSearchParam } from '@/lib/router-search-param';
 import {
   ensureAdminProfile,
   ensureStudentProfile,
@@ -32,7 +33,8 @@ import {
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 export default function NewMemberScreen() {
-  const { userType } = useLocalSearchParams<{ userType?: string }>();
+  const { userType: userTypeRaw } = useLocalSearchParams<{ userType?: string | string[] }>();
+  const userType = normalizeSearchParam(userTypeRaw);
   const isAdmin = userType === 'admin';
   const { setUserInfo, userInfo } = useSelection();
 

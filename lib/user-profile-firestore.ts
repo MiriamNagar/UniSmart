@@ -1,6 +1,6 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import type { UserPassportMerge, UserProfileDoc, UserRole } from '@/types/user-profile';
-import { db } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { mapFirestoreDataToUserProfile } from '@/lib/map-firestore-user-profile';
 import { USER_PROFILE_COLLECTION } from '@/lib/user-profile-helpers';
 
@@ -54,26 +54,41 @@ export async function getUserProfile(uid: string): Promise<UserProfileDoc | null
   if (!snap.exists) {
     return null;
   }
-  const data = snap.data() as Record<string, unknown>;
-  return mapFirestoreDataToUserProfile(data);
+  const raw = snap.data();
+  if (raw == null || typeof raw !== 'object') {
+    return null;
+  }
+  return mapFirestoreDataToUserProfile(raw as Record<string, unknown>);
 }
+
+export type EnsureStudentProfileOptions = {
+  /**
+   * Student login screen only: always write `role: 'student'` (overwrites admin).
+   * Registration / new-member flows omit this so an existing admin doc is not downgraded by mistake.
+   */
+  force?: boolean;
+};
 
 /**
  * Ensures `users/{uid}` exists with `role: 'student'` (merge upsert).
- * Does **not** downgrade an existing **`admin`** profile (wrong entry point / shared Google account).
+ * Does **not** downgrade an existing **`admin`** profile unless `force` is true (see {@link EnsureStudentProfileOptions}).
  */
-export async function ensureStudentProfile(uid: string): Promise<void> {
+export async function ensureStudentProfile(uid: string, options?: EnsureStudentProfileOptions): Promise<void> {
   if (!uid.trim()) {
     throw new Error('User id is required.');
   }
   if (!db) {
     throw new Error('Firestore is not configured.');
   }
+  if (auth?.currentUser?.uid === uid) {
+    await auth.currentUser.getIdToken();
+  }
   const ref = doc(db, USER_PROFILE_COLLECTION, uid);
   const snap = await getDoc(ref);
-  if (snap.exists) {
-    const data = snap.data() as { role?: unknown };
-    if (data.role === 'admin') {
+  if (!options?.force && snap.exists) {
+    const raw = snap.data();
+    const role = raw && typeof raw === 'object' ? (raw as { role?: unknown }).role : undefined;
+    if (role === 'admin') {
       return;
     }
   }
@@ -100,6 +115,9 @@ export async function ensureAdminProfile(uid: string): Promise<void> {
   }
   if (!db) {
     throw new Error('Firestore is not configured.');
+  }
+  if (auth?.currentUser?.uid === uid) {
+    await auth.currentUser.getIdToken();
   }
   const ref = doc(db, USER_PROFILE_COLLECTION, uid);
   const snap = await getDoc(ref);

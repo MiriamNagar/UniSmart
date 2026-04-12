@@ -19,7 +19,7 @@ export default function LoginScreen() {
         <TouchableOpacity
           style={styles.signInButton}
           activeOpacity={0.8}
-          onPress={() => router.push({ pathname: ROUTES.AUTH.WELCOME, params: { mode: 'signin' } })}>
+          onPress={() => router.push(`${ROUTES.AUTH.WELCOME}?mode=signin`)}>
           <ThemedText style={styles.signInButtonText}>SIGN IN</ThemedText>
         </TouchableOpacity>
 
@@ -27,7 +27,7 @@ export default function LoginScreen() {
         <TouchableOpacity
           style={styles.createAccountButton}
           activeOpacity={0.8}
-          onPress={() => router.push({ pathname: ROUTES.AUTH.WELCOME, params: { mode: 'signup' } })}>
+          onPress={() => router.push(`${ROUTES.AUTH.WELCOME}?mode=signup`)}>
           <ThemedText style={styles.createAccountButtonText}>CREATE ACCOUNT</ThemedText>
         </TouchableOpacity>
       </View>

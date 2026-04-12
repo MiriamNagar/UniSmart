@@ -14,6 +14,9 @@ function readTrimmedString(data: Record<string, unknown>, key: string): string |
  * Maps raw Firestore document data to {@link UserProfileDoc} (role + optional passport fields).
  */
 export function mapFirestoreDataToUserProfile(data: Record<string, unknown>): UserProfileDoc | null {
+  if (data == null || typeof data !== 'object') {
+    return null;
+  }
   const role = data.role;
   if (!isUserRole(role)) {
     return null;

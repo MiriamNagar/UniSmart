@@ -38,7 +38,11 @@ export function useAuthShellRoleGate() {
     return () => clearTimeout(timer);
   }, [userInfo, segments]);
 
-  /** If Auth has a display name but Firestore never resolved a role, leave auth entry (AC4 recovery). */
+  /**
+   * If profile shell has a display name but Firestore never resolved a role, leave non-auth entry (AC4 recovery).
+   * Do not run while the user is inside `/(auth)` — `router.replace(WELCOME)` strips search params (`mode=signin`)
+   * and sends sign-in flows to the registration (new-member) path.
+   */
   useEffect(() => {
     if (!userInfo.fullName) {
       return;
@@ -46,11 +50,15 @@ export function useAuthShellRoleGate() {
     if (userInfo.userType === 'student' || userInfo.userType === 'admin') {
       return;
     }
+    const currentPath = `/${segments.join('/')}`;
+    if (currentPath.startsWith('/(auth)')) {
+      return;
+    }
     const escape = setTimeout(() => {
       router.replace(ROUTES.AUTH.WELCOME);
     }, 3800);
     return () => clearTimeout(escape);
-  }, [userInfo.fullName, userInfo.userType]);
+  }, [userInfo.fullName, userInfo.userType, segments]);
 }
 
 /**

@@ -3,8 +3,8 @@ import { ROUTES } from '@/constants/routes';
 import { ensureAdminProfile, ensureStudentProfile, getUserProfile } from '@/lib/user-profile-firestore';
 
 /**
- * After Firebase sign-in on a role-specific login screen, resolves Firestore `role` and the home route.
- * Does not overwrite an existing opposite role (e.g. admin signing in via student screen → admin home).
+ * After Firebase sign-in on a role-specific login screen, persists `role` and the home route.
+ * Student and admin entry points are separate: student login always student + planner; admin login always admin + dashboard.
  */
 export async function resolvePostSignInNavigation(params: {
   firebaseUser: User;
@@ -13,30 +13,14 @@ export async function resolvePostSignInNavigation(params: {
   const uid = params.firebaseUser.uid;
 
   if (params.entry === 'student-login') {
-    let profile = await getUserProfile(uid).catch(() => null);
-    if (profile?.role === 'admin') {
-      return { userType: 'admin', home: ROUTES.ADMIN.DASHBOARD };
-    }
-    if (!profile) {
-      await ensureStudentProfile(uid);
-      profile = await getUserProfile(uid).catch(() => null);
-    }
-    if (profile?.role === 'admin') {
-      return { userType: 'admin', home: ROUTES.ADMIN.DASHBOARD };
-    }
+    await ensureStudentProfile(uid, { force: true });
     return { userType: 'student', home: ROUTES.STUDENT.PLANNER };
   }
 
-  let profile = await getUserProfile(uid).catch(() => null);
-  if (profile?.role === 'student') {
-    return { userType: 'student', home: ROUTES.STUDENT.PLANNER };
-  }
-  if (!profile) {
+  // Admin login screen: persist `role: admin` (promotes prior student docs) and always land in admin.
+  const profile = await getUserProfile(uid).catch(() => null);
+  if (profile?.role !== 'admin') {
     await ensureAdminProfile(uid);
-    profile = await getUserProfile(uid).catch(() => null);
-  }
-  if (profile?.role === 'student') {
-    return { userType: 'student', home: ROUTES.STUDENT.PLANNER };
   }
   return { userType: 'admin', home: ROUTES.ADMIN.DASHBOARD };
 }

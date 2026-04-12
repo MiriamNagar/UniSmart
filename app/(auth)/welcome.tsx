@@ -4,9 +4,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ROUTES } from '@/constants/routes';
+import { normalizeSearchParam } from '@/lib/router-search-param';
 
 export default function WelcomeScreen() {
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const { mode: modeRaw } = useLocalSearchParams<{ mode?: string | string[] }>();
+  const mode = normalizeSearchParam(modeRaw);
   const isSignIn = mode === 'signin';
 
   const handleStudentPress = () => {
