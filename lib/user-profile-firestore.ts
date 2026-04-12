@@ -1,7 +1,8 @@
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import type { UserProfileDoc, UserRole } from '@/types/user-profile';
+import type { UserPassportMerge, UserProfileDoc, UserRole } from '@/types/user-profile';
 import { db } from '@/lib/firebase';
-import { isUserRole, USER_PROFILE_COLLECTION } from '@/lib/user-profile-helpers';
+import { mapFirestoreDataToUserProfile } from '@/lib/map-firestore-user-profile';
+import { USER_PROFILE_COLLECTION } from '@/lib/user-profile-helpers';
 
 export {
   isUserRole,
@@ -9,6 +10,34 @@ export {
   userProfileDocPath,
   USER_PROFILE_COLLECTION,
 } from '@/lib/user-profile-helpers';
+
+export { mapFirestoreDataToUserProfile } from '@/lib/map-firestore-user-profile';
+
+/**
+ * Merges passport / identity fields into `users/{uid}` (owner must match; see Firestore rules).
+ */
+export async function mergeUserPassport(uid: string, partial: UserPassportMerge): Promise<void> {
+  if (!uid.trim()) {
+    throw new Error('User id is required.');
+  }
+  if (!db) {
+    throw new Error('Firestore is not configured.');
+  }
+  const keys = ['fullName', 'age', 'faculty', 'major', 'academicLevel'] as const;
+  const payload: Record<string, unknown> = {};
+  for (const k of keys) {
+    if (k in partial && partial[k] !== undefined) {
+      const v = partial[k];
+      payload[k] = typeof v === 'string' ? v.trim() : v;
+    }
+  }
+  if (Object.keys(payload).length === 0) {
+    return;
+  }
+  const ref = doc(db, USER_PROFILE_COLLECTION, uid);
+  payload.updatedAt = serverTimestamp();
+  await setDoc(ref, payload, { merge: true });
+}
 
 /**
  * Reads `users/{uid}`. Returns `null` if missing or `role` is not a valid `UserRole`.
@@ -22,15 +51,11 @@ export async function getUserProfile(uid: string): Promise<UserProfileDoc | null
   }
   const ref = doc(db, USER_PROFILE_COLLECTION, uid);
   const snap = await getDoc(ref);
-  if (!snap.exists()) {
+  if (!snap.exists) {
     return null;
   }
   const data = snap.data() as Record<string, unknown>;
-  const role = data.role;
-  if (!isUserRole(role)) {
-    return null;
-  }
-  return { role, createdAt: data.createdAt, updatedAt: data.updatedAt } as UserProfileDoc;
+  return mapFirestoreDataToUserProfile(data);
 }
 
 /**
@@ -46,7 +71,7 @@ export async function ensureStudentProfile(uid: string): Promise<void> {
   }
   const ref = doc(db, USER_PROFILE_COLLECTION, uid);
   const snap = await getDoc(ref);
-  if (snap.exists()) {
+  if (snap.exists) {
     const data = snap.data() as { role?: unknown };
     if (data.role === 'admin') {
       return;
@@ -56,7 +81,7 @@ export async function ensureStudentProfile(uid: string): Promise<void> {
     role: 'student' as UserRole,
     updatedAt: serverTimestamp(),
   };
-  if (!snap.exists()) {
+  if (!snap.exists) {
     partial.createdAt = serverTimestamp();
   }
   await setDoc(ref, partial, { merge: true });

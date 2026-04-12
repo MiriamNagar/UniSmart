@@ -7,4 +7,17 @@ export interface UserProfileDoc {
   createdAt?: unknown;
   /** Firestore Timestamp */
   updatedAt?: unknown;
+  /** Student passport / identity — optional until onboarding completes */
+  fullName?: string;
+  age?: string;
+  /** Department (faculty) */
+  faculty?: string;
+  /** Program / major */
+  major?: string;
+  academicLevel?: string;
 }
+
+/** Subset merged into `users/{uid}` alongside `role` (owner-only writes; see firestore.rules). */
+export type UserPassportMerge = Partial<
+  Pick<UserProfileDoc, 'fullName' | 'age' | 'faculty' | 'major' | 'academicLevel'>
+>;

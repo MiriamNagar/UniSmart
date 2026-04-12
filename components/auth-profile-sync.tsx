@@ -78,9 +78,14 @@ export function AuthProfileSync({ children }: { children: ReactNode }) {
           });
           return;
         }
+        const ref = userInfoRef.current;
         setUserInfo({
-          ...userInfoRef.current,
-          fullName: userInfoRef.current.fullName || display,
+          ...ref,
+          fullName: profile.fullName || ref.fullName || display,
+          age: profile.age || ref.age,
+          faculty: profile.faculty || ref.faculty,
+          major: profile.major || ref.major,
+          academicLevel: profile.academicLevel || ref.academicLevel,
           userType: profile.role,
         });
       } catch {

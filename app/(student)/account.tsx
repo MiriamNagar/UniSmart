@@ -110,15 +110,31 @@ export default function AccountScreen() {
             <ThemedText style={styles.passportTitle}>ACADEMIC PASSPORT</ThemedText>
             <View style={styles.passportInfo}>
               <View style={styles.passportRow}>
-                <ThemedText style={styles.passportLabel}>DEPARTMENT</ThemedText>
+                <ThemedText style={styles.passportLabel}>FULL NAME</ThemedText>
                 <ThemedText style={styles.passportValue}>
-                  {userInfo.faculty && userInfo.major
-                    ? `${userInfo.faculty} - ${userInfo.major}`
-                    : 'Not set'}
+                  {userInfo.fullName?.trim() ? userInfo.fullName : 'Not set'}
                 </ThemedText>
               </View>
               <View style={styles.passportRow}>
-                <ThemedText style={styles.passportLabel}>CURRENT YEAR</ThemedText>
+                <ThemedText style={styles.passportLabel}>AGE</ThemedText>
+                <ThemedText style={styles.passportValue}>
+                  {userInfo.age?.trim() ? userInfo.age : 'Not set'}
+                </ThemedText>
+              </View>
+              <View style={styles.passportRow}>
+                <ThemedText style={styles.passportLabel}>DEPARTMENT</ThemedText>
+                <ThemedText style={styles.passportValue}>
+                  {userInfo.faculty?.trim() ? userInfo.faculty : 'Not set'}
+                </ThemedText>
+              </View>
+              <View style={styles.passportRow}>
+                <ThemedText style={styles.passportLabel}>PROGRAM / MAJOR</ThemedText>
+                <ThemedText style={styles.passportValue}>
+                  {userInfo.major?.trim() ? userInfo.major : 'Not set'}
+                </ThemedText>
+              </View>
+              <View style={styles.passportRow}>
+                <ThemedText style={styles.passportLabel}>LEVEL</ThemedText>
                 <ThemedText style={styles.passportValue}>
                   {userInfo.academicLevel
                     ? formatAcademicLevel(userInfo.academicLevel)

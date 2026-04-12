@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, TextInput } from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity, View, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -6,6 +6,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
+import { auth } from '@/lib/firebase';
+import { mapUserProfileWriteErrorToMessage, mergeUserPassport } from '@/lib/user-profile-firestore';
 
 export default function IdentityHubScreen() {
   const { userType } = useLocalSearchParams<{ userType?: string }>();
@@ -17,30 +19,47 @@ export default function IdentityHubScreen() {
   const isFormValid = fullName.trim().length > 0 && age.trim().length > 0;
 
   const handleContinue = () => {
-    if (isFormValid) {
+    if (!isFormValid) {
+      return;
+    }
+    void (async () => {
       if (isAdmin) {
-        // Admin: save info with userType and go directly to setup-complete
-        setUserInfo({ 
-          ...userInfo, 
-          fullName, 
-          age, 
-          faculty: '', 
-          major: '', 
+        setUserInfo({
+          ...userInfo,
+          fullName,
+          age,
+          faculty: '',
+          major: '',
           academicLevel: '',
-          userType: 'admin'
+          userType: 'admin',
         });
+        if (auth?.currentUser) {
+          try {
+            await mergeUserPassport(auth.currentUser.uid, { fullName, age });
+          } catch (e: unknown) {
+            Alert.alert('Could not save profile', mapUserProfileWriteErrorToMessage(e));
+            return;
+          }
+        }
         router.push(ROUTES.ONBOARDING.SETUP_COMPLETE);
       } else {
-        // Student: save info with userType and go to department
-        setUserInfo({ 
-          ...userInfo, 
-          fullName, 
+        setUserInfo({
+          ...userInfo,
+          fullName,
           age,
-          userType: 'student'
+          userType: 'student',
         });
+        if (auth?.currentUser) {
+          try {
+            await mergeUserPassport(auth.currentUser.uid, { fullName, age });
+          } catch (e: unknown) {
+            Alert.alert('Could not save profile', mapUserProfileWriteErrorToMessage(e));
+            return;
+          }
+        }
         router.push(ROUTES.ONBOARDING.DEPARTMENT);
       }
-    }
+    })();
   };
 
   return (

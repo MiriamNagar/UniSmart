@@ -1,4 +1,4 @@
-import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -6,6 +6,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
+import { auth } from '@/lib/firebase';
+import { mapUserProfileWriteErrorToMessage, mergeUserPassport } from '@/lib/user-profile-firestore';
 
 export default function DepartmentScreen() {
   const { userInfo, setUserInfo } = useSelection();
@@ -34,14 +36,28 @@ export default function DepartmentScreen() {
   const isFormValid = selectedFaculty !== null && selectedMajor !== null;
 
   const handleContinue = () => {
-    if (isFormValid && selectedFaculty && selectedMajor) {
+    if (!isFormValid || !selectedFaculty || !selectedMajor) {
+      return;
+    }
+    void (async () => {
       setUserInfo({
         ...userInfo,
         faculty: selectedFaculty,
         major: selectedMajor,
       });
+      if (auth?.currentUser) {
+        try {
+          await mergeUserPassport(auth.currentUser.uid, {
+            faculty: selectedFaculty,
+            major: selectedMajor,
+          });
+        } catch (e: unknown) {
+          Alert.alert('Could not save profile', mapUserProfileWriteErrorToMessage(e));
+          return;
+        }
+      }
       router.push(ROUTES.ONBOARDING.ACADEMIC_LEVEL);
-    }
+    })();
   };
 
   return (
