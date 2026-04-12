@@ -159,7 +159,7 @@ export default function CourseSelectionScreen() {
                   <View style={styles.courseInfo}>
                     <ThemedText style={styles.courseCode}>{course.courseID}</ThemedText>
                     <ThemedText style={styles.courseName}>{course.courseName}</ThemedText>
-                    <ThemedText style={styles.courseCredits}>{(course as any).credits} Credits</ThemedText>
+                    <ThemedText style={styles.courseCredits}>{course.credits} Credits</ThemedText>
                   </View>
                   <View
                     style={[
