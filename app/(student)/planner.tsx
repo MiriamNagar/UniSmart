@@ -1,7 +1,9 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { ROUTES } from "@/constants/routes";
+import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
+import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import { DEGREE_YEAR_PLANNER_OPTIONS } from "@/lib/planner-active-term";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
@@ -19,6 +21,10 @@ export default function PlannerScreen() {
     setSelectedCourses,
     userInfo,
   } = useSelection();
+
+  const { scrollViewProps } = usePersistedTabScroll(
+    TAB_SCROLL_KEYS.STUDENT_PLANNER,
+  );
 
   const resetPlannerSelectionsForTermChange = () => {
     setSelectedCourses(new Set());
@@ -48,6 +54,7 @@ export default function PlannerScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

@@ -1,7 +1,9 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { ROUTES } from "@/constants/routes";
+import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
+import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -16,20 +18,42 @@ import {
 
 import { usePlannerCatalog } from "@/contexts/bgu-planner-catalog-context";
 import {
-  catalogLetterForDegreeTier,
-  filterCoursesForPlannerTerm,
+    catalogLetterForDegreeTier,
+    filterCoursesForPlannerTerm,
 } from "@/lib/planner-active-term";
 import {
-  collectDistinctLecturersForCourseId,
-  collectDistinctLecturersFromCourse,
-  findPlannerCourseById,
+    collectDistinctLecturersForCourseId,
+    collectDistinctLecturersFromCourse,
+    findPlannerCourseById,
 } from "@/lib/planner-instructor-options";
 import {
-  isCourseEligibleForSemester,
-  virtualCompletedCourseNamesForDegreeTier,
+    isCourseEligibleForSemester,
+    virtualCompletedCourseNamesForDegreeTier,
 } from "@/lib/planner-prerequisite-eligibility";
 import { validatePlannerAvailabilityPreferences } from "@/logic/solver";
 import { Days } from "@/types/courses";
+
+/** Resolve Map keys after trim so modal state stays aligned with legacy spacing in keys. */
+function getInstructorPreferenceForCourse(
+  map: Map<string, string>,
+  courseId: string,
+): string | undefined {
+  const needle = courseId.trim();
+  if (!needle) return undefined;
+  const direct = map.get(needle);
+  if (direct !== undefined) return direct;
+  for (const [k, v] of map) {
+    if (k.trim() === needle) return v;
+  }
+  return undefined;
+}
+
+function hasInstructorPreferenceForCourse(
+  map: Map<string, string>,
+  courseId: string,
+): boolean {
+  return getInstructorPreferenceForCourse(map, courseId) !== undefined;
+}
 
 export default function CustomRulesScreen() {
   const {
@@ -46,6 +70,10 @@ export default function CustomRulesScreen() {
     selectedSemester,
     activeDegreeYearTier,
   } = useSelection();
+
+  const { scrollViewProps } = usePersistedTabScroll(
+    TAB_SCROLL_KEYS.PLANNER_FLOW_CUSTOM_RULES,
+  );
 
   const { allCourses: catalogCourses, loading: catalogLoading } =
     usePlannerCatalog();
@@ -209,7 +237,8 @@ export default function CustomRulesScreen() {
 
   const getAvailableCourses = () => {
     return Array.from(selectedCourses).filter((courseId) => {
-      if (professorPreferences.has(courseId)) return false;
+      if (hasInstructorPreferenceForCourse(professorPreferences, courseId))
+        return false;
       return (
         collectDistinctLecturersForCourseId(
           plannerCoursesForPreferences,
@@ -241,6 +270,7 @@ export default function CustomRulesScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -340,29 +370,29 @@ export default function CustomRulesScreen() {
             {visibleProfessorPreferences.map(([courseId, professor]) => {
               const { primary, secondary } = getCoursePresentation(courseId);
               return (
-              <View key={courseId} style={styles.preferenceItem}>
-                <View style={styles.preferenceInfo}>
-                  <ThemedText style={styles.preferenceCourseTitle}>
-                    {primary}
-                  </ThemedText>
-                  {secondary ? (
-                    <ThemedText style={styles.preferenceCourseCode}>
-                      {secondary}
+                <View key={courseId} style={styles.preferenceItem}>
+                  <View style={styles.preferenceInfo}>
+                    <ThemedText style={styles.preferenceCourseTitle}>
+                      {primary}
                     </ThemedText>
-                  ) : null}
-                  <ThemedText style={styles.preferenceProfessor}>
-                    {professor}
-                  </ThemedText>
+                    {secondary ? (
+                      <ThemedText style={styles.preferenceCourseCode}>
+                        {secondary}
+                      </ThemedText>
+                    ) : null}
+                    <ThemedText style={styles.preferenceProfessor}>
+                      {professor}
+                    </ThemedText>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleRemoveProfessorPreference(courseId)}
+                    style={styles.removeButton}
+                    activeOpacity={0.7}
+                  >
+                    <MaterialIcons name="close" size={20} color="#9B9B9B" />
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={() => handleRemoveProfessorPreference(courseId)}
-                  style={styles.removeButton}
-                  activeOpacity={0.7}
-                >
-                  <MaterialIcons name="close" size={20} color="#9B9B9B" />
-                </TouchableOpacity>
-              </View>
-            );
+              );
             })}
 
             {getAvailableCourses().length > 0 ? (
@@ -498,7 +528,7 @@ export default function CustomRulesScreen() {
         </View>
       </Modal>
 
-      {/* Professor Preference Modal */}
+      {/* Instructor preference modal */}
       <Modal
         visible={showProfessorModal}
         transparent={true}
@@ -513,8 +543,8 @@ export default function CustomRulesScreen() {
             <View style={styles.modalHeader}>
               <ThemedText style={styles.modalTitle}>
                 {selectedCourseForProfessor
-                  ? "Select Professor"
-                  : "Select Course"}
+                  ? "Select instructor"
+                  : "Select course"}
               </ThemedText>
               <TouchableOpacity
                 onPress={() => {
@@ -530,34 +560,35 @@ export default function CustomRulesScreen() {
               {!selectedCourseForProfessor ? (
                 // Show available courses
                 getAvailableCourses().map((courseId) => {
-                  const { primary, secondary } = getCoursePresentation(courseId);
+                  const { primary, secondary } =
+                    getCoursePresentation(courseId);
                   return (
-                  <TouchableOpacity
-                    key={courseId}
-                    style={styles.modalOption}
-                    onPress={() => handleSelectCourse(courseId)}
-                    accessibilityLabel={`${primary}${secondary ? `, ${secondary}` : ""}`}
-                  >
-                    <View style={styles.modalOptionContent}>
-                      <ThemedText style={styles.modalCoursePrimary}>
-                        {primary}
-                      </ThemedText>
-                      {secondary ? (
-                        <ThemedText style={styles.modalCourseCode}>
-                          {secondary}
+                    <TouchableOpacity
+                      key={courseId}
+                      style={styles.modalOption}
+                      onPress={() => handleSelectCourse(courseId)}
+                      accessibilityLabel={`${primary}${secondary ? `, ${secondary}` : ""}`}
+                    >
+                      <View style={styles.modalOptionContent}>
+                        <ThemedText style={styles.modalCoursePrimary}>
+                          {primary}
                         </ThemedText>
-                      ) : null}
-                    </View>
-                    <MaterialIcons
-                      name="chevron-right"
-                      size={24}
-                      color="#9B9B9B"
-                    />
-                  </TouchableOpacity>
+                        {secondary ? (
+                          <ThemedText style={styles.modalCourseCode}>
+                            {secondary}
+                          </ThemedText>
+                        ) : null}
+                      </View>
+                      <MaterialIcons
+                        name="chevron-right"
+                        size={24}
+                        color="#9B9B9B"
+                      />
+                    </TouchableOpacity>
                   );
                 })
               ) : (
-                // Show professors for selected course
+                // Show instructors for selected course
                 <>
                   <TouchableOpacity
                     style={styles.modalBackButton}
@@ -581,41 +612,44 @@ export default function CustomRulesScreen() {
                   </TouchableOpacity>
                   {lecturerChoicesForModal.length > 0 ? (
                     lecturerChoicesForModal.map((professor) => (
-                        <TouchableOpacity
-                          key={professor}
-                          style={[
-                            styles.modalOption,
-                            professorPreferences.get(
-                              selectedCourseForProfessor,
-                            ) === professor && styles.modalOptionSelected,
-                          ]}
-                          onPress={() => handleSelectProfessor(professor)}
-                        >
-                          <ThemedText
-                            style={[
-                              styles.modalOptionText,
-                              professorPreferences.get(
-                                selectedCourseForProfessor,
-                              ) === professor && styles.modalOptionTextSelected,
-                            ]}
-                          >
-                            {professor}
-                          </ThemedText>
-                          {professorPreferences.get(
+                      <TouchableOpacity
+                        key={professor}
+                        style={[
+                          styles.modalOption,
+                          getInstructorPreferenceForCourse(
+                            professorPreferences,
                             selectedCourseForProfessor,
-                          ) === professor && (
-                            <MaterialIcons
-                              name="check"
-                              size={20}
-                              color="#5B4C9D"
-                            />
-                          )}
-                        </TouchableOpacity>
-                      ))
+                          ) === professor && styles.modalOptionSelected,
+                        ]}
+                        onPress={() => handleSelectProfessor(professor)}
+                      >
+                        <ThemedText
+                          style={[
+                            styles.modalOptionText,
+                            getInstructorPreferenceForCourse(
+                              professorPreferences,
+                              selectedCourseForProfessor,
+                            ) === professor && styles.modalOptionTextSelected,
+                          ]}
+                        >
+                          {professor}
+                        </ThemedText>
+                        {getInstructorPreferenceForCourse(
+                          professorPreferences,
+                          selectedCourseForProfessor,
+                        ) === professor && (
+                          <MaterialIcons
+                            name="check"
+                            size={20}
+                            color="#5B4C9D"
+                          />
+                        )}
+                      </TouchableOpacity>
+                    ))
                   ) : (
                     <View style={styles.emptyModalContent}>
                       <ThemedText style={styles.emptyText}>
-                        No professors available for this course
+                        No instructors listed for this course in the catalog
                       </ThemedText>
                     </View>
                   )}

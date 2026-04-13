@@ -1,23 +1,49 @@
-import { StyleSheet, View, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useSelection } from '@/contexts/selection-context';
-import { useMemo, useState } from 'react';
-import { ROUTES } from '@/constants/routes';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { ROUTES } from "@/constants/routes";
+import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
+import { useSelection } from "@/contexts/selection-context";
+import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
+import {
+    Modal,
+    ScrollView,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
 export default function NotesScreen() {
-  const { savedPlans, customFolders, setCustomFolders, userInfo } = useSelection();
+  const {
+    savedPlans,
+    customFolders,
+    setCustomFolders,
+    userInfo,
+    setLastNotesFolderName,
+  } = useSelection();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderName, setNewFolderName] = useState("");
+
+  useFocusEffect(
+    useCallback(() => {
+      setLastNotesFolderName(null);
+    }, [setLastNotesFolderName]),
+  );
+
+  const { scrollViewProps } = usePersistedTabScroll(TAB_SCROLL_KEYS.STUDENT_NOTES);
 
   // Check if user is admin
-  const isAdmin = userInfo.userType === 'admin';
+  const isAdmin = userInfo.userType === "admin";
 
   // Extract unique courses from saved plans
   const courseFolders = useMemo(() => {
-    const courses = new Map<string, { courseCode: string; courseName: string }>();
+    const courses = new Map<
+      string,
+      { courseCode: string; courseName: string }
+    >();
 
     savedPlans.forEach((plan) => {
       Object.values(plan.schedule).forEach((dayCourses) => {
@@ -41,10 +67,10 @@ export default function NotesScreen() {
 
   // Combine General Notes with course folders and custom folders
   const allFolders = [
-    { id: 'general', name: 'General Notes', isGeneral: true, isCustom: false },
+    { id: "general", name: "General Notes", isGeneral: true, isCustom: false },
     ...courseFolders.map((course) => {
       // Clean up course name (remove truncation dots if present)
-      const cleanCourseName = course.courseName.replace(/\.\.\.$/, '');
+      const cleanCourseName = course.courseName.replace(/\.\.\.$/, "");
       return {
         id: course.courseCode,
         name: `${course.courseCode}: ${cleanCourseName}`,
@@ -63,7 +89,7 @@ export default function NotesScreen() {
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
       setCustomFolders((prev) => [...prev, newFolderName.trim()]);
-      setNewFolderName('');
+      setNewFolderName("");
       setIsModalVisible(false);
     }
   };
@@ -81,9 +107,11 @@ export default function NotesScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {/* Title Section */}
         <View style={styles.titleSection}>
           <View style={styles.titleRow}>
@@ -94,7 +122,8 @@ export default function NotesScreen() {
             <TouchableOpacity
               style={styles.addButton}
               activeOpacity={0.8}
-              onPress={() => setIsModalVisible(true)}>
+              onPress={() => setIsModalVisible(true)}
+            >
               <MaterialIcons name="add" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
@@ -112,11 +141,12 @@ export default function NotesScreen() {
                   pathname: ROUTES.STUDENT.FOLDER_CONTENT,
                   params: { folderName: folder.name },
                 });
-              }}>
+              }}
+            >
               <MaterialIcons
                 name="folder"
                 size={48}
-                color={folder.isGeneral ? '#9B9B9B' : '#5B9BD5'}
+                color={folder.isGeneral ? "#9B9B9B" : "#5B9BD5"}
               />
               <ThemedText style={styles.folderName} numberOfLines={2}>
                 {folder.name}
@@ -131,7 +161,8 @@ export default function NotesScreen() {
         visible={isModalVisible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setIsModalVisible(false)}>
+        onRequestClose={() => setIsModalVisible(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ThemedText style={styles.modalTitle}>New Folder</ThemedText>
@@ -148,9 +179,10 @@ export default function NotesScreen() {
                 style={styles.modalCancelButton}
                 onPress={() => {
                   setIsModalVisible(false);
-                  setNewFolderName('');
+                  setNewFolderName("");
                 }}
-                activeOpacity={0.7}>
+                activeOpacity={0.7}
+              >
                 <ThemedText style={styles.modalCancelText}>CANCEL</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
@@ -160,12 +192,14 @@ export default function NotesScreen() {
                 ]}
                 onPress={handleCreateFolder}
                 activeOpacity={0.8}
-                disabled={!newFolderName.trim()}>
+                disabled={!newFolderName.trim()}
+              >
                 <ThemedText
                   style={[
                     styles.modalCreateText,
                     !newFolderName.trim() && styles.modalCreateTextDisabled,
-                  ]}>
+                  ]}
+                >
                   CREATE
                 </ThemedText>
               </TouchableOpacity>
@@ -180,36 +214,36 @@ export default function NotesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'flex-start',
+    backgroundColor: "#FFFFFF",
+    alignItems: "flex-start",
   },
   headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   headerTitleUni: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
   },
   headerTitleSmart: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#5B4C9D',
+    fontWeight: "bold",
+    color: "#5B4C9D",
   },
   headerSubtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   scrollView: {
     flex: 1,
@@ -223,72 +257,72 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   titleContainer: {
     flex: 1,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   addButton: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#5B4C9D',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#5B4C9D",
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: 16,
   },
   folderGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   folderCard: {
-    width: '47%',
-    backgroundColor: '#FFFFFF',
+    width: "47%",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 16,
     minHeight: 140,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   folderName: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#1A1A1A',
+    fontWeight: "500",
+    color: "#1A1A1A",
     marginTop: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 24,
-    width: '85%',
+    width: "85%",
     maxWidth: 400,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
@@ -296,57 +330,56 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
     marginBottom: 20,
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: '#1A1A1A',
+    borderColor: "#1A1A1A",
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#1A1A1A',
-    backgroundColor: '#FFFFFF',
+    color: "#1A1A1A",
+    backgroundColor: "#FFFFFF",
     marginBottom: 24,
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 12,
   },
   modalCancelButton: {
     flex: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
     borderRadius: 12,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalCancelText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontWeight: "700",
+    color: "#1A1A1A",
     letterSpacing: 0.5,
   },
   modalCreateButton: {
     flex: 1,
-    backgroundColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
     borderRadius: 12,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalCreateButtonDisabled: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   modalCreateText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
   },
   modalCreateTextDisabled: {
-    color: '#9B9B9B',
+    color: "#9B9B9B",
   },
 });
-

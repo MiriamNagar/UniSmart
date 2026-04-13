@@ -153,7 +153,11 @@ export function calculateFitScore(
     for (const [courseId, prefRaw] of Object.entries(prefMap)) {
       const prefNorm = normalizeLecturerLabel(prefRaw);
       if (!prefNorm) continue;
-      const course = allSelectedCourses.find((c) => c.courseID === courseId);
+      const idNeedle = courseId.trim();
+      if (!idNeedle) continue;
+      const course = allSelectedCourses.find(
+        (c) => c.courseID.trim() === idNeedle,
+      );
       if (!course) continue;
       const scheduledSection = currentSections.find((section) =>
         course.availableSections.some((s) => s.sectionID === section.sectionID),

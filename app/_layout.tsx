@@ -7,12 +7,14 @@ import '@/lib/firebase';
 import { AuthProfileSync } from '@/components/auth-profile-sync';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SelectionProvider } from '@/contexts/selection-context';
+import { TabScrollProvider } from '@/contexts/tab-scroll-context';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <SelectionProvider>
+      <TabScrollProvider>
       <AuthProfileSync>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>
@@ -26,6 +28,7 @@ export default function RootLayout() {
         <StatusBar style="auto" />
       </ThemeProvider>
       </AuthProfileSync>
+      </TabScrollProvider>
     </SelectionProvider>
   );
 }

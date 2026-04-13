@@ -128,4 +128,43 @@ describe("calculateFitScore instructor preferences", () => {
 
     expect(withPref).toBe(without);
   });
+
+  it("applies bonus when preferredInstructorsByCourse key has surrounding whitespace", () => {
+    const cs101 = mockCourses.find((c) => c.courseID === "CS101") as Course;
+    const section001 = cs101.availableSections.find(
+      (s) => s.sectionID === "CS101-001",
+    ) as CourseSection;
+
+    const without = calculateFitScore(
+      [section001],
+      [cs101],
+      basePrefs(),
+    );
+    const withPref = calculateFitScore([section001], [cs101], {
+      ...basePrefs(),
+      preferredInstructorsByCourse: { "  CS101  ": "Dr. Smith" },
+    });
+
+    expect(withPref).toBeGreaterThan(without);
+  });
+
+  it("applies bonus when catalog courseID has surrounding whitespace", () => {
+    const cs101 = mockCourses.find((c) => c.courseID === "CS101") as Course;
+    const section001 = cs101.availableSections.find(
+      (s) => s.sectionID === "CS101-001",
+    ) as CourseSection;
+    const courseSpaced = { ...cs101, courseID: "  CS101  " };
+
+    const without = calculateFitScore(
+      [section001],
+      [courseSpaced],
+      basePrefs(),
+    );
+    const withPref = calculateFitScore([section001], [courseSpaced], {
+      ...basePrefs(),
+      preferredInstructorsByCourse: { CS101: "Dr. Smith" },
+    });
+
+    expect(withPref).toBeGreaterThan(without);
+  });
 });

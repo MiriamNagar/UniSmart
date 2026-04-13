@@ -1,6 +1,8 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
+import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -14,6 +16,7 @@ interface CourseTrend {
 
 export default function AdminDashboardScreen() {
   const { alerts, userInfo } = useSelection();
+  const { scrollViewProps } = usePersistedTabScroll(TAB_SCROLL_KEYS.ADMIN_DASHBOARD);
 
   // Sample course data
   const courseTrends: CourseTrend[] = [
@@ -66,6 +69,7 @@ export default function AdminDashboardScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

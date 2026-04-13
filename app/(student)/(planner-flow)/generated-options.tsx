@@ -1,7 +1,9 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { ROUTES } from "@/constants/routes";
+import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
+import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -51,6 +53,10 @@ export default function GeneratedOptionsScreen() {
     hasFirebaseDb,
     refresh: refreshCatalog,
   } = usePlannerCatalog();
+
+  const { scrollViewProps } = usePersistedTabScroll(
+    TAB_SCROLL_KEYS.PLANNER_FLOW_GENERATED_OPTIONS,
+  );
 
   const virtualCompletedCourseNames = useMemo(
     () =>
@@ -251,6 +257,7 @@ export default function GeneratedOptionsScreen() {
       </View>
 
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

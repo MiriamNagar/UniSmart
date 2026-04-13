@@ -1,7 +1,9 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { ROUTES } from "@/constants/routes";
+import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
+import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo } from "react";
@@ -38,6 +40,10 @@ export default function CourseSelectionScreen() {
     hasFirebaseDb,
     refresh: refreshCatalog,
   } = usePlannerCatalog();
+
+  const { scrollViewProps } = usePersistedTabScroll(
+    TAB_SCROLL_KEYS.PLANNER_FLOW_COURSE_SELECTION,
+  );
 
   // Save this route as the last visited planner flow route
   useEffect(() => {
@@ -127,6 +133,7 @@ export default function CourseSelectionScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

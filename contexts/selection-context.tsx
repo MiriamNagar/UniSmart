@@ -64,6 +64,9 @@ interface SelectionContextType {
   setUserInfo: (info: UserInfo) => void;
   lastPlannerFlowRoute: string | null;
   setLastPlannerFlowRoute: (route: string | null) => void;
+  /** When set, restoring the Notes tab opens this folder; null means last focused screen was the notes hub. */
+  lastNotesFolderName: string | null;
+  setLastNotesFolderName: (name: string | null) => void;
   professorPreferences: Map<string, string>;
   setProfessorPreferences: (
     prefs:
@@ -115,6 +118,9 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const [lastPlannerFlowRoute, setLastPlannerFlowRoute] = useState<
     string | null
   >(null);
+  const [lastNotesFolderName, setLastNotesFolderName] = useState<string | null>(
+    null,
+  );
   const [professorPreferences, setProfessorPreferencesState] = useState<
     Map<string, string>
   >(new Map());
@@ -208,6 +214,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         setUserInfo,
         lastPlannerFlowRoute,
         setLastPlannerFlowRoute,
+        lastNotesFolderName,
+        setLastNotesFolderName,
         professorPreferences,
         setProfessorPreferences,
       }}

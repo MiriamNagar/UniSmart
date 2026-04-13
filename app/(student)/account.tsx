@@ -7,9 +7,12 @@ import { useSelection } from '@/contexts/selection-context';
 import { auth } from '@/lib/firebase';
 import { beforeFirebaseSignOut } from '@/lib/sign-out-side-effects';
 import { ROUTES } from '@/constants/routes';
+import { TAB_SCROLL_KEYS } from '@/constants/tab-scroll-keys';
+import { usePersistedTabScroll } from '@/hooks/use-persisted-tab-scroll';
 
 export default function AccountScreen() {
   const { userInfo, setUserInfo } = useSelection();
+  const { scrollViewProps } = usePersistedTabScroll(TAB_SCROLL_KEYS.STUDENT_ACCOUNT);
 
   // Check if user is admin
   const isAdmin = userInfo.userType === 'admin';
@@ -81,6 +84,7 @@ export default function AccountScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>

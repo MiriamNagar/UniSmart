@@ -1,10 +1,13 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
+import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function AlertsScreen() {
   const { alerts, setAlerts } = useSelection();
+  const { scrollViewProps } = usePersistedTabScroll(TAB_SCROLL_KEYS.STUDENT_ALERTS);
 
   const handleMarkAllRead = () => {
     setAlerts((prev) => prev.map((alert) => ({ ...alert, isRead: true })));
@@ -25,6 +28,7 @@ export default function AlertsScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
