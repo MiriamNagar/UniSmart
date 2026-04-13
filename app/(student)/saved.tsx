@@ -210,6 +210,14 @@ export default function SavedScreen() {
                                       >
                                         {course.courseName}
                                       </ThemedText>
+                                      {course.lessonKindLabel ? (
+                                        <ThemedText
+                                          style={styles.lessonKindTag}
+                                          numberOfLines={1}
+                                        >
+                                          {course.lessonKindLabel}
+                                        </ThemedText>
+                                      ) : null}
                                       <View style={styles.courseDetails}>
                                         <MaterialIcons
                                           name="person"
@@ -218,9 +226,11 @@ export default function SavedScreen() {
                                         />
                                         <ThemedText
                                           style={styles.courseDetailText}
-                                          numberOfLines={1}
+                                          numberOfLines={2}
                                         >
-                                          {course.instructor}
+                                          {course.instructorsLine ??
+                                            course.instructor ??
+                                            "—"}
                                         </ThemedText>
                                       </View>
                                       <View style={styles.courseDetails}>
@@ -499,9 +509,17 @@ const styles = StyleSheet.create({
   courseName: {
     fontSize: 12,
     color: "#4A4A6A",
-    marginBottom: 8,
+    marginBottom: 4,
     fontWeight: "400",
     lineHeight: 16,
+  },
+  lessonKindTag: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#333399",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+    marginBottom: 6,
   },
   courseDetails: {
     flexDirection: "row",

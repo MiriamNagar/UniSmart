@@ -8,6 +8,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+    Modal,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -23,14 +24,51 @@ import {
 } from "@/lib/planner-active-term";
 import { buildPlannerCatalogUiModel } from "@/lib/planner-catalog-ui-messages";
 import {
+    lessonKindShortLabel,
+    uniqueLecturersForLessonSlot,
+} from "@/lib/planner-schedule-display";
+import {
     isCourseEligibleForSemester,
     virtualCompletedCourseNamesForDegreeTier,
 } from "@/lib/planner-prerequisite-eligibility";
 import {
+    computeFitScoreBreakdown,
+    DEFAULT_MAX_PLANNER_PROPOSALS,
     generateSchedules,
+    lessonMultisetFingerprint,
+    PLANNER_RANKING_NOT_ENROLLMENT_DISCLAIMER,
+    PLANNER_SOFT_SCORE_EXPLANATION,
+    SOFT_SCORE_CAP_CREDITS,
+    SOFT_SCORE_CAP_PREFERRED_HOURS,
     validatePlannerAvailabilityPreferences,
 } from "@/logic/solver";
 import { Days } from "@/types/courses";
+
+type PlannerDayKey = "SUN" | "MON" | "TUE" | "WED" | "THU" | "FRI";
+
+type GeneratedOptionScheduleCell = {
+  id: string;
+  courseCode: string;
+  courseName: string;
+  lessonKindLabel: string;
+  instructorsLine: string;
+  location: string;
+  time: string;
+  startTime: string;
+  endTime: string;
+  calendarDay: string;
+};
+
+function emptyWeekSchedule(): Record<PlannerDayKey, GeneratedOptionScheduleCell[]> {
+  return {
+    SUN: [],
+    MON: [],
+    TUE: [],
+    WED: [],
+    THU: [],
+    FRI: [],
+  };
+}
 
 export default function GeneratedOptionsScreen() {
   const {
@@ -69,6 +107,17 @@ export default function GeneratedOptionsScreen() {
 
   // מצב למעקב אחרי ריחוף עכבר
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
+  /** Full details for a timetable cell (tap / short blocks). */
+  const [courseDetailModal, setCourseDetailModal] = useState<{
+    id: string;
+    courseCode: string;
+    courseName: string;
+    lessonKindLabel: string;
+    instructorsLine: string;
+    location: string;
+    time: string;
+    calendarDay: string;
+  } | null>(null);
 
   useEffect(() => {
     setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS);
@@ -141,34 +190,51 @@ export default function GeneratedOptionsScreen() {
         : {}),
     };
 
-    const solverResult = generateSchedules(coursesToSchedule, preferences);
+    const solverResult = generateSchedules(
+      coursesToSchedule,
+      preferences,
+      DEFAULT_MAX_PLANNER_PROPOSALS,
+    );
 
-    return solverResult.proposals.map((proposal) => {
-      const transformedSchedule: any = {
-        SUN: [],
-        MON: [],
-        TUE: [],
-        WED: [],
-        THU: [],
-        FRI: [],
-      };
+    const seenVisual = new Set<string>();
+    const proposalsDeduped = solverResult.proposals.filter((p) => {
+      const key = lessonMultisetFingerprint(p.sections, coursesToSchedule);
+      if (seenVisual.has(key)) return false;
+      seenVisual.add(key);
+      return true;
+    });
+
+    return proposalsDeduped.map((proposal) => {
+      const scoreBreakdown = computeFitScoreBreakdown(
+        proposal.sections,
+        coursesToSchedule,
+        preferences,
+      );
+
+      const transformedSchedule = emptyWeekSchedule();
       proposal.sections.forEach((section) => {
         const parentCourse = catalogCourses.find((c) =>
           c.availableSections.some((s) => s.sectionID === section.sectionID),
         );
 
         section.lessons.forEach((lesson) => {
-          const dayKey = lesson.day.toUpperCase();
+          const dayKey = lesson.day.toUpperCase() as PlannerDayKey;
           if (transformedSchedule[dayKey]) {
+            const lecturers = uniqueLecturersForLessonSlot(
+              parentCourse,
+              lesson,
+            );
             transformedSchedule[dayKey].push({
-              id: `${section.sectionID}-${lesson.day}-${lesson.startTime}`, // מזהה ייחודי ל-hover
+              id: `${section.sectionID}-${lesson.day}-${lesson.startTime}-${lesson.type}`,
               courseCode: parentCourse?.courseID || "??",
               courseName: parentCourse?.courseName || "Unknown",
-              instructor: lesson.lecturer,
+              lessonKindLabel: lessonKindShortLabel(lesson.type),
+              instructorsLine: lecturers.join(" · "),
               location: lesson.location,
               time: `${lesson.startTime}-${lesson.endTime}`,
               startTime: lesson.startTime,
               endTime: lesson.endTime,
+              calendarDay: dayKey,
             });
           }
         });
@@ -176,7 +242,8 @@ export default function GeneratedOptionsScreen() {
 
       return {
         id: proposal.id,
-        fitScore: proposal.fitScore,
+        fitScore: scoreBreakdown.total,
+        scoreBreakdown,
         schedule: transformedSchedule,
       };
     });
@@ -315,6 +382,25 @@ export default function GeneratedOptionsScreen() {
           ) : null}
         </View>
 
+        {availabilityValidation.ok && proposals.length > 0 ? (
+          <View style={styles.rankingDisclosure} accessibilityRole="text">
+            <ThemedText style={styles.rankingDisclosureTitle}>
+              How options are ranked
+            </ThemedText>
+            <ThemedText style={styles.rankingDisclosureBody}>
+              {PLANNER_SOFT_SCORE_EXPLANATION}
+            </ThemedText>
+            <ThemedText
+              style={[
+                styles.rankingDisclosureBody,
+                styles.rankingDisclosureBodyFollow,
+              ]}
+            >
+              {PLANNER_RANKING_NOT_ENROLLMENT_DISCLAIMER}
+            </ThemedText>
+          </View>
+        ) : null}
+
         {!availabilityValidation.ok ? (
           <View style={styles.availabilityNotice} accessibilityRole="alert">
             <ThemedText style={styles.availabilityNoticeTitle}>
@@ -354,7 +440,17 @@ export default function GeneratedOptionsScreen() {
                     PROPOSAL {proposalIndex + 1}
                   </ThemedText>
                   <ThemedText style={styles.fitScore}>
-                    Fit Score: {proposal.fitScore}%
+                    Fit score: {proposal.fitScore}%
+                  </ThemedText>
+                  <ThemedText style={styles.fitScoreBreakdown}>
+                    Credits{" "}
+                    {Math.round(proposal.scoreBreakdown.creditPoints)}/
+                    {SOFT_SCORE_CAP_CREDITS} · Preferred hours{" "}
+                    {Math.round(proposal.scoreBreakdown.preferredHoursPoints)}/
+                    {SOFT_SCORE_CAP_PREFERRED_HOURS}
+                    {proposal.scoreBreakdown.instructorCoursesConsidered > 0
+                      ? ` · Instructor +${Math.round(proposal.scoreBreakdown.instructorBonusPoints)} (${proposal.scoreBreakdown.instructorMatches}/${proposal.scoreBreakdown.instructorCoursesConsidered} courses)`
+                      : ""}
                   </ThemedText>
                 </View>
                 <TouchableOpacity
@@ -453,6 +549,9 @@ export default function GeneratedOptionsScreen() {
                               return (
                                 <Pressable
                                   key={course.id}
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`${course.courseCode}, ${course.courseName}, ${course.lessonKindLabel}. Tap for full details.`}
+                                  onPress={() => setCourseDetailModal(course)}
                                   onHoverIn={() =>
                                     setHoveredCourseId(course.id)
                                   }
@@ -498,9 +597,20 @@ export default function GeneratedOptionsScreen() {
                                     >
                                       {course.courseName}
                                     </ThemedText>
+                                    <ThemedText
+                                      style={styles.lessonKindTag}
+                                      numberOfLines={1}
+                                    >
+                                      {course.lessonKindLabel}
+                                    </ThemedText>
+                                    <ThemedText
+                                      style={styles.instructorsLine}
+                                      numberOfLines={isHovered ? 4 : 2}
+                                    >
+                                      {course.instructorsLine || "—"}
+                                    </ThemedText>
 
-                                    {/* פרטים נוספים שמוצגים רק ב-Hover או אם יש מקום */}
-                                    {isHovered && (
+                                    {isHovered ? (
                                       <View
                                         style={[
                                           styles.courseDetails,
@@ -525,26 +635,8 @@ export default function GeneratedOptionsScreen() {
                                             {course.location}
                                           </ThemedText>
                                         </View>
-                                        <View
-                                          style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            gap: 2,
-                                          }}
-                                        >
-                                          <MaterialIcons
-                                            name="person"
-                                            size={10}
-                                            color="#9B9B9B"
-                                          />
-                                          <ThemedText
-                                            style={styles.courseDetailText}
-                                          >
-                                            {course.instructor}
-                                          </ThemedText>
-                                        </View>
                                       </View>
-                                    )}
+                                    ) : null}
                                   </View>
                                 </Pressable>
                               );
@@ -560,6 +652,68 @@ export default function GeneratedOptionsScreen() {
           ))
         ) : null}
       </ScrollView>
+
+      {courseDetailModal ? (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCourseDetailModal(null)}
+        >
+          <View style={styles.courseDetailModalRoot}>
+            <Pressable
+              style={styles.courseDetailModalBackdrop}
+              onPress={() => setCourseDetailModal(null)}
+              accessibilityRole="button"
+              accessibilityLabel="Close details"
+            />
+            <View
+              style={styles.courseDetailModalCard}
+              accessibilityViewIsModal
+            >
+              <View style={styles.courseDetailModalHeader}>
+                <ThemedText style={styles.courseDetailModalTitle}>
+                  {courseDetailModal.courseCode} · {courseDetailModal.courseName}
+                </ThemedText>
+                <TouchableOpacity
+                  onPress={() => setCourseDetailModal(null)}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
+                >
+                  <MaterialIcons name="close" size={22} color="#666666" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                style={styles.courseDetailModalBody}
+                showsVerticalScrollIndicator={false}
+              >
+                <ThemedText style={styles.courseDetailModalMeta}>
+                  {courseDetailModal.calendarDay} · {courseDetailModal.time}
+                </ThemedText>
+                <ThemedText style={styles.courseDetailModalRowLabel}>
+                  Session
+                </ThemedText>
+                <ThemedText style={styles.courseDetailModalRowValue}>
+                  {courseDetailModal.lessonKindLabel}
+                </ThemedText>
+                <ThemedText style={styles.courseDetailModalRowLabel}>
+                  Instructors
+                </ThemedText>
+                <ThemedText style={styles.courseDetailModalRowValue}>
+                  {courseDetailModal.instructorsLine || "—"}
+                </ThemedText>
+                <ThemedText style={styles.courseDetailModalRowLabel}>
+                  Location
+                </ThemedText>
+                <ThemedText style={styles.courseDetailModalRowValue}>
+                  {courseDetailModal.location || "—"}
+                </ThemedText>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
 
       {/* Bottom Buttons */}
       <View style={styles.adjustButtonContainer}>
@@ -667,6 +821,28 @@ const styles = StyleSheet.create({
   catalogNoticeBodyFollow: {
     marginTop: 8,
   },
+  rankingDisclosure: {
+    backgroundColor: "#F0F7FF",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#C5D9F0",
+    padding: 14,
+    marginBottom: 20,
+  },
+  rankingDisclosureTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#1A4A7A",
+    marginBottom: 8,
+  },
+  rankingDisclosureBody: {
+    fontSize: 12,
+    color: "#444444",
+    lineHeight: 17,
+  },
+  rankingDisclosureBodyFollow: {
+    marginTop: 8,
+  },
   catalogRetry: {
     marginTop: 10,
     alignSelf: "flex-start",
@@ -728,6 +904,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#1A1A1A",
+  },
+  fitScoreBreakdown: {
+    marginTop: 6,
+    fontSize: 11,
+    color: "#666666",
+    lineHeight: 15,
+    maxWidth: 220,
   },
   saveButton: {
     backgroundColor: "#5B4C9D",
@@ -847,6 +1030,20 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 14,
   },
+  lessonKindTag: {
+    marginTop: 2,
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#5B4C9D",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
+  instructorsLine: {
+    marginTop: 1,
+    fontSize: 9,
+    color: "#555555",
+    lineHeight: 12,
+  },
   courseDetails: {
     gap: 2,
   },
@@ -858,6 +1055,75 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#4A4A6A",
     fontWeight: "700",
+  },
+  courseDetailModalRoot: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  courseDetailModalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  courseDetailModalCard: {
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "80%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 0,
+    overflow: "hidden",
+    zIndex: 2,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+  },
+  courseDetailModalHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEEEEE",
+  },
+  courseDetailModalTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    lineHeight: 22,
+  },
+  courseDetailModalBody: {
+    maxHeight: 360,
+    paddingHorizontal: 18,
+    paddingBottom: 20,
+    paddingTop: 12,
+  },
+  courseDetailModalMeta: {
+    fontSize: 13,
+    color: "#5B4C9D",
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  courseDetailModalRowLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#9B9B9B",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  courseDetailModalRowValue: {
+    fontSize: 15,
+    color: "#333333",
+    lineHeight: 22,
   },
   adjustButtonContainer: {
     flexDirection: "row",
