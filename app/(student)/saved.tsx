@@ -1,36 +1,36 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useSelection } from '@/contexts/selection-context';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
-import { ROUTES } from '@/constants/routes';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { ROUTES } from "@/constants/routes";
+import { useSelection } from "@/contexts/selection-context";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function SavedScreen() {
   const { savedPlans, setSavedPlans } = useSelection();
 
   const timeSlots = [
-    '8:00',
-    '9:00',
-    '10:00',
-    '11:00',
-    '12:00',
-    '13:00',
-    '14:00',
-    '15:00',
-    '16:00',
-    '17:00',
-    '19:00',
-    '20:00',
-    '21:00',
-    '22:00',
+    "8:00",
+    "9:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+    "19:00",
+    "20:00",
+    "21:00",
+    "22:00",
   ];
 
-  const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI'];
+  const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI"];
 
   const getTimeSlotIndex = (time: string) => {
-    const hour = parseInt(time.split(':')[0]);
-    return timeSlots.findIndex((slot) => parseInt(slot.split(':')[0]) === hour);
+    const hour = parseInt(time.split(":")[0]);
+    return timeSlots.findIndex((slot) => parseInt(slot.split(":")[0]) === hour);
   };
 
   const getTimeSlotSpan = (startTime: string, endTime: string) => {
@@ -58,7 +58,8 @@ export default function SavedScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {/* Title Section */}
         <View style={styles.titleSection}>
           <ThemedText style={styles.title}>My Workspace</ThemedText>
@@ -68,12 +69,19 @@ export default function SavedScreen() {
         {/* Saved Plans */}
         {savedPlans.length === 0 ? (
           <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyStateText}>No saved plans.</ThemedText>
-			<TouchableOpacity
+            <ThemedText style={styles.emptyStateText}>
+              No saved plans.
+            </ThemedText>
+            <TouchableOpacity
               style={styles.createButton}
               activeOpacity={0.8}
-              onPress={() => router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION)}>
-              <ThemedText style={styles.createButtonText}>CREATE NEW PLAN</ThemedText>
+              onPress={() =>
+                router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION)
+              }
+            >
+              <ThemedText style={styles.createButtonText}>
+                CREATE NEW PLAN
+              </ThemedText>
             </TouchableOpacity>
           </View>
         ) : (
@@ -81,11 +89,14 @@ export default function SavedScreen() {
             <View key={plan.id} style={styles.planCard}>
               {/* Plan Header */}
               <View style={styles.planHeader}>
-                <ThemedText style={styles.compiledText}>COMPILED {plan.date}</ThemedText>
+                <ThemedText style={styles.compiledText}>
+                  COMPILED {plan.date}
+                </ThemedText>
                 <TouchableOpacity
                   style={styles.deleteButton}
                   onPress={() => deletePlan(plan.id)}
-                  activeOpacity={0.7}>
+                  activeOpacity={0.7}
+                >
                   <MaterialIcons name="delete" size={20} color="#FF4444" />
                 </TouchableOpacity>
               </View>
@@ -96,12 +107,16 @@ export default function SavedScreen() {
                   {/* Fixed Time Column */}
                   <View style={styles.fixedTimeSection}>
                     <View style={styles.timeHeaderFixed}>
-                      <ThemedText style={styles.gridHeaderText}>TIME</ThemedText>
+                      <ThemedText style={styles.gridHeaderText}>
+                        TIME
+                      </ThemedText>
                     </View>
                     <View style={styles.timeColumnFixed}>
                       {timeSlots.map((time, index) => (
                         <View key={index} style={styles.timeSlot}>
-                          <ThemedText style={styles.timeText}>{time}</ThemedText>
+                          <ThemedText style={styles.timeText}>
+                            {time}
+                          </ThemedText>
                         </View>
                       ))}
                     </View>
@@ -112,7 +127,8 @@ export default function SavedScreen() {
                     horizontal
                     showsHorizontalScrollIndicator={true}
                     style={styles.daysScrollView}
-                    contentContainerStyle={styles.daysScrollContent}>
+                    contentContainerStyle={styles.daysScrollContent}
+                  >
                     {/* Days Header */}
                     <View style={styles.daysHeaderContainer}>
                       {days.map((day, index) => (
@@ -121,8 +137,11 @@ export default function SavedScreen() {
                           style={[
                             styles.dayHeader,
                             index === days.length - 1 && styles.dayHeaderLast,
-                          ]}>
-                          <ThemedText style={styles.gridHeaderText}>{day}</ThemedText>
+                          ]}
+                        >
+                          <ThemedText style={styles.gridHeaderText}>
+                            {day}
+                          </ThemedText>
                         </View>
                       ))}
                     </View>
@@ -134,18 +153,32 @@ export default function SavedScreen() {
                           key={day}
                           style={[
                             styles.dayColumn,
-                            dayIndex === days.length - 1 && styles.dayColumnLast,
-                          ]}>
+                            dayIndex === days.length - 1 &&
+                              styles.dayColumnLast,
+                          ]}
+                        >
                           {timeSlots.map((time, timeIndex) => {
-                            const course = plan.schedule[day as keyof typeof plan.schedule]?.find(
-                              (c: any) => {
-                                const slotInfo = getTimeSlotSpan(c.startTime, c.endTime);
-                                return timeIndex >= slotInfo.start && timeIndex < slotInfo.end;
-                              }
-                            );
+                            const course = plan.schedule[
+                              day as keyof typeof plan.schedule
+                            ]?.find((c: any) => {
+                              const slotInfo = getTimeSlotSpan(
+                                c.startTime,
+                                c.endTime,
+                              );
+                              return (
+                                timeIndex >= slotInfo.start &&
+                                timeIndex < slotInfo.end
+                              );
+                            });
 
-                            if (course && getTimeSlotIndex(course.startTime) === timeIndex) {
-                              const slotInfo = getTimeSlotSpan(course.startTime, course.endTime);
+                            if (
+                              course &&
+                              getTimeSlotIndex(course.startTime) === timeIndex
+                            ) {
+                              const slotInfo = getTimeSlotSpan(
+                                course.startTime,
+                                course.endTime,
+                              );
                               return (
                                 <View key={timeIndex} style={styles.gridCell}>
                                   <View
@@ -153,33 +186,58 @@ export default function SavedScreen() {
                                       styles.courseBlock,
                                       {
                                         top: 2,
-                                        height: slotInfo.span * 40 + (slotInfo.span - 1) * 1 - 4,
+                                        height:
+                                          slotInfo.span * 40 +
+                                          (slotInfo.span - 1) * 1 -
+                                          4,
                                       },
-                                    ]}>
+                                    ]}
+                                  >
                                     <View style={styles.courseContent}>
-                                      <ThemedText style={styles.courseCode} numberOfLines={1}>
+                                      <ThemedText
+                                        style={styles.courseCode}
+                                        numberOfLines={1}
+                                      >
                                         {course.courseCode}
                                       </ThemedText>
-                                      <ThemedText style={styles.courseName} numberOfLines={2}>
+                                      <ThemedText
+                                        style={styles.courseName}
+                                        numberOfLines={2}
+                                      >
                                         {course.courseName}
                                       </ThemedText>
                                       <View style={styles.courseDetails}>
-                                        <MaterialIcons name="person" size={14} color="#9B9B9B" />
-                                        <ThemedText style={styles.courseDetailText} numberOfLines={1}>
+                                        <MaterialIcons
+                                          name="person"
+                                          size={14}
+                                          color="#9B9B9B"
+                                        />
+                                        <ThemedText
+                                          style={styles.courseDetailText}
+                                          numberOfLines={1}
+                                        >
                                           {course.instructor}
                                         </ThemedText>
                                       </View>
                                       <View style={styles.courseDetails}>
-                                        <MaterialIcons name="location-on" size={14} color="#9B9B9B" />
+                                        <MaterialIcons
+                                          name="location-on"
+                                          size={14}
+                                          color="#9B9B9B"
+                                        />
                                         <ThemedText
                                           style={styles.courseDetailTextBold}
-                                          numberOfLines={1}>
+                                          numberOfLines={1}
+                                        >
                                           {course.location}
                                         </ThemedText>
                                       </View>
                                     </View>
                                     <View style={styles.courseTimeContainer}>
-                                      <ThemedText style={styles.courseTime} numberOfLines={1}>
+                                      <ThemedText
+                                        style={styles.courseTime}
+                                        numberOfLines={1}
+                                      >
                                         {course.time}
                                       </ThemedText>
                                     </View>
@@ -204,14 +262,17 @@ export default function SavedScreen() {
           ))
         )}
       </ScrollView>
-		{savedPlans.length > 0 && (
-			<TouchableOpacity
-				style={styles.floatingButton}
-				activeOpacity={0.8}
-				onPress={() => router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION)}>
-				<MaterialIcons name="add" size={32} color="#FFFFFF" />
-				</TouchableOpacity>
-		)}
+      {savedPlans.length > 0 && (
+        <TouchableOpacity
+          style={styles.floatingButton}
+          activeOpacity={0.8}
+          onPress={() =>
+            router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION)
+          }
+        >
+          <MaterialIcons name="add" size={32} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
     </ThemedView>
   );
 }
@@ -219,36 +280,36 @@ export default function SavedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'flex-start',
+    backgroundColor: "#FFFFFF",
+    alignItems: "flex-start",
   },
   headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   headerTitleUni: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
   },
   headerTitleSmart: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#5B4C9D',
+    fontWeight: "bold",
+    color: "#5B4C9D",
   },
   headerSubtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   scrollView: {
     flex: 1,
@@ -263,102 +324,102 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   emptyState: {
     paddingTop: 100,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#9B9B9B',
+    color: "#9B9B9B",
   },
   createButton: {
     marginTop: 24,
     paddingHorizontal: 24,
     paddingVertical: 14,
-    backgroundColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   createButtonText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
   },
   planCard: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
   },
   planHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 16,
   },
   compiledText: {
     fontSize: 12,
-    color: '#9B9B9B',
-    fontWeight: '500',
+    color: "#9B9B9B",
+    fontWeight: "500",
   },
   deleteButton: {
     padding: 4,
   },
   scheduleCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-    overflow: 'hidden',
+    borderColor: "#E0E0E0",
+    overflow: "hidden",
   },
   scheduleContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   fixedTimeSection: {
     borderRightWidth: 2,
-    borderRightColor: '#E0E0E0',
+    borderRightColor: "#E0E0E0",
   },
   timeHeaderFixed: {
     width: 80,
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderBottomWidth: 2,
-    borderBottomColor: '#E0E0E0',
-    backgroundColor: '#F8F8F8',
+    borderBottomColor: "#E0E0E0",
+    backgroundColor: "#F8F8F8",
   },
   daysScrollView: {
     flex: 1,
   },
   daysScrollContent: {
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   daysHeaderContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 2,
-    borderBottomColor: '#E0E0E0',
-    backgroundColor: '#F8F8F8',
+    borderBottomColor: "#E0E0E0",
+    backgroundColor: "#F8F8F8",
   },
   dayHeader: {
     width: 140,
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderRightWidth: 1,
-    borderRightColor: '#E0E0E0',
-    alignItems: 'center',
+    borderRightColor: "#E0E0E0",
+    alignItems: "center",
   },
   dayHeaderLast: {
     borderRightWidth: 0,
@@ -368,58 +429,58 @@ const styles = StyleSheet.create({
   },
   gridHeaderText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#1A1A1A",
+    textAlign: "center",
   },
   daysBodyContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   timeColumnFixed: {
     width: 80,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: "#FAFAFA",
   },
   timeSlot: {
     height: 40,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: "#F0F0F0",
   },
   timeText: {
     fontSize: 11,
-    color: '#9B9B9B',
+    color: "#9B9B9B",
   },
   dayColumn: {
     width: 140,
     borderRightWidth: 1,
-    borderRightColor: '#E0E0E0',
+    borderRightColor: "#E0E0E0",
   },
   gridCell: {
     height: 40,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    position: 'relative',
+    borderBottomColor: "#F0F0F0",
+    position: "relative",
   },
   gridLine: {
     height: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
   },
   courseBlock: {
-    backgroundColor: '#E0E0FF',
+    backgroundColor: "#E0E0FF",
     borderRadius: 10,
     padding: 0,
-    position: 'absolute',
+    position: "absolute",
     left: 6,
     right: 6,
     zIndex: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 3,
-    overflow: 'hidden',
-    flexDirection: 'column',
+    overflow: "hidden",
+    flexDirection: "column",
   },
   courseContent: {
     padding: 10,
@@ -427,69 +488,68 @@ const styles = StyleSheet.create({
   },
   courseCode: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333399',
+    fontWeight: "bold",
+    color: "#333399",
     marginBottom: 4,
   },
   courseName: {
     fontSize: 12,
-    color: '#4A4A6A',
+    color: "#4A4A6A",
     marginBottom: 8,
-    fontWeight: '400',
+    fontWeight: "400",
     lineHeight: 16,
   },
   courseDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 5,
     gap: 6,
     flexShrink: 1,
   },
   courseDetailText: {
     fontSize: 11,
-    color: '#4A4A6A',
+    color: "#4A4A6A",
     flex: 1,
     flexShrink: 1,
   },
   courseDetailTextBold: {
     fontSize: 11,
-    color: '#4A4A6A',
-    fontWeight: '600',
+    color: "#4A4A6A",
+    fontWeight: "600",
     flex: 1,
     flexShrink: 1,
   },
   courseTimeContainer: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 10,
-    marginTop: 'auto',
+    marginTop: "auto",
     marginHorizontal: 6,
     marginBottom: 6,
-    alignItems: 'center',
+    alignItems: "center",
   },
   courseTime: {
     fontSize: 10,
-    color: '#9B9B9B',
-    fontWeight: '400',
+    color: "#9B9B9B",
+    fontWeight: "400",
   },
   floatingButton: {
-    position: 'absolute', // מנתק את הכפתור מהזרימה הרגילה של העמוד וגורם לו לרחף
+    position: "absolute", // מנתק את הכפתור מהזרימה הרגילה של העמוד וגורם לו לרחף
     bottom: 30, // מרחק של 30 פיקסלים מהתחתית
-    alignSelf: 'center', // ממרכז אותו אופקית על המסך
+    alignSelf: "center", // ממרכז אותו אופקית על המסך
     width: 64, // רוחב הכפתור
     height: 64, // גובה הכפתור (זהה לרוחב כדי ליצור ריבוע שיהפוך לעיגול)
     borderRadius: 32, // הגדרת הרדיוס כמחצית מהגודל הופכת את הריבוע לעיגול מושלם
-    backgroundColor: '#5B4C9D', // הצבע הסגול המרכזי של האפליקציה
-    justifyContent: 'center', // ממרכז את אייקון הפלוס אנכית
-    alignItems: 'center', // ממרכז את אייקון הפלוס אופקית
-    
+    backgroundColor: "#5B4C9D", // הצבע הסגול המרכזי של האפליקציה
+    justifyContent: "center", // ממרכז את אייקון הפלוס אנכית
+    alignItems: "center", // ממרכז את אייקון הפלוס אופקית
+
     // קוד להצללה שנותן תחושה אמיתית של ריחוף (מתאים גם ל-iOS וגם לאנדרואיד)
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
   },
 });
-

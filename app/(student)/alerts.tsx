@@ -1,8 +1,7 @@
-import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useSelection } from '@/contexts/selection-context';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { useSelection } from "@/contexts/selection-context";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function AlertsScreen() {
   const { alerts, setAlerts } = useSelection();
@@ -28,7 +27,8 @@ export default function AlertsScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {/* Title Section */}
         <View style={styles.titleSection}>
           <ThemedText style={styles.title}>Alert Center</ThemedText>
@@ -36,8 +36,11 @@ export default function AlertsScreen() {
             <TouchableOpacity
               style={styles.markAllReadButton}
               onPress={handleMarkAllRead}
-              activeOpacity={0.7}>
-              <ThemedText style={styles.markAllReadText}>MARK ALL READ</ThemedText>
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.markAllReadText}>
+                MARK ALL READ
+              </ThemedText>
             </TouchableOpacity>
           )}
         </View>
@@ -47,7 +50,9 @@ export default function AlertsScreen() {
           {alerts.map((alert) => (
             <View key={alert.id} style={styles.alertCard}>
               <ThemedText style={styles.alertTitle}>{alert.title}</ThemedText>
-              <ThemedText style={styles.alertMessage}>{alert.message}</ThemedText>
+              <ThemedText style={styles.alertMessage}>
+                {alert.message}
+              </ThemedText>
             </View>
           ))}
         </View>
@@ -59,36 +64,36 @@ export default function AlertsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'flex-start',
+    backgroundColor: "#FFFFFF",
+    alignItems: "flex-start",
   },
   headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   headerTitleUni: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
   },
   headerTitleSmart: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#5B4C9D',
+    fontWeight: "bold",
+    color: "#5B4C9D",
   },
   headerSubtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   scrollView: {
     flex: 1,
@@ -98,16 +103,16 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   titleSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 20,
     marginBottom: 24,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
   },
   markAllReadButton: {
     paddingVertical: 8,
@@ -115,28 +120,27 @@ const styles = StyleSheet.create({
   },
   markAllReadText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#5B4C9D',
+    fontWeight: "600",
+    color: "#5B4C9D",
     letterSpacing: 0.5,
   },
   alertsList: {
     gap: 16,
   },
   alertCard: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 16,
     padding: 20,
   },
   alertTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#5B4C9D',
+    fontWeight: "bold",
+    color: "#5B4C9D",
     marginBottom: 8,
   },
   alertMessage: {
     fontSize: 14,
-    color: '#1A1A1A',
+    color: "#1A1A1A",
     lineHeight: 20,
   },
 });
-

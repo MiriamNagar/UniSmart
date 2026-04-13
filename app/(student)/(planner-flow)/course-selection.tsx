@@ -1,24 +1,24 @@
-import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useEffect, useMemo } from 'react';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { ROUTES } from "@/constants/routes";
+import { useSelection } from "@/contexts/selection-context";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useEffect, useMemo } from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
-import { PlannerCatalogStatusBanner } from '@/components/planner-catalog-status-banner';
-import { usePlannerCatalog } from '@/contexts/bgu-planner-catalog-context';
+import { PlannerCatalogStatusBanner } from "@/components/planner-catalog-status-banner";
+import { usePlannerCatalog } from "@/contexts/bgu-planner-catalog-context";
 import {
-  filterCoursesEligibleForSemester,
-  virtualCompletedCourseNamesForDegreeTier,
-} from '@/lib/planner-prerequisite-eligibility';
+    catalogLetterForDegreeTier,
+    DEGREE_YEAR_PLANNER_OPTIONS,
+    filterCoursesForPlannerTerm,
+} from "@/lib/planner-active-term";
+import { buildPlannerCatalogUiModel } from "@/lib/planner-catalog-ui-messages";
 import {
-  catalogLetterForDegreeTier,
-  DEGREE_YEAR_PLANNER_OPTIONS,
-  filterCoursesForPlannerTerm,
-} from '@/lib/planner-active-term';
-import { buildPlannerCatalogUiModel } from '@/lib/planner-catalog-ui-messages';
+    filterCoursesEligibleForSemester,
+    virtualCompletedCourseNamesForDegreeTier,
+} from "@/lib/planner-prerequisite-eligibility";
 
 export default function CourseSelectionScreen() {
   const {
@@ -44,24 +44,44 @@ export default function CourseSelectionScreen() {
     setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
   }, [setLastPlannerFlowRoute]);
 
-  const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
+  const semesterKey = selectedSemester === "Sem 1" ? "A" : "B";
   const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
 
   const virtualCompletedCourseNames = useMemo(
-    () => virtualCompletedCourseNamesForDegreeTier(catalogCourses, activeDegreeYearTier),
+    () =>
+      virtualCompletedCourseNamesForDegreeTier(
+        catalogCourses,
+        activeDegreeYearTier,
+      ),
     [catalogCourses, activeDegreeYearTier],
   );
 
   const courses = useMemo(() => {
-    const inTerm = filterCoursesForPlannerTerm(catalogCourses, semesterKey, catalogYearLetter);
-    return filterCoursesEligibleForSemester(inTerm, semesterKey, catalogCourses, {
-      completedCourseNames: virtualCompletedCourseNames,
-    });
-  }, [semesterKey, catalogYearLetter, catalogCourses, virtualCompletedCourseNames]);
+    const inTerm = filterCoursesForPlannerTerm(
+      catalogCourses,
+      semesterKey,
+      catalogYearLetter,
+    );
+    return filterCoursesEligibleForSemester(
+      inTerm,
+      semesterKey,
+      catalogCourses,
+      {
+        completedCourseNames: virtualCompletedCourseNames,
+      },
+    );
+  }, [
+    semesterKey,
+    catalogYearLetter,
+    catalogCourses,
+    virtualCompletedCourseNames,
+  ]);
 
   const activeTermSummary = useMemo(() => {
-    const yearLabel = DEGREE_YEAR_PLANNER_OPTIONS.find((o) => o.tier === activeDegreeYearTier)?.label ?? 'Year 1';
-    const semLabel = selectedSemester === 'Sem 1' ? 'Semester A' : 'Semester B';
+    const yearLabel =
+      DEGREE_YEAR_PLANNER_OPTIONS.find((o) => o.tier === activeDegreeYearTier)
+        ?.label ?? "Year 1";
+    const semLabel = selectedSemester === "Sem 1" ? "Semester A" : "Semester B";
     return `${yearLabel} · ${semLabel}`;
   }, [activeDegreeYearTier, selectedSemester]);
 
@@ -74,7 +94,13 @@ export default function CourseSelectionScreen() {
         loading: catalogLoading,
         activeTermSummary,
       }),
-    [hasFirebaseDb, catalogSource, catalogLoadError, catalogLoading, activeTermSummary],
+    [
+      hasFirebaseDb,
+      catalogSource,
+      catalogLoadError,
+      catalogLoading,
+      activeTermSummary,
+    ],
   );
 
   const toggleCourse = (courseId: string) => {
@@ -94,23 +120,27 @@ export default function CourseSelectionScreen() {
       {/* Header */}
       <View style={styles.header}>
         <ThemedText style={styles.headerTitle}>UniSmart</ThemedText>
-        <ThemedText style={styles.headerSubtitle}>INTELLIGENCE PLANNER</ThemedText>
+        <ThemedText style={styles.headerSubtitle}>
+          INTELLIGENCE PLANNER
+        </ThemedText>
       </View>
 
       {/* Main Content */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
-        
+        showsVerticalScrollIndicator={false}
+      >
         {/* Curriculum Filter */}
         <View style={styles.curriculumFilter}>
           <ThemedText style={styles.filterLabel}>CURRICULUM FILTER</ThemedText>
           <ThemedText style={styles.filterTitle}>
-            {userInfo.major || 'Computer Science'}
-            {userInfo.academicLevel ? ` — ${userInfo.academicLevel}` : ''}
+            {userInfo.major || "Computer Science"}
+            {userInfo.academicLevel ? ` — ${userInfo.academicLevel}` : ""}
           </ThemedText>
-          <ThemedText style={styles.filterSemester}>Active term: {activeTermSummary}</ThemedText>
+          <ThemedText style={styles.filterSemester}>
+            Active term: {activeTermSummary}
+          </ThemedText>
           <PlannerCatalogStatusBanner
             ui={catalogUi}
             loading={catalogLoading}
@@ -118,13 +148,14 @@ export default function CourseSelectionScreen() {
           />
         </View>
 
-
         {/* Course List */}
         <View style={styles.courseListSection}>
           <ThemedText style={styles.sectionLabel}>COURSE LIST</ThemedText>
           {!catalogLoading && courses.length === 0 ? (
             <View style={styles.emptyCatalog}>
-              <ThemedText style={styles.emptyCatalogTitle}>No courses for this term</ThemedText>
+              <ThemedText style={styles.emptyCatalogTitle}>
+                No courses for this term
+              </ThemedText>
               <ThemedText style={styles.emptyCatalogBody}>
                 {catalogUi.showRetry
                   ? `No courses in the loaded catalog match ${activeTermSummary}. If you expected classes here, try another degree year or semester on the planner home screen, or retry loading the catalog from Firestore.`
@@ -132,7 +163,10 @@ export default function CourseSelectionScreen() {
               </ThemedText>
               {catalogUi.showRetry ? (
                 <TouchableOpacity
-                  style={[styles.emptyRetry, catalogLoading ? styles.emptyRetryDisabled : null]}
+                  style={[
+                    styles.emptyRetry,
+                    catalogLoading ? styles.emptyRetryDisabled : null,
+                  ]}
                   onPress={() => {
                     if (catalogLoading) return;
                     void refreshCatalog();
@@ -141,8 +175,11 @@ export default function CourseSelectionScreen() {
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel="Retry loading catalog from Firestore"
-                  accessibilityState={{ disabled: catalogLoading }}>
-                  <ThemedText style={styles.emptyRetryText}>Retry Firestore</ThemedText>
+                  accessibilityState={{ disabled: catalogLoading }}
+                >
+                  <ThemedText style={styles.emptyRetryText}>
+                    Retry Firestore
+                  </ThemedText>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -154,18 +191,26 @@ export default function CourseSelectionScreen() {
                 key={course.courseID}
                 style={styles.courseCard}
                 onPress={() => toggleCourse(course.courseID)}
-                activeOpacity={0.7}>
+                activeOpacity={0.7}
+              >
                 <View style={styles.courseCardContent}>
                   <View style={styles.courseInfo}>
-                    <ThemedText style={styles.courseCode}>{course.courseID}</ThemedText>
-                    <ThemedText style={styles.courseName}>{course.courseName}</ThemedText>
-                    <ThemedText style={styles.courseCredits}>{course.credits} Credits</ThemedText>
+                    <ThemedText style={styles.courseCode}>
+                      {course.courseID}
+                    </ThemedText>
+                    <ThemedText style={styles.courseName}>
+                      {course.courseName}
+                    </ThemedText>
+                    <ThemedText style={styles.courseCredits}>
+                      {course.credits} Credits
+                    </ThemedText>
                   </View>
                   <View
                     style={[
                       styles.checkIcon,
                       isSelected && styles.checkIconSelected,
-                    ]}>
+                    ]}
+                  >
                     {isSelected && (
                       <MaterialIcons name="check" size={20} color="#FFFFFF" />
                     )}
@@ -185,7 +230,8 @@ export default function CourseSelectionScreen() {
             setLastPlannerFlowRoute(null);
             router.push(ROUTES.STUDENT.PLANNER);
           }}
-          activeOpacity={0.7}>
+          activeOpacity={0.7}
+        >
           <MaterialIcons name="chevron-left" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <TouchableOpacity
@@ -199,12 +245,14 @@ export default function CourseSelectionScreen() {
             if (hasSelectedCourses) {
               router.push(ROUTES.STUDENT.PLANNER_FLOW.CUSTOM_RULES);
             }
-          }}>
+          }}
+        >
           <ThemedText
             style={[
               styles.solverButtonText,
               !hasSelectedCourses && styles.solverButtonTextDisabled,
-            ]}>
+            ]}
+          >
             SOLVER SETUP
           </ThemedText>
         </TouchableOpacity>
@@ -216,27 +264,27 @@ export default function CourseSelectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   scrollView: {
     flex: 1,
@@ -246,7 +294,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   curriculumFilter: {
-    backgroundColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
     borderRadius: 16,
     padding: 20,
     marginTop: 20,
@@ -254,21 +302,21 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: 8,
   },
   filterTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 8,
   },
   filterSemester: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     opacity: 0.9,
   },
   emptyCatalog: {
@@ -277,19 +325,19 @@ const styles = StyleSheet.create({
   },
   emptyCatalogTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontWeight: "700",
+    color: "#1A1A1A",
     marginBottom: 8,
   },
   emptyCatalogBody: {
     fontSize: 14,
-    color: '#666666',
+    color: "#666666",
     lineHeight: 20,
     marginBottom: 12,
   },
   emptyRetry: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#5B4C9D',
+    alignSelf: "flex-start",
+    backgroundColor: "#5B4C9D",
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -298,8 +346,8 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
   emptyRetryText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
     fontSize: 14,
   },
   courseListSection: {
@@ -307,94 +355,93 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     marginBottom: 16,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   courseCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 12,
     marginBottom: 12,
     padding: 16,
   },
   courseCardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   courseInfo: {
     flex: 1,
   },
   courseCode: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#5B4C9D',
+    fontWeight: "600",
+    color: "#5B4C9D",
     marginBottom: 4,
   },
   courseName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
     marginBottom: 4,
   },
   courseCredits: {
     fontSize: 14,
-    color: '#9B9B9B',
+    color: "#9B9B9B",
   },
   checkIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#E0E0E0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkIconSelected: {
-    backgroundColor: '#5B4C9D',
-    borderColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
+    borderColor: "#5B4C9D",
   },
   bottomActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 24,
     paddingBottom: 16,
     paddingTop: 16,
     gap: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: "#F0F0F0",
   },
   backButton: {
     width: 56,
     height: 56,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: "#1A1A1A",
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   solverButton: {
     flex: 1,
     height: 56,
-    backgroundColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   solverButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.5,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   solverButtonDisabled: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   solverButtonTextDisabled: {
-    color: '#9B9B9B',
+    color: "#9B9B9B",
   },
 });
-

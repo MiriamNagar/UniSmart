@@ -1,12 +1,12 @@
-import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
-import { DEGREE_YEAR_PLANNER_OPTIONS } from '@/lib/planner-active-term';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { ROUTES } from "@/constants/routes";
+import { useSelection } from "@/contexts/selection-context";
+import { DEGREE_YEAR_PLANNER_OPTIONS } from "@/lib/planner-active-term";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback } from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function PlannerScreen() {
   const {
@@ -33,7 +33,7 @@ export default function PlannerScreen() {
         // This means the user wants to see the main planner, not the saved state
         setLastPlannerFlowRoute(null);
       }
-    }, [lastPlannerFlowRoute, setLastPlannerFlowRoute])
+    }, [lastPlannerFlowRoute, setLastPlannerFlowRoute]),
   );
 
   return (
@@ -41,14 +41,17 @@ export default function PlannerScreen() {
       {/* Header */}
       <View style={styles.header}>
         <ThemedText style={styles.headerTitle}>UniSmart</ThemedText>
-        <ThemedText style={styles.headerSubtitle}>INTELLIGENCE PLANNER</ThemedText>
+        <ThemedText style={styles.headerSubtitle}>
+          INTELLIGENCE PLANNER
+        </ThemedText>
       </View>
 
       {/* Main Content */}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {/* Icon */}
         <View style={styles.iconContainer}>
           <View style={styles.iconSquare}>
@@ -62,23 +65,27 @@ export default function PlannerScreen() {
         {/* Description */}
         <View style={styles.descriptionContainer}>
           <ThemedText style={styles.descriptionText}>
-            Courses filtered for{' '}
+            Courses filtered for{" "}
             <ThemedText style={styles.highlightedText}>
-              {userInfo.major || 'Computer Science'}
+              {userInfo.major || "Computer Science"}
             </ThemedText>
             {userInfo.academicLevel ? (
               <>
-                {', '}
-                <ThemedText style={styles.highlightedText}>{userInfo.academicLevel}</ThemedText>
+                {", "}
+                <ThemedText style={styles.highlightedText}>
+                  {userInfo.academicLevel}
+                </ThemedText>
               </>
             ) : null}
-            . Active term:{' '}
+            . Active term:{" "}
             <ThemedText style={styles.highlightedText}>
-              {DEGREE_YEAR_PLANNER_OPTIONS.find((o) => o.tier === activeDegreeYearTier)?.label ?? 'Year 1'}
+              {DEGREE_YEAR_PLANNER_OPTIONS.find(
+                (o) => o.tier === activeDegreeYearTier,
+              )?.label ?? "Year 1"}
             </ThemedText>
-            {' · '}
+            {" · "}
             <ThemedText style={styles.highlightedText}>
-              {selectedSemester === 'Sem 1' ? 'Semester A' : 'Semester B'}
+              {selectedSemester === "Sem 1" ? "Semester A" : "Semester B"}
             </ThemedText>
             .
           </ThemedText>
@@ -86,25 +93,31 @@ export default function PlannerScreen() {
 
         {/* Degree year (catalog) — drives which offerings appear with the semester */}
         <View style={styles.semesterSection}>
-          <ThemedText style={styles.sectionLabel}>SELECT DEGREE YEAR</ThemedText>
+          <ThemedText style={styles.sectionLabel}>
+            SELECT DEGREE YEAR
+          </ThemedText>
           <View style={styles.degreeYearGrid}>
             {DEGREE_YEAR_PLANNER_OPTIONS.map((opt) => (
               <TouchableOpacity
                 key={opt.tier}
                 style={[
                   styles.degreeYearButton,
-                  activeDegreeYearTier === opt.tier && styles.semesterButtonSelected,
+                  activeDegreeYearTier === opt.tier &&
+                    styles.semesterButtonSelected,
                 ]}
                 onPress={() => {
                   setActiveDegreeYearTier(opt.tier);
                   resetPlannerSelectionsForTermChange();
                 }}
-                activeOpacity={0.7}>
+                activeOpacity={0.7}
+              >
                 <ThemedText
                   style={[
                     styles.degreeYearButtonText,
-                    activeDegreeYearTier === opt.tier && styles.semesterButtonTextSelected,
-                  ]}>
+                    activeDegreeYearTier === opt.tier &&
+                      styles.semesterButtonTextSelected,
+                  ]}
+                >
                   {opt.label}
                 </ThemedText>
               </TouchableOpacity>
@@ -114,41 +127,49 @@ export default function PlannerScreen() {
 
         {/* Semester Selection */}
         <View style={styles.semesterSection}>
-          <ThemedText style={styles.sectionLabel}>SELECT SEMESTER (A = FIRST, B = SECOND)</ThemedText>
+          <ThemedText style={styles.sectionLabel}>
+            SELECT SEMESTER (A = FIRST, B = SECOND)
+          </ThemedText>
           <View style={styles.semesterButtons}>
             <TouchableOpacity
               style={[
                 styles.semesterButton,
-                selectedSemester === 'Sem 1' && styles.semesterButtonSelected,
+                selectedSemester === "Sem 1" && styles.semesterButtonSelected,
               ]}
               onPress={() => {
-                setSelectedSemester('Sem 1');
+                setSelectedSemester("Sem 1");
                 resetPlannerSelectionsForTermChange();
               }}
-              activeOpacity={0.7}>
+              activeOpacity={0.7}
+            >
               <ThemedText
                 style={[
                   styles.semesterButtonText,
-                  selectedSemester === 'Sem 1' && styles.semesterButtonTextSelected,
-                ]}>
+                  selectedSemester === "Sem 1" &&
+                    styles.semesterButtonTextSelected,
+                ]}
+              >
                 Semester A
               </ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.semesterButton,
-                selectedSemester === 'Sem 2' && styles.semesterButtonSelected,
+                selectedSemester === "Sem 2" && styles.semesterButtonSelected,
               ]}
               onPress={() => {
-                setSelectedSemester('Sem 2');
+                setSelectedSemester("Sem 2");
                 resetPlannerSelectionsForTermChange();
               }}
-              activeOpacity={0.7}>
+              activeOpacity={0.7}
+            >
               <ThemedText
                 style={[
                   styles.semesterButtonText,
-                  selectedSemester === 'Sem 2' && styles.semesterButtonTextSelected,
-                ]}>
+                  selectedSemester === "Sem 2" &&
+                    styles.semesterButtonTextSelected,
+                ]}
+              >
                 Semester B
               </ThemedText>
             </TouchableOpacity>
@@ -161,10 +182,15 @@ export default function PlannerScreen() {
           activeOpacity={0.8}
           onPress={() => {
             // Clear any previous flow route when starting fresh
-            setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
+            setLastPlannerFlowRoute(
+              ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION,
+            );
             router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
-          }}>
-          <ThemedText style={styles.beginButtonText}>Begin Course Selection</ThemedText>
+          }}
+        >
+          <ThemedText style={styles.beginButtonText}>
+            Begin Course Selection
+          </ThemedText>
         </TouchableOpacity>
       </ScrollView>
     </ThemedView>
@@ -174,26 +200,26 @@ export default function PlannerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
     paddingTop: 50,
     paddingBottom: 16,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   scrollView: {
     flex: 1,
@@ -203,7 +229,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   iconContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
     marginBottom: 24,
   },
@@ -211,15 +237,15 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 24,
-    backgroundColor: '#E8E6F7',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#E8E6F7",
+    justifyContent: "center",
+    alignItems: "center",
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#1A1A1A",
+    textAlign: "center",
     marginBottom: 16,
   },
   descriptionContainer: {
@@ -227,87 +253,86 @@ const styles = StyleSheet.create({
   },
   descriptionText: {
     fontSize: 16,
-    color: '#9B9B9B',
-    textAlign: 'center',
+    color: "#9B9B9B",
+    textAlign: "center",
     lineHeight: 24,
   },
   highlightedText: {
-    color: '#5B4C9D',
-    fontWeight: '600',
+    color: "#5B4C9D",
+    fontWeight: "600",
   },
   semesterSection: {
     marginBottom: 32,
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     marginBottom: 16,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   degreeYearGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   degreeYearButton: {
-    flexBasis: '30%',
+    flexBasis: "30%",
     minWidth: 100,
     flexGrow: 1,
     height: 52,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   degreeYearButtonText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#9B9B9B',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#9B9B9B",
+    textAlign: "center",
   },
   semesterButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   semesterButton: {
     flex: 1,
     height: 64,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   semesterButtonSelected: {
-    borderColor: '#5B4C9D',
+    borderColor: "#5B4C9D",
   },
   semesterButtonText: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
   },
   semesterButtonTextSelected: {
-    color: '#5B4C9D',
+    color: "#5B4C9D",
   },
   beginButton: {
-    width: '100%',
+    width: "100%",
     height: 56,
-    backgroundColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: 8,
   },
   beginButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.5,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 });
-

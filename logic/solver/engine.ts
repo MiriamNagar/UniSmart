@@ -1,16 +1,15 @@
-import { Course, CourseSection } from '@/types/courses';
-import { StudentPreferences } from '@/types/constraints';
-import { schedule, PlannerResult } from '@/types/planner-result';
-import { isSectionValid, calculateFitScore } from './utils';
+import { StudentPreferences } from "@/types/constraints";
+import { Course, CourseSection } from "@/types/courses";
+import { PlannerResult, schedule } from "@/types/planner-result";
+import { calculateFitScore, isSectionValid } from "./utils";
 
 export function generateSchedules(
-  courses: Course[], 
+  courses: Course[],
   preferences: StudentPreferences,
-  maxResults: number = 5
+  maxResults: number = 5,
 ): PlannerResult {
-  
   const validSchedules: schedule[] = [];
-  
+
   // סידור הקורסים כך שקורסי חובה ישובצו קודם
   // זה מייעל את הגיזום בעץ הקומבינטורי
   const sortedCourses = [...courses].sort((a, b) => {
@@ -26,7 +25,11 @@ export function generateSchedules(
       const newSchedule: schedule = {
         id: `sched-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         sections: [...currentSections],
-        fitScore: calculateFitScore(currentSections, sortedCourses, preferences),
+        fitScore: calculateFitScore(
+          currentSections,
+          sortedCourses,
+          preferences,
+        ),
         totalCredits: currentSections.length, // כאן אפשר לשנות לסכימת נ"ז אמיתית אם תתווסף למודל
       };
       validSchedules.push(newSchedule);
@@ -55,8 +58,8 @@ export function generateSchedules(
 
   // מיון התוצאות מהציון הגבוה לנמוך והחזרת המערכות הטובות ביותר
   validSchedules.sort((a, b) => b.fitScore - a.fitScore);
-  
+
   return {
-    proposals: validSchedules.slice(0, maxResults)
+    proposals: validSchedules.slice(0, maxResults),
   };
 }
