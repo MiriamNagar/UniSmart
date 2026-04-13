@@ -1,8 +1,10 @@
+import { mockCourses } from "@/mockData/mock-courses";
 import { StudentPreferences } from "@/types/constraints";
-import type { CourseSection } from "@/types/courses";
+import type { Course, CourseSection } from "@/types/courses";
 import { Days } from "@/types/courses";
 
 import {
+    calculateFitScore,
     isSectionValid,
     parseLessonTimeToMinutes,
     parsePreferenceTimeToMinutes,
@@ -79,5 +81,51 @@ describe("isSectionValid hard daily window", () => {
     };
     expect(isSectionValid(section, [], prefs("Any", "7:00 PM"))).toBe(false);
     expect(isSectionValid(section, [], prefs("Any", "9:00 PM"))).toBe(true);
+  });
+});
+
+describe("calculateFitScore instructor preferences", () => {
+  const basePrefs = (): StudentPreferences => ({
+    blockedDays: [],
+    startHour: "Any",
+    endHour: "Any",
+  });
+
+  it("adds bonus when scheduled section includes the preferred lecturer", () => {
+    const cs101 = mockCourses.find((c) => c.courseID === "CS101") as Course;
+    const section001 = cs101.availableSections.find(
+      (s) => s.sectionID === "CS101-001",
+    ) as CourseSection;
+
+    const without = calculateFitScore(
+      [section001],
+      [cs101],
+      basePrefs(),
+    );
+    const withPref = calculateFitScore([section001], [cs101], {
+      ...basePrefs(),
+      preferredInstructorsByCourse: { CS101: "Dr. Smith" },
+    });
+
+    expect(withPref).toBeGreaterThan(without);
+  });
+
+  it("does not add bonus when another lecturer is scheduled", () => {
+    const cs101 = mockCourses.find((c) => c.courseID === "CS101") as Course;
+    const section002 = cs101.availableSections.find(
+      (s) => s.sectionID === "CS101-002",
+    ) as CourseSection;
+
+    const without = calculateFitScore(
+      [section002],
+      [cs101],
+      basePrefs(),
+    );
+    const withPref = calculateFitScore([section002], [cs101], {
+      ...basePrefs(),
+      preferredInstructorsByCourse: { CS101: "Dr. Smith" },
+    });
+
+    expect(withPref).toBe(without);
   });
 });

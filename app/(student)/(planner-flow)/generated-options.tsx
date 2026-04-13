@@ -104,12 +104,6 @@ export default function GeneratedOptionsScreen() {
       return [];
     }
 
-    const preferences = {
-      blockedDays: Array.from(selectedDays) as Days[],
-      startHour,
-      endHour,
-    };
-
     const semesterKey = selectedSemester === "Sem 1" ? "A" : "B";
     const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
 
@@ -125,6 +119,21 @@ export default function GeneratedOptionsScreen() {
           completedCourseNames: virtualCompletedCourseNames,
         }),
     );
+
+    const preferredInstructorsByCourse: Record<string, string> = {};
+    for (const c of coursesToSchedule) {
+      const pref = professorPreferences.get(c.courseID)?.trim();
+      if (pref) preferredInstructorsByCourse[c.courseID] = pref;
+    }
+
+    const preferences = {
+      blockedDays: Array.from(selectedDays) as Days[],
+      startHour,
+      endHour,
+      ...(Object.keys(preferredInstructorsByCourse).length > 0
+        ? { preferredInstructorsByCourse }
+        : {}),
+    };
 
     const solverResult = generateSchedules(coursesToSchedule, preferences);
 
@@ -167,6 +176,7 @@ export default function GeneratedOptionsScreen() {
     });
   }, [
     selectedCourses,
+    professorPreferences,
     selectedDays,
     startHour,
     endHour,

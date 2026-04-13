@@ -5,4 +5,6 @@ export interface StudentPreferences {
   blockedDays: Days[];
   startHour: string;
   endHour: string;
+  /** Preferred lecturer display name per course ID (FR13 soft scoring). Omitted when catalog has no faculty. */
+  preferredInstructorsByCourse?: Record<string, string>;
 }

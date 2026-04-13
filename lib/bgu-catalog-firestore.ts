@@ -26,6 +26,10 @@ interface OfferingDoc {
 	orderIndex?: number;
 	sessionType?: string;
 	lecturer?: string;
+	/** Alternate field names seen in manual Firestore edits or other importers */
+	instructor?: string;
+	teacher?: string;
+	lecturerName?: string;
 	language?: string | null;
 	semesterHebrew?: string;
 	yearHebrew?: string;
@@ -44,6 +48,27 @@ interface EdgeDoc {
 function matchesProgram(d: { programKey?: string } | undefined, programKey: string): boolean {
 	if (!d) return false;
 	return !d.programKey || d.programKey === programKey;
+}
+
+/** Exported for unit tests; merges common Firestore field variants into one display string. */
+export function mergeOfferingLecturerFields(row: OfferingDoc): string {
+	const candidates: unknown[] = [
+		row.lecturer,
+		row.instructor,
+		row.teacher,
+		row.lecturerName,
+	];
+	for (const c of candidates) {
+		if (c == null) continue;
+		if (typeof c === 'string') {
+			const t = c.trim();
+			if (t) return t;
+			continue;
+		}
+		const s = String(c).trim();
+		if (s) return s;
+	}
+	return '';
 }
 
 /**
@@ -111,7 +136,7 @@ export async function fetchBguCatalogJsonFromFirestore(
 		courses[displayName].offerings = rows.map(
 			(row): BguOfferingRow => ({
 				type: row.sessionType ?? '',
-				lecturer: row.lecturer ?? '',
+				lecturer: mergeOfferingLecturerFields(row),
 				language: row.language ?? undefined,
 				semester: row.semesterHebrew ?? '',
 				year: row.yearHebrew ?? '',

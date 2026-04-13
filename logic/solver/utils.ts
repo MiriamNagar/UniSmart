@@ -1,6 +1,11 @@
 import { StudentPreferences } from "@/types/constraints";
 import { Course, CourseSection, Lesson } from "@/types/courses";
 
+/** Normalize lecturer labels for preference matching (case-insensitive, collapsed whitespace). */
+export function normalizeLecturerLabel(raw: string): string {
+  return raw.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 /** Catalog / lesson times: 24h "HH:MM". Returns minutes from midnight, or -1 if unset or invalid. */
 export function parseLessonTimeToMinutes(time: string): number {
   if (time === "Any" || !time) return -1;
@@ -140,6 +145,30 @@ export function calculateFitScore(
   // כל שיעור שחורג מוריד את החלק היחסי שלו מתוך ה-60 נקודות
   const timeScore = 40 * (1 - penaltyCount / totalLessonsCount);
 
-  // ציון סופי
-  return Math.round(creditScore + timeScore);
+  const prefMap = preferences.preferredInstructorsByCourse;
+  let instructorBonus = 0;
+  if (prefMap && Object.keys(prefMap).length > 0) {
+    let considered = 0;
+    let matches = 0;
+    for (const [courseId, prefRaw] of Object.entries(prefMap)) {
+      const prefNorm = normalizeLecturerLabel(prefRaw);
+      if (!prefNorm) continue;
+      const course = allSelectedCourses.find((c) => c.courseID === courseId);
+      if (!course) continue;
+      const scheduledSection = currentSections.find((section) =>
+        course.availableSections.some((s) => s.sectionID === section.sectionID),
+      );
+      if (!scheduledSection) continue;
+      considered += 1;
+      const hit = scheduledSection.lessons.some(
+        (lesson) => normalizeLecturerLabel(lesson.lecturer) === prefNorm,
+      );
+      if (hit) matches += 1;
+    }
+    if (considered > 0) {
+      instructorBonus = (matches / considered) * 12;
+    }
+  }
+
+  return Math.round(creditScore + timeScore + instructorBonus);
 }

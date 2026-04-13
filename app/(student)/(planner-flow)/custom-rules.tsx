@@ -4,7 +4,7 @@ import { ROUTES } from "@/constants/routes";
 import { useSelection } from "@/contexts/selection-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Modal,
@@ -14,6 +14,20 @@ import {
     View,
 } from "react-native";
 
+import { usePlannerCatalog } from "@/contexts/bgu-planner-catalog-context";
+import {
+  catalogLetterForDegreeTier,
+  filterCoursesForPlannerTerm,
+} from "@/lib/planner-active-term";
+import {
+  collectDistinctLecturersForCourseId,
+  collectDistinctLecturersFromCourse,
+  findPlannerCourseById,
+} from "@/lib/planner-instructor-options";
+import {
+  isCourseEligibleForSemester,
+  virtualCompletedCourseNamesForDegreeTier,
+} from "@/lib/planner-prerequisite-eligibility";
 import { validatePlannerAvailabilityPreferences } from "@/logic/solver";
 import { Days } from "@/types/courses";
 
@@ -29,7 +43,73 @@ export default function CustomRulesScreen() {
     selectedCourses,
     professorPreferences,
     setProfessorPreferences,
+    selectedSemester,
+    activeDegreeYearTier,
   } = useSelection();
+
+  const { allCourses: catalogCourses, loading: catalogLoading } =
+    usePlannerCatalog();
+
+  const virtualCompletedCourseNames = useMemo(
+    () =>
+      virtualCompletedCourseNamesForDegreeTier(
+        catalogCourses,
+        activeDegreeYearTier,
+      ),
+    [catalogCourses, activeDegreeYearTier],
+  );
+
+  const semesterKey = selectedSemester === "Sem 1" ? "A" : "B";
+  const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
+
+  const plannerCoursesForPreferences = useMemo(() => {
+    const inTerm = filterCoursesForPlannerTerm(
+      catalogCourses,
+      semesterKey,
+      catalogYearLetter,
+    );
+    return inTerm.filter(
+      (course) =>
+        selectedCourses.has(course.courseID) &&
+        isCourseEligibleForSemester(course, semesterKey, catalogCourses, {
+          completedCourseNames: virtualCompletedCourseNames,
+        }),
+    );
+  }, [
+    catalogCourses,
+    selectedCourses,
+    semesterKey,
+    catalogYearLetter,
+    virtualCompletedCourseNames,
+  ]);
+
+  const showInstructorPreferences =
+    !catalogLoading &&
+    plannerCoursesForPreferences.some(
+      (c) => collectDistinctLecturersFromCourse(c).length > 0,
+    );
+
+  /** Catalog title large, internal solver id small (e.g. bgu-…). */
+  const getCoursePresentation = (courseId: string) => {
+    const c = findPlannerCourseById(plannerCoursesForPreferences, courseId);
+    const raw = courseId.trim();
+    if (!c) return { primary: raw, secondary: null as string | null };
+
+    const id = c.courseID;
+    const name = c.courseName?.trim();
+    if (name && name.length > 0) {
+      return { primary: name, secondary: id };
+    }
+    return { primary: id, secondary: null };
+  };
+
+  const visibleProfessorPreferences = useMemo(
+    () =>
+      Array.from(professorPreferences.entries()).filter(([courseId]) =>
+        selectedCourses.has(courseId),
+      ),
+    [professorPreferences, selectedCourses],
+  );
 
   // Save this route as the last visited planner flow route
   useEffect(() => {
@@ -45,6 +125,10 @@ export default function CustomRulesScreen() {
     null,
   );
 
+  const professorModalCoursePres = selectedCourseForProfessor
+    ? getCoursePresentation(selectedCourseForProfessor)
+    : null;
+
   useEffect(() => {
     const result = validatePlannerAvailabilityPreferences({
       startHour,
@@ -52,16 +136,6 @@ export default function CustomRulesScreen() {
     });
     setAvailabilityError(result.ok ? null : result.message);
   }, [startHour, endHour]);
-
-  // Mock course data with names
-  const courseData: Record<string, { name: string }> = {
-    CS101: { name: "Intro to Programming" },
-  };
-
-  // Mock professor data - in a real app, this would come from an API
-  const professorsByCourse: Record<string, string[]> = {
-    CS101: ["Dr. Smith", "Dr. Johnson", "Dr. Williams", "Dr. Brown"],
-  };
 
   // Generate hour options from 8 AM to 9 PM
   const hourOptions = [
@@ -110,7 +184,7 @@ export default function CustomRulesScreen() {
   };
 
   const handleSelectCourse = (courseId: string) => {
-    setSelectedCourseForProfessor(courseId);
+    setSelectedCourseForProfessor(courseId.trim());
   };
 
   const handleSelectProfessor = (professor: string) => {
@@ -134,10 +208,23 @@ export default function CustomRulesScreen() {
   };
 
   const getAvailableCourses = () => {
-    return Array.from(selectedCourses).filter(
-      (courseId) => !professorPreferences.has(courseId),
-    );
+    return Array.from(selectedCourses).filter((courseId) => {
+      if (professorPreferences.has(courseId)) return false;
+      return (
+        collectDistinctLecturersForCourseId(
+          plannerCoursesForPreferences,
+          courseId,
+        ).length > 0
+      );
+    });
   };
+
+  const lecturerChoicesForModal = selectedCourseForProfessor
+    ? collectDistinctLecturersForCourseId(
+        plannerCoursesForPreferences,
+        selectedCourseForProfessor,
+      )
+    : [];
 
   return (
     <ThemedView style={styles.container}>
@@ -240,23 +327,29 @@ export default function CustomRulesScreen() {
           ) : null}
         </View>
 
-        {/* Professor Preferences Card */}
-        <View style={styles.card}>
-          <ThemedText style={styles.cardLabel}>
-            PROFESSOR PREFERENCES
-          </ThemedText>
-          <ThemedText style={styles.avoidText}>
-            Preferred professors for courses
-          </ThemedText>
+        {/* Instructor preferences — only when the catalog lists lecturers (FR13) */}
+        {showInstructorPreferences ? (
+          <View style={[styles.card, styles.instructorPreferencesCard]}>
+            <ThemedText style={styles.cardLabel}>
+              INSTRUCTOR PREFERENCES
+            </ThemedText>
+            <ThemedText style={styles.avoidText}>
+              Preferred instructors (from the catalog) for ranking
+            </ThemedText>
 
-          {/* Existing Preferences */}
-          {Array.from(professorPreferences.entries()).map(
-            ([courseId, professor]) => (
+            {visibleProfessorPreferences.map(([courseId, professor]) => {
+              const { primary, secondary } = getCoursePresentation(courseId);
+              return (
               <View key={courseId} style={styles.preferenceItem}>
                 <View style={styles.preferenceInfo}>
-                  <ThemedText style={styles.preferenceCourse}>
-                    {courseId} - {courseData[courseId]?.name || courseId}
+                  <ThemedText style={styles.preferenceCourseTitle}>
+                    {primary}
                   </ThemedText>
+                  {secondary ? (
+                    <ThemedText style={styles.preferenceCourseCode}>
+                      {secondary}
+                    </ThemedText>
+                  ) : null}
                   <ThemedText style={styles.preferenceProfessor}>
                     {professor}
                   </ThemedText>
@@ -269,32 +362,32 @@ export default function CustomRulesScreen() {
                   <MaterialIcons name="close" size={20} color="#9B9B9B" />
                 </TouchableOpacity>
               </View>
-            ),
-          )}
+            );
+            })}
 
-          {/* Add Button */}
-          {getAvailableCourses().length > 0 && (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddProfessorPreference}
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="add" size={24} color="#5B4C9D" />
-              <ThemedText style={styles.addButtonText}>
-                Add Course with Professor
-              </ThemedText>
-            </TouchableOpacity>
-          )}
+            {getAvailableCourses().length > 0 ? (
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={handleAddProfessorPreference}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="add" size={24} color="#5B4C9D" />
+                <ThemedText style={styles.addButtonText}>
+                  Add instructor preference
+                </ThemedText>
+              </TouchableOpacity>
+            ) : null}
 
-          {professorPreferences.size === 0 &&
-            getAvailableCourses().length === 0 && (
+            {visibleProfessorPreferences.length === 0 &&
+            getAvailableCourses().length === 0 ? (
               <ThemedText style={styles.emptyText}>
                 {selectedCourses.size === 0
-                  ? "Select courses first to add professor preferences"
-                  : "All selected courses have professor preferences"}
+                  ? "Select courses first to add instructor preferences."
+                  : "All eligible courses with catalog instructors already have a preference, or none remain."}
               </ThemedText>
-            )}
-        </View>
+            ) : null}
+          </View>
+        ) : null}
       </ScrollView>
 
       {/* Start Hour Picker Modal */}
@@ -436,19 +529,24 @@ export default function CustomRulesScreen() {
             <ScrollView style={styles.modalOptions}>
               {!selectedCourseForProfessor ? (
                 // Show available courses
-                getAvailableCourses().map((courseId) => (
+                getAvailableCourses().map((courseId) => {
+                  const { primary, secondary } = getCoursePresentation(courseId);
+                  return (
                   <TouchableOpacity
                     key={courseId}
                     style={styles.modalOption}
                     onPress={() => handleSelectCourse(courseId)}
+                    accessibilityLabel={`${primary}${secondary ? `, ${secondary}` : ""}`}
                   >
                     <View style={styles.modalOptionContent}>
-                      <ThemedText style={styles.modalOptionText}>
-                        {courseId}
+                      <ThemedText style={styles.modalCoursePrimary}>
+                        {primary}
                       </ThemedText>
-                      <ThemedText style={styles.modalOptionSubtext}>
-                        {courseData[courseId]?.name || "Course"}
-                      </ThemedText>
+                      {secondary ? (
+                        <ThemedText style={styles.modalCourseCode}>
+                          {secondary}
+                        </ThemedText>
+                      ) : null}
                     </View>
                     <MaterialIcons
                       name="chevron-right"
@@ -456,7 +554,8 @@ export default function CustomRulesScreen() {
                       color="#9B9B9B"
                     />
                   </TouchableOpacity>
-                ))
+                  );
+                })
               ) : (
                 // Show professors for selected course
                 <>
@@ -469,15 +568,19 @@ export default function CustomRulesScreen() {
                       size={20}
                       color="#5B4C9D"
                     />
-                    <ThemedText style={styles.modalBackText}>
-                      {selectedCourseForProfessor} -{" "}
-                      {courseData[selectedCourseForProfessor]?.name}
-                    </ThemedText>
+                    <View style={styles.modalBackTextBlock}>
+                      <ThemedText style={styles.modalBackTitle}>
+                        {professorModalCoursePres?.primary}
+                      </ThemedText>
+                      {professorModalCoursePres?.secondary ? (
+                        <ThemedText style={styles.modalBackCode}>
+                          {professorModalCoursePres.secondary}
+                        </ThemedText>
+                      ) : null}
+                    </View>
                   </TouchableOpacity>
-                  {(professorsByCourse[selectedCourseForProfessor] || [])
-                    .length > 0 ? (
-                    (professorsByCourse[selectedCourseForProfessor] || []).map(
-                      (professor) => (
+                  {lecturerChoicesForModal.length > 0 ? (
+                    lecturerChoicesForModal.map((professor) => (
                         <TouchableOpacity
                           key={professor}
                           style={[
@@ -508,8 +611,7 @@ export default function CustomRulesScreen() {
                             />
                           )}
                         </TouchableOpacity>
-                      ),
-                    )
+                      ))
                   ) : (
                     <View style={styles.emptyModalContent}>
                       <ThemedText style={styles.emptyText}>
@@ -646,6 +748,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  /** Breathing room between TIME SLOTS and instructor preferences */
+  instructorPreferencesCard: {
+    marginTop: 24,
   },
   cardLabel: {
     fontSize: 11,
@@ -799,6 +905,16 @@ const styles = StyleSheet.create({
   modalOptionSelected: {
     backgroundColor: "#F8F8F8",
   },
+  modalCoursePrimary: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
+  },
+  modalCourseCode: {
+    fontSize: 12,
+    color: "#9B9B9B",
+    marginTop: 4,
+  },
   modalOptionText: {
     fontSize: 16,
     color: "#1A1A1A",
@@ -820,11 +936,16 @@ const styles = StyleSheet.create({
   preferenceInfo: {
     flex: 1,
   },
-  preferenceCourse: {
-    fontSize: 14,
+  preferenceCourseTitle: {
+    fontSize: 16,
     fontWeight: "600",
     color: "#1A1A1A",
-    marginBottom: 4,
+    marginBottom: 2,
+  },
+  preferenceCourseCode: {
+    fontSize: 12,
+    color: "#9B9B9B",
+    marginBottom: 6,
   },
   preferenceProfessor: {
     fontSize: 14,
@@ -867,11 +988,19 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F0F0F0",
     marginBottom: 8,
   },
-  modalBackText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#5B4C9D",
+  modalBackTextBlock: {
+    flex: 1,
     marginLeft: 8,
+  },
+  modalBackTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
+  },
+  modalBackCode: {
+    fontSize: 12,
+    color: "#9B9B9B",
+    marginTop: 2,
   },
   modalOptionContent: {
     flex: 1,
