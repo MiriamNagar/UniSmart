@@ -32,6 +32,7 @@ export interface Course {
 	/** BGU catalog degree year (Hebrew letter: א–ד). Present for catalog-derived courses. */
 	degreeCatalogYear?: string;
 	availableSections: CourseSection[];
-	/** Catalog prerequisite course names (same language as in the catalog). Used for eligibility before scheduling. */
+	/** Catalog prerequisite course names (same language as in the catalog). Shown in planner detail UI; selection is not blocked when unmet. */
 	prerequisiteNames?: string[];
 }
+

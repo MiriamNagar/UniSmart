@@ -103,3 +103,51 @@ export function filterCoursesEligibleForSemester(
 		isCourseEligibleForSemester(c, targetSemester, allCourses, options),
 	);
 }
+
+/**
+ * Data for schedule / detail UI: catalog prerequisite names and an optional advisory when
+ * catalog semester ordering suggests the student may not have satisfied prerequisites by this term.
+ * Does not block scheduling; use for disclosure only.
+ */
+export function prerequisiteScheduleDisclosure(
+	course: Course,
+	targetSemester: Course['semester'],
+	allCourses: Course[],
+	options: PrerequisiteEligibilityOptions = {},
+): {
+	names: string[];
+	eligibleForTerm: boolean;
+	advisoryNote: string | null;
+} {
+	const raw = course.prerequisiteNames ?? [];
+	const trimmedNonempty = raw.map((n) => n.trim()).filter((n) => n.length > 0);
+	const names = [...new Set(trimmedNonempty)];
+	if (raw.length === 0) {
+		return {
+			names: [],
+			eligibleForTerm: true,
+			advisoryNote: null,
+		};
+	}
+	if (names.length === 0) {
+		return {
+			names: [],
+			eligibleForTerm: true,
+			advisoryNote:
+				'Prerequisite entries in the catalog could not be read. Confirm with your department.',
+		};
+	}
+	const eligibleForTerm = isCourseEligibleForSemester(
+		course,
+		targetSemester,
+		allCourses,
+		options,
+	);
+	return {
+		names,
+		eligibleForTerm,
+		advisoryNote: eligibleForTerm
+			? null
+			: 'Based on catalog semester ordering, at least one listed prerequisite may not be completed before this term. Confirm with your department before enrolling.',
+	};
+}

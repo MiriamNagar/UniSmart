@@ -28,7 +28,7 @@ import {
     uniqueLecturersForLessonSlot,
 } from "@/lib/planner-schedule-display";
 import {
-    isCourseEligibleForSemester,
+    prerequisiteScheduleDisclosure,
     virtualCompletedCourseNamesForDegreeTier,
 } from "@/lib/planner-prerequisite-eligibility";
 import {
@@ -57,6 +57,11 @@ type GeneratedOptionScheduleCell = {
   startTime: string;
   endTime: string;
   calendarDay: string;
+  /** Catalog prerequisite names when present; selection is not blocked when unmet. */
+  prerequisiteNames: string[];
+  prerequisiteAdvisoryNote: string | null;
+  /** True when the scheduled section could not be resolved to a catalog course (prereqs unknown). */
+  prerequisiteParentMissing?: boolean;
 };
 
 function emptyWeekSchedule(): Record<PlannerDayKey, GeneratedOptionScheduleCell[]> {
@@ -108,16 +113,9 @@ export default function GeneratedOptionsScreen() {
   // מצב למעקב אחרי ריחוף עכבר
   const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
   /** Full details for a timetable cell (tap / short blocks). */
-  const [courseDetailModal, setCourseDetailModal] = useState<{
-    id: string;
-    courseCode: string;
-    courseName: string;
-    lessonKindLabel: string;
-    instructorsLine: string;
-    location: string;
-    time: string;
-    calendarDay: string;
-  } | null>(null);
+  const [courseDetailModal, setCourseDetailModal] = useState<
+    GeneratedOptionScheduleCell | null
+  >(null);
 
   useEffect(() => {
     setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS);
@@ -167,12 +165,8 @@ export default function GeneratedOptionsScreen() {
       semesterKey,
       catalogYearLetter,
     );
-    const coursesToSchedule = inTerm.filter(
-      (course) =>
-        selectedCourses.has(course.courseID) &&
-        isCourseEligibleForSemester(course, semesterKey, catalogCourses, {
-          completedCourseNames: virtualCompletedCourseNames,
-        }),
+    const coursesToSchedule = inTerm.filter((course) =>
+      selectedCourses.has(course.courseID),
     );
 
     const preferredInstructorsByCourse: Record<string, string> = {};
@@ -216,6 +210,18 @@ export default function GeneratedOptionsScreen() {
         const parentCourse = catalogCourses.find((c) =>
           c.availableSections.some((s) => s.sectionID === section.sectionID),
         );
+        const prereqDisclosure = parentCourse
+          ? prerequisiteScheduleDisclosure(
+              parentCourse,
+              semesterKey,
+              catalogCourses,
+              { completedCourseNames: virtualCompletedCourseNames },
+            )
+          : {
+              names: [] as string[],
+              advisoryNote: null as string | null,
+            };
+        const prerequisiteParentMissing = !parentCourse;
 
         section.lessons.forEach((lesson) => {
           const dayKey = lesson.day.toUpperCase() as PlannerDayKey;
@@ -235,6 +241,9 @@ export default function GeneratedOptionsScreen() {
               startTime: lesson.startTime,
               endTime: lesson.endTime,
               calendarDay: dayKey,
+              prerequisiteNames: prereqDisclosure.names,
+              prerequisiteAdvisoryNote: prereqDisclosure.advisoryNote,
+              prerequisiteParentMissing,
             });
           }
         });
@@ -709,6 +718,30 @@ export default function GeneratedOptionsScreen() {
                 <ThemedText style={styles.courseDetailModalRowValue}>
                   {courseDetailModal.location || "—"}
                 </ThemedText>
+                <ThemedText style={styles.courseDetailModalRowLabel}>
+                  Prerequisites
+                </ThemedText>
+                {courseDetailModal.prerequisiteParentMissing ? (
+                  <ThemedText style={styles.courseDetailModalRowValueMuted}>
+                    Could not match this section to a catalog course. Prerequisite
+                    list unavailable.
+                  </ThemedText>
+                ) : (courseDetailModal.prerequisiteNames ?? []).length > 0 ? (
+                  <ThemedText style={styles.courseDetailModalRowValue}>
+                    {(courseDetailModal.prerequisiteNames ?? []).join(" · ")}
+                  </ThemedText>
+                ) : (
+                  <ThemedText style={styles.courseDetailModalRowValueMuted}>
+                    No prerequisites listed in the catalog for this course.
+                  </ThemedText>
+                )}
+                {courseDetailModal.prerequisiteAdvisoryNote ? (
+                  <View style={styles.prerequisiteAdvisoryBox}>
+                    <ThemedText style={styles.prerequisiteAdvisoryText}>
+                      {courseDetailModal.prerequisiteAdvisoryNote}
+                    </ThemedText>
+                  </View>
+                ) : null}
               </ScrollView>
             </View>
           </View>
@@ -1124,6 +1157,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#333333",
     lineHeight: 22,
+  },
+  courseDetailModalRowValueMuted: {
+    fontSize: 14,
+    color: "#888888",
+    lineHeight: 20,
+    fontStyle: "italic",
+  },
+  prerequisiteAdvisoryBox: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: "#FFF8E1",
+    borderWidth: 1,
+    borderColor: "#FFE082",
+  },
+  prerequisiteAdvisoryText: {
+    fontSize: 13,
+    color: "#5D4037",
+    lineHeight: 18,
   },
   adjustButtonContainer: {
     flexDirection: "row",

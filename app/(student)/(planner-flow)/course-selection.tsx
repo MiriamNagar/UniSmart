@@ -17,11 +17,6 @@ import {
     filterCoursesForPlannerTerm,
 } from "@/lib/planner-active-term";
 import { buildPlannerCatalogUiModel } from "@/lib/planner-catalog-ui-messages";
-import {
-    filterCoursesEligibleForSemester,
-    virtualCompletedCourseNamesForDegreeTier,
-} from "@/lib/planner-prerequisite-eligibility";
-
 export default function CourseSelectionScreen() {
   const {
     selectedCourses,
@@ -53,35 +48,13 @@ export default function CourseSelectionScreen() {
   const semesterKey = selectedSemester === "Sem 1" ? "A" : "B";
   const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
 
-  const virtualCompletedCourseNames = useMemo(
-    () =>
-      virtualCompletedCourseNamesForDegreeTier(
-        catalogCourses,
-        activeDegreeYearTier,
-      ),
-    [catalogCourses, activeDegreeYearTier],
-  );
-
   const courses = useMemo(() => {
-    const inTerm = filterCoursesForPlannerTerm(
+    return filterCoursesForPlannerTerm(
       catalogCourses,
       semesterKey,
       catalogYearLetter,
     );
-    return filterCoursesEligibleForSemester(
-      inTerm,
-      semesterKey,
-      catalogCourses,
-      {
-        completedCourseNames: virtualCompletedCourseNames,
-      },
-    );
-  }, [
-    semesterKey,
-    catalogYearLetter,
-    catalogCourses,
-    virtualCompletedCourseNames,
-  ]);
+  }, [semesterKey, catalogYearLetter, catalogCourses]);
 
   const activeTermSummary = useMemo(() => {
     const yearLabel =

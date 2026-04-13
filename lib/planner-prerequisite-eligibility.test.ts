@@ -3,6 +3,7 @@ import {
 	filterCoursesEligibleForSemester,
 	isCourseEligibleForSemester,
 	minSemesterRankAmongOfferings,
+	prerequisiteScheduleDisclosure,
 	semesterRank,
 	virtualCompletedCourseNamesForDegreeTier,
 } from './planner-prerequisite-eligibility';
@@ -110,5 +111,72 @@ describe('minSemesterRankAmongOfferings', () => {
 			mk({ courseID: '2', courseName: 'Foo', semester: 'A' }),
 		];
 		expect(minSemesterRankAmongOfferings('Foo', all)).toBe(0);
+	});
+});
+
+describe('prerequisiteScheduleDisclosure', () => {
+	it('returns no names and no advisory when course has no prerequisites', () => {
+		const c = mk({ courseID: 'x', courseName: 'Solo', semester: 'B' });
+		const r = prerequisiteScheduleDisclosure(c, 'B', [c], {});
+		expect(r.names).toEqual([]);
+		expect(r.advisoryNote).toBeNull();
+		expect(r.eligibleForTerm).toBe(true);
+	});
+
+	it('lists names and advisory when catalog order suggests unmet prerequisites', () => {
+		const all: Course[] = [
+			mk({ courseID: 'a1', courseName: 'מבוא לחישוב', semester: 'A' }),
+			mk({ courseID: 'a2', courseName: 'מבנה נתונים', semester: 'B', prerequisiteNames: ['מבוא לחישוב'] }),
+			mk({
+				courseID: 'a3',
+				courseName: 'אלגוריתמים 1',
+				semester: 'B',
+				prerequisiteNames: ['מבנה נתונים'],
+			}),
+		];
+		const algo = all[2];
+		const r = prerequisiteScheduleDisclosure(algo, 'B', all, {
+			completedCourseNames: new Set(),
+		});
+		expect(r.names).toEqual(['מבנה נתונים']);
+		expect(r.eligibleForTerm).toBe(false);
+		expect(r.advisoryNote).toContain('Confirm with your department');
+	});
+
+	it('no advisory when prerequisites appear satisfied for the term', () => {
+		const all: Course[] = [
+			mk({ courseID: 'a1', courseName: 'מבוא לחישוב', semester: 'A' }),
+			mk({ courseID: 'a2', courseName: 'מבנה נתונים', semester: 'B', prerequisiteNames: ['מבוא לחישוב'] }),
+		];
+		const data = all[1];
+		const r = prerequisiteScheduleDisclosure(data, 'B', all, {
+			completedCourseNames: new Set(),
+		});
+		expect(r.names).toEqual(['מבוא לחישוב']);
+		expect(r.eligibleForTerm).toBe(true);
+		expect(r.advisoryNote).toBeNull();
+	});
+
+	it('advisory when prerequisite strings are only whitespace', () => {
+		const c = mk({
+			courseID: 'x',
+			courseName: 'Weird',
+			semester: 'B',
+			prerequisiteNames: ['   ', '\t'],
+		});
+		const r = prerequisiteScheduleDisclosure(c, 'B', [c], {});
+		expect(r.names).toEqual([]);
+		expect(r.advisoryNote).toContain('could not be read');
+	});
+
+	it('deduplicates prerequisite names', () => {
+		const c = mk({
+			courseID: 'x',
+			courseName: 'Dup',
+			semester: 'B',
+			prerequisiteNames: ['מבוא', 'מבוא', ' מבוא '],
+		});
+		const r = prerequisiteScheduleDisclosure(c, 'B', [c], {});
+		expect(r.names).toEqual(['מבוא']);
 	});
 });

@@ -26,10 +26,6 @@ import {
     collectDistinctLecturersFromCourse,
     findPlannerCourseById,
 } from "@/lib/planner-instructor-options";
-import {
-    isCourseEligibleForSemester,
-    virtualCompletedCourseNamesForDegreeTier,
-} from "@/lib/planner-prerequisite-eligibility";
 import { validatePlannerAvailabilityPreferences } from "@/logic/solver";
 import { Days } from "@/types/courses";
 
@@ -78,15 +74,6 @@ export default function CustomRulesScreen() {
   const { allCourses: catalogCourses, loading: catalogLoading } =
     usePlannerCatalog();
 
-  const virtualCompletedCourseNames = useMemo(
-    () =>
-      virtualCompletedCourseNamesForDegreeTier(
-        catalogCourses,
-        activeDegreeYearTier,
-      ),
-    [catalogCourses, activeDegreeYearTier],
-  );
-
   const semesterKey = selectedSemester === "Sem 1" ? "A" : "B";
   const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
 
@@ -96,20 +83,8 @@ export default function CustomRulesScreen() {
       semesterKey,
       catalogYearLetter,
     );
-    return inTerm.filter(
-      (course) =>
-        selectedCourses.has(course.courseID) &&
-        isCourseEligibleForSemester(course, semesterKey, catalogCourses, {
-          completedCourseNames: virtualCompletedCourseNames,
-        }),
-    );
-  }, [
-    catalogCourses,
-    selectedCourses,
-    semesterKey,
-    catalogYearLetter,
-    virtualCompletedCourseNames,
-  ]);
+    return inTerm.filter((course) => selectedCourses.has(course.courseID));
+  }, [catalogCourses, selectedCourses, semesterKey, catalogYearLetter]);
 
   const showInstructorPreferences =
     !catalogLoading &&
