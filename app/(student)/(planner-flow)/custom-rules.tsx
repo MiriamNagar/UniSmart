@@ -1,9 +1,11 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { PlannerConstraintSummaryStrip } from "@/components/planner-constraint-summary-strip";
 import { ROUTES } from "@/constants/routes";
 import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
 import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
+import { buildConstraintSummary } from "@/lib/planner-constraint-summary";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -108,10 +110,25 @@ export default function CustomRulesScreen() {
 
   const visibleProfessorPreferences = useMemo(
     () =>
-      Array.from(professorPreferences.entries()).filter(([courseId]) =>
-        selectedCourses.has(courseId),
-      ),
+      Array.from(selectedCourses).flatMap((courseId) => {
+        const preferredInstructor = getInstructorPreferenceForCourse(
+          professorPreferences,
+          courseId,
+        );
+        if (!preferredInstructor) return [];
+        return [[courseId, preferredInstructor] as const];
+      }),
     [professorPreferences, selectedCourses],
+  );
+  const constraintSummary = useMemo(
+    () =>
+      buildConstraintSummary({
+        blockedDays: selectedDays,
+        startHour,
+        endHour,
+        preferredInstructorCount: visibleProfessorPreferences.length,
+      }),
+    [selectedDays, startHour, endHour, visibleProfessorPreferences.length],
   );
 
   // Save this route as the last visited planner flow route
@@ -205,7 +222,13 @@ export default function CustomRulesScreen() {
   const handleRemoveProfessorPreference = (courseId: string) => {
     setProfessorPreferences((prev) => {
       const newMap = new Map(prev);
-      newMap.delete(courseId);
+      const normalizedCourseId = courseId.trim();
+      const keysToDelete = Array.from(newMap.keys()).filter(
+        (key) => key.trim() === normalizedCourseId,
+      );
+      for (const key of keysToDelete) {
+        newMap.delete(key);
+      }
       return newMap;
     });
   };
@@ -256,6 +279,11 @@ export default function CustomRulesScreen() {
           Block weekdays you cannot attend, then optionally set your earliest
           start and latest end time.
         </ThemedText>
+        <PlannerConstraintSummaryStrip
+          blockedDaysLabel={constraintSummary.blockedDaysLabel}
+          timeWindowLabel={constraintSummary.timeWindowLabel}
+          preferencesLabel={constraintSummary.preferencesLabel}
+        />
 
         {/* Time Slots Card */}
         <View style={styles.card}>

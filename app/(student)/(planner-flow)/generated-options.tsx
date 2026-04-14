@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { PlannerConstraintSummaryStrip } from "@/components/planner-constraint-summary-strip";
 import { ROUTES } from "@/constants/routes";
 import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
@@ -31,6 +32,7 @@ import {
     prerequisiteScheduleDisclosure,
     virtualCompletedCourseNamesForDegreeTier,
 } from "@/lib/planner-prerequisite-eligibility";
+import { goToCustomRulesFromGeneratedOptions } from "@/lib/planner-constraint-summary-shortcut";
 import {
     computeFitScoreBreakdown,
     DEFAULT_MAX_PLANNER_PROPOSALS,
@@ -43,6 +45,7 @@ import {
     validatePlannerAvailabilityPreferences,
 } from "@/logic/solver";
 import { Days } from "@/types/courses";
+import { buildConstraintSummary } from "@/lib/planner-constraint-summary";
 
 type PlannerDayKey = "SUN" | "MON" | "TUE" | "WED" | "THU" | "FRI";
 
@@ -271,10 +274,28 @@ export default function GeneratedOptionsScreen() {
     availabilityValidation,
   ]);
 
+  const selectedCourseInstructorPreferenceCount = useMemo(
+    () =>
+      Array.from(professorPreferences.keys()).filter((courseId) =>
+        selectedCourses.has(courseId),
+      ).length,
+    [professorPreferences, selectedCourses],
+  );
   const constraintCount =
     selectedDays.size +
     (startHour !== "Any" ? 1 : 0) +
-    (endHour !== "Any" ? 1 : 0);
+    (endHour !== "Any" ? 1 : 0) +
+    selectedCourseInstructorPreferenceCount;
+  const constraintSummary = useMemo(
+    () =>
+      buildConstraintSummary({
+        blockedDays: selectedDays,
+        startHour,
+        endHour,
+        preferredInstructorCount: selectedCourseInstructorPreferenceCount,
+      }),
+    [selectedDays, startHour, endHour, selectedCourseInstructorPreferenceCount],
+  );
 
   const timeSlots = [
     "8:00",
@@ -336,6 +357,12 @@ export default function GeneratedOptionsScreen() {
             {constraintCount === 1 ? "CONSTRAINT" : "CONSTRAINTS"}
           </ThemedText>
         </View>
+        <PlannerConstraintSummaryStrip
+          blockedDaysLabel={constraintSummary.blockedDaysLabel}
+          timeWindowLabel={constraintSummary.timeWindowLabel}
+          preferencesLabel={constraintSummary.preferencesLabel}
+          onEditPress={goToCustomRulesFromGeneratedOptions}
+        />
 
         <View style={styles.catalogNotice} accessibilityRole="text">
           <ThemedText style={styles.catalogNoticeTitle}>
