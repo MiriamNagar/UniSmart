@@ -6,27 +6,32 @@ import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
 import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import { buildConstraintSummary } from "@/lib/planner-constraint-summary";
-import { MaterialIcons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  evaluateRunOptimizerPress,
+  getRunOptimizerCtaState,
+} from "@/lib/planner-optimizer-cta";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { usePlannerCatalog } from "@/contexts/bgu-planner-catalog-context";
 import {
-    catalogLetterForDegreeTier,
-    filterCoursesForPlannerTerm,
+  catalogLetterForDegreeTier,
+  filterCoursesForPlannerTerm,
 } from "@/lib/planner-active-term";
 import {
-    collectDistinctLecturersForCourseId,
-    collectDistinctLecturersFromCourse,
-    findPlannerCourseById,
+  collectDistinctLecturersForCourseId,
+  collectDistinctLecturersFromCourse,
+  findPlannerCourseById,
 } from "@/lib/planner-instructor-options";
 import { validatePlannerAvailabilityPreferences } from "@/logic/solver";
 import { Days } from "@/types/courses";
@@ -144,6 +149,11 @@ export default function CustomRulesScreen() {
   const [availabilityError, setAvailabilityError] = useState<string | null>(
     null,
   );
+  const [isStartingOptimizer, setIsStartingOptimizer] = useState(false);
+  const [optimizerCtaError, setOptimizerCtaError] = useState<string | null>(
+    null,
+  );
+  const optimizerPressLockRef = useRef(false);
 
   const professorModalCoursePres = selectedCourseForProfessor
     ? getCoursePresentation(selectedCourseForProfessor)
@@ -252,6 +262,54 @@ export default function CustomRulesScreen() {
         selectedCourseForProfessor,
       )
     : [];
+  const runOptimizerCtaState = getRunOptimizerCtaState({
+    hasAvailabilityError: !!availabilityError,
+    isSubmitting: isStartingOptimizer,
+    errorMessage: optimizerCtaError,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      optimizerPressLockRef.current = false;
+      setIsStartingOptimizer(false);
+    }, []),
+  );
+
+  const handleRunOptimizerPress = () => {
+    const check = validatePlannerAvailabilityPreferences({
+      startHour,
+      endHour,
+    });
+
+    const pressDecision = evaluateRunOptimizerPress({
+      isPressLocked: optimizerPressLockRef.current,
+      ctaDisabled: runOptimizerCtaState.disabled,
+      availabilityCheckOk: check.ok,
+    });
+
+    if (pressDecision === "ignore") {
+      return;
+    }
+
+    if (pressDecision === "validation-error") {
+      Alert.alert("Fix availability", check.message);
+      return;
+    }
+
+    optimizerPressLockRef.current = true;
+    setOptimizerCtaError(null);
+    setIsStartingOptimizer(true);
+
+    try {
+      router.push(ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS);
+    } catch {
+      optimizerPressLockRef.current = false;
+      setIsStartingOptimizer(false);
+      setOptimizerCtaError(
+        "Could not open generated options. Please retry running the optimizer.",
+      );
+    }
+  };
 
   return (
     <ThemedView style={styles.container}>
@@ -677,39 +735,61 @@ export default function CustomRulesScreen() {
         <TouchableOpacity
           style={[
             styles.optimizerButton,
-            availabilityError ? styles.optimizerButtonDisabled : null,
+            runOptimizerCtaState.disabled ? styles.optimizerButtonDisabled : null,
           ]}
-          activeOpacity={0.8}
-          disabled={!!availabilityError}
+          activeOpacity={runOptimizerCtaState.disabled ? 1 : 0.8}
+          disabled={runOptimizerCtaState.disabled}
           accessibilityRole="button"
           accessibilityLabel={
             availabilityError
               ? "Run optimizer, unavailable until availability is fixed"
-              : "Run optimizer"
+              : runOptimizerCtaState.busy
+                ? "Running optimizer, please wait"
+                : "Run optimizer"
           }
-          accessibilityState={{ disabled: !!availabilityError }}
-          onPress={() => {
-            const check = validatePlannerAvailabilityPreferences({
-              startHour,
-              endHour,
-            });
-            if (!check.ok) {
-              Alert.alert("Fix availability", check.message);
-              return;
-            }
-            router.push(ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS);
+          accessibilityState={{
+            disabled: runOptimizerCtaState.disabled,
+            busy: runOptimizerCtaState.busy,
           }}
+          onPress={handleRunOptimizerPress}
         >
+          {runOptimizerCtaState.busy ? (
+            <ActivityIndicator
+              size="small"
+              color="#FFFFFF"
+              style={styles.optimizerSpinner}
+            />
+          ) : null}
           <ThemedText
             style={[
               styles.optimizerButtonText,
-              availabilityError ? styles.optimizerButtonTextDisabled : null,
+              runOptimizerCtaState.disabled
+                ? styles.optimizerButtonTextDisabled
+                : null,
             ]}
           >
-            RUN OPTIMIZER
+            {runOptimizerCtaState.label}
           </ThemedText>
         </TouchableOpacity>
       </View>
+      {runOptimizerCtaState.showRetry ? (
+        <View style={styles.optimizerRetryContainer}>
+          <ThemedText style={styles.optimizerRetryError} accessibilityRole="alert">
+            {runOptimizerCtaState.errorMessage}
+          </ThemedText>
+          <TouchableOpacity
+            style={styles.optimizerRetryButton}
+            activeOpacity={0.8}
+            onPress={handleRunOptimizerPress}
+            accessibilityRole="button"
+            accessibilityLabel="Retry running optimizer"
+          >
+            <ThemedText style={styles.optimizerRetryButtonText}>
+              RETRY RUN
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </ThemedView>
   );
 }
@@ -894,8 +974,36 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: "#FFFFFF",
   },
+  optimizerSpinner: {
+    marginBottom: 4,
+  },
   optimizerButtonTextDisabled: {
     color: "#F0F0F0",
+  },
+  optimizerRetryContainer: {
+    backgroundColor: "#1A1A1A",
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    marginTop: -6,
+  },
+  optimizerRetryError: {
+    color: "#F0F0F0",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  optimizerRetryButton: {
+    marginTop: 10,
+    alignSelf: "flex-start",
+    backgroundColor: "#5B4C9D",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  optimizerRetryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   modalOverlay: {
     flex: 1,
