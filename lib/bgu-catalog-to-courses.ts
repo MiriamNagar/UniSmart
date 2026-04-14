@@ -16,6 +16,10 @@ export interface BguOfferingRow {
 
 export interface BguCatalogCourse {
 	name: string;
+	shortDescription?: string;
+	short_description?: string;
+	summary?: string;
+	description?: string;
 	offerings: BguOfferingRow[];
 	prerequisites: string[];
 }
@@ -223,6 +227,21 @@ function courseCreditsForGroup(rows: ParsedOffering[]): number {
 	return 0;
 }
 
+function normalizedShortDescription(course: BguCatalogCourse): string | undefined {
+	const candidates: unknown[] = [
+		course.shortDescription,
+		course.short_description,
+		course.summary,
+		course.description,
+	];
+	for (const c of candidates) {
+		if (typeof c !== 'string') continue;
+		const trimmed = c.trim();
+		if (trimmed.length > 0) return trimmed;
+	}
+	return undefined;
+}
+
 /**
  * Converts merged BGU catalog JSON into `Course[]` for `generateSchedules`.
  * Splits by (course name, semester letter, year) so offerings stay consistent.
@@ -276,6 +295,7 @@ export function bguCatalogToCourses(
 			out.push({
 				courseID,
 				courseName: course.name,
+				shortDescription: normalizedShortDescription(course),
 				isMandatory,
 				credits: courseCreditsForGroup(groupRows),
 				semester,

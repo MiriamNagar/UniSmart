@@ -18,6 +18,10 @@ export const DEFAULT_BGU_PROGRAM_KEY = 'bgu_computer_science';
 interface CourseDoc {
 	programKey?: string;
 	displayName?: string;
+	shortDescription?: string;
+	short_description?: string;
+	description?: string;
+	summary?: string;
 }
 
 interface OfferingDoc {
@@ -71,6 +75,22 @@ export function mergeOfferingLecturerFields(row: OfferingDoc): string {
 	return '';
 }
 
+/** Exported for unit tests; merges common short-description variants into one trimmed string. */
+export function mergeCourseDescriptionFields(row: CourseDoc): string | undefined {
+	const candidates: unknown[] = [
+		row.shortDescription,
+		row.short_description,
+		row.summary,
+		row.description,
+	];
+	for (const c of candidates) {
+		if (typeof c !== 'string') continue;
+		const t = c.trim();
+		if (t) return t;
+	}
+	return undefined;
+}
+
 /**
  * Loads catalog docs and rebuilds the same shape as `mockData/bgu-cs-catalog.json`
  * so {@link bguCatalogToCourses} can run unchanged.
@@ -113,6 +133,7 @@ export async function fetchBguCatalogJsonFromFirestore(
 		idToName.set(docSnap.id, name);
 		courses[name] = {
 			name,
+			shortDescription: mergeCourseDescriptionFields(d),
 			offerings: [],
 			prerequisites: [],
 		};

@@ -26,6 +26,8 @@ export interface CourseSection { // A specific section of a course: A course can
 export interface Course {
 	courseID: string;
 	courseName: string; // ADD
+	/** Optional short catalog summary displayed in planner result rows when present. */
+	shortDescription?: string;
 	isMandatory: boolean;
 	credits: number;
 	semester: 'A' | 'B' | 'summer'; // ADD

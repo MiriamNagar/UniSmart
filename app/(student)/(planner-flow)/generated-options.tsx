@@ -50,6 +50,7 @@ type GeneratedOptionScheduleCell = {
   id: string;
   courseCode: string;
   courseName: string;
+  shortDescription?: string;
   lessonKindLabel: string;
   instructorsLine: string;
   location: string;
@@ -234,6 +235,7 @@ export default function GeneratedOptionsScreen() {
               id: `${section.sectionID}-${lesson.day}-${lesson.startTime}-${lesson.type}`,
               courseCode: parentCourse?.courseID || "??",
               courseName: parentCourse?.courseName || "Unknown",
+              shortDescription: parentCourse?.shortDescription,
               lessonKindLabel: lessonKindShortLabel(lesson.type),
               instructorsLine: lecturers.join(" · "),
               location: lesson.location,
@@ -306,17 +308,6 @@ export default function GeneratedOptionsScreen() {
     const [endH, endM] = endTime.split(":").map(Number);
     const duration = endH * 60 + endM - (startH * 60 + startM);
     return (duration / 60) * HOUR_HEIGHT;
-  };
-
-  const getTimeSlotIndex = (time: string) => {
-    const hour = parseInt(time.split(":")[0]);
-    return timeSlots.findIndex((slot) => parseInt(slot.split(":")[0]) === hour);
-  };
-
-  const getTimeSlotSpan = (startTime: string, endTime: string) => {
-    const start = getTimeSlotIndex(startTime);
-    const end = getTimeSlotIndex(endTime);
-    return { start, end, span: end - start };
   };
 
   return (
@@ -606,6 +597,14 @@ export default function GeneratedOptionsScreen() {
                                     >
                                       {course.courseName}
                                     </ThemedText>
+                                    {course.shortDescription ? (
+                                      <ThemedText
+                                        style={styles.courseShortDescription}
+                                        numberOfLines={isHovered ? 3 : 1}
+                                      >
+                                        {course.shortDescription}
+                                      </ThemedText>
+                                    ) : null}
                                     <ThemedText
                                       style={styles.lessonKindTag}
                                       numberOfLines={1}
@@ -700,6 +699,18 @@ export default function GeneratedOptionsScreen() {
                 <ThemedText style={styles.courseDetailModalMeta}>
                   {courseDetailModal.calendarDay} · {courseDetailModal.time}
                 </ThemedText>
+                <ThemedText style={styles.courseDetailModalRowLabel}>
+                  Description
+                </ThemedText>
+                {courseDetailModal.shortDescription ? (
+                  <ThemedText style={styles.courseDetailModalRowValue}>
+                    {courseDetailModal.shortDescription}
+                  </ThemedText>
+                ) : (
+                  <ThemedText style={styles.courseDetailModalRowValueMuted}>
+                    No short catalog description available for this course.
+                  </ThemedText>
+                )}
                 <ThemedText style={styles.courseDetailModalRowLabel}>
                   Session
                 </ThemedText>
@@ -1062,6 +1073,12 @@ const styles = StyleSheet.create({
     color: "#4A4A6A",
     fontWeight: "600",
     lineHeight: 14,
+  },
+  courseShortDescription: {
+    marginTop: 1,
+    fontSize: 9,
+    color: "#6C6C80",
+    lineHeight: 12,
   },
   lessonKindTag: {
     marginTop: 2,
