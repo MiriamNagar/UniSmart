@@ -7,8 +7,10 @@ import { useSelection } from "@/contexts/selection-context";
 import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useIsFocused } from "@react-navigation/native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+    Alert,
     Modal,
     Pressable,
     ScrollView,
@@ -32,7 +34,6 @@ import {
     prerequisiteScheduleDisclosure,
     virtualCompletedCourseNamesForDegreeTier,
 } from "@/lib/planner-prerequisite-eligibility";
-import { goToCustomRulesFromGeneratedOptions } from "@/lib/planner-constraint-summary-shortcut";
 import {
     computeFitScoreBreakdown,
     DEFAULT_MAX_PLANNER_PROPOSALS,
@@ -46,6 +47,15 @@ import {
 } from "@/logic/solver";
 import { Days } from "@/types/courses";
 import { buildConstraintSummary } from "@/lib/planner-constraint-summary";
+import {
+  buildRestartPlannerState,
+  createInitialClapDetectionState,
+  decideGeneratedBatchClearPolicy,
+  evaluateClapSample,
+  shouldProcessGeneratedBatchClear,
+  shouldTriggerShakeGesture,
+  type GeneratedBatchClearTrigger,
+} from "@/lib/planner-generated-batch-clear";
 
 type PlannerDayKey = "SUN" | "MON" | "TUE" | "WED" | "THU" | "FRI";
 
@@ -80,14 +90,20 @@ function emptyWeekSchedule(): Record<PlannerDayKey, GeneratedOptionScheduleCell[
 }
 
 export default function GeneratedOptionsScreen() {
+  const isFocused = useIsFocused();
   const {
     selectedCourses,
+    setSelectedCourses,
     selectedDays,
+    setSelectedDays,
     startHour,
+    setStartHour,
     endHour,
+    setEndHour,
     setSavedPlans,
     setLastPlannerFlowRoute,
     professorPreferences,
+    setProfessorPreferences,
     selectedSemester,
     activeDegreeYearTier,
   } = useSelection();
@@ -120,6 +136,11 @@ export default function GeneratedOptionsScreen() {
   const [courseDetailModal, setCourseDetailModal] = useState<
     GeneratedOptionScheduleCell | null
   >(null);
+  const [isClearingBatch, setIsClearingBatch] = useState(false);
+  const clapStateRef = useRef(createInitialClapDetectionState());
+  const shakeLastTriggeredAtRef = useRef(0);
+  const clapPermissionDeniedRef = useRef(false);
+  const isClearDialogOpenRef = useRef(false);
 
   useEffect(() => {
     setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.GENERATED_OPTIONS);
@@ -296,6 +317,9 @@ export default function GeneratedOptionsScreen() {
       }),
     [selectedDays, startHour, endHour, selectedCourseInstructorPreferenceCount],
   );
+  const shouldConfirmGeneratedBatchClear = true;
+  const hasGeneratedBatchVisible =
+    isFocused && availabilityValidation.ok && proposals.length > 0;
 
   const timeSlots = [
     "8:00",
@@ -331,6 +355,255 @@ export default function GeneratedOptionsScreen() {
     return (duration / 60) * HOUR_HEIGHT;
   };
 
+  const clearGeneratedBatchAndRestart = useCallback(() => {
+    if (isClearingBatch) return;
+    setIsClearingBatch(true);
+
+    const restartState = buildRestartPlannerState();
+    setSelectedCourses(restartState.selectedCourses);
+    setSelectedDays(restartState.selectedDays);
+    setStartHour(restartState.startHour);
+    setEndHour(restartState.endHour);
+    setProfessorPreferences(restartState.professorPreferences);
+    setLastPlannerFlowRoute(restartState.lastPlannerFlowRoute);
+    router.replace(ROUTES.STUDENT.PLANNER);
+  }, [
+    isClearingBatch,
+    setEndHour,
+    setLastPlannerFlowRoute,
+    setProfessorPreferences,
+    setSelectedCourses,
+    setSelectedDays,
+    setStartHour,
+  ]);
+
+  const requestGeneratedBatchClear = useCallback(
+    (trigger: GeneratedBatchClearTrigger) => {
+      if (
+        !shouldProcessGeneratedBatchClear({
+          trigger,
+          hasGeneratedBatchVisible,
+          isClearingBatch,
+        })
+      ) {
+        return;
+      }
+      if (isClearDialogOpenRef.current) return;
+
+      const decision = decideGeneratedBatchClearPolicy({
+        trigger,
+        requireConfirmation: shouldConfirmGeneratedBatchClear,
+      });
+
+      if (!decision.requireConfirmation) {
+        clearGeneratedBatchAndRestart();
+        return;
+      }
+
+      isClearDialogOpenRef.current = true;
+      Alert.alert(
+        "Clear generated options?",
+        `This will discard the current generated schedule batch (${decision.triggerLabel}) and restart planner setup.`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+            onPress: () => {
+              isClearDialogOpenRef.current = false;
+            },
+          },
+          {
+            text: "Clear and restart",
+            style: "destructive",
+            onPress: () => {
+              isClearDialogOpenRef.current = false;
+              clearGeneratedBatchAndRestart();
+            },
+          },
+        ],
+        {
+          cancelable: true,
+          onDismiss: () => {
+            isClearDialogOpenRef.current = false;
+          },
+        },
+      );
+    },
+    [
+      clearGeneratedBatchAndRestart,
+      hasGeneratedBatchVisible,
+      isClearingBatch,
+      shouldConfirmGeneratedBatchClear,
+    ],
+  );
+
+  useEffect(() => {
+    if (!hasGeneratedBatchVisible) return;
+
+    let isMounted = true;
+    let shakeSubscription: { remove: () => void } | null = null;
+
+    const startShakeListener = async () => {
+      try {
+        const sensorModule = await import("expo-sensors/build/Accelerometer");
+        if (!isMounted) return;
+        const Accelerometer = sensorModule.default ?? sensorModule.Accelerometer;
+        if (!Accelerometer) return;
+
+        Accelerometer.setUpdateInterval?.(220);
+        shakeSubscription = Accelerometer.addListener(
+          ({ x, y, z }: { x: number; y: number; z: number }) => {
+            const verdict = shouldTriggerShakeGesture({
+              x,
+              y,
+              z,
+              nowMs: Date.now(),
+              lastTriggeredAtMs: shakeLastTriggeredAtRef.current,
+            });
+            if (!verdict.shouldTrigger) return;
+            shakeLastTriggeredAtRef.current = verdict.lastTriggeredAtMs;
+            requestGeneratedBatchClear("shake");
+          },
+        );
+      } catch {
+        // Motion sensor path is optional; button restart remains available.
+      }
+    };
+
+    void startShakeListener();
+
+    return () => {
+      isMounted = false;
+      shakeSubscription?.remove();
+      shakeSubscription = null;
+    };
+  }, [hasGeneratedBatchVisible, requestGeneratedBatchClear]);
+
+  useEffect(() => {
+    if (!hasGeneratedBatchVisible) return;
+
+    let isMounted = true;
+    let pollingInterval: ReturnType<typeof setInterval> | null = null;
+    let recording: { stopAndUnloadAsync: () => Promise<void>; getStatusAsync: () => Promise<unknown> } | null =
+      null;
+    let Audio: {
+      getPermissionsAsync: () => Promise<{ granted: boolean; canAskAgain?: boolean }>;
+      requestPermissionsAsync: () => Promise<{ granted: boolean }>;
+      setAudioModeAsync: (mode: { allowsRecordingIOS: boolean; playsInSilentModeIOS?: boolean }) => Promise<void>;
+      Recording: new () => {
+        prepareToRecordAsync: (options: unknown) => Promise<void>;
+        startAsync: () => Promise<void>;
+        stopAndUnloadAsync: () => Promise<void>;
+        getStatusAsync: () => Promise<unknown>;
+      };
+      RecordingOptionsPresets: {
+        LOW_QUALITY: {
+          android?: Record<string, unknown>;
+          ios?: Record<string, unknown>;
+          [key: string]: unknown;
+        };
+      };
+    } | null = null;
+    let isPollingMetering = false;
+
+    const startClapListener = async () => {
+      try {
+        const expoAvModule = await import("expo-av");
+        Audio = expoAvModule.Audio;
+        if (!isMounted || !Audio || clapPermissionDeniedRef.current) return;
+
+        const currentPermission = await Audio.getPermissionsAsync();
+        if (!isMounted) return;
+        let permissionGranted = currentPermission.granted;
+        if (!permissionGranted && currentPermission.canAskAgain) {
+          const requestedPermission = await Audio.requestPermissionsAsync();
+          if (!isMounted) return;
+          permissionGranted = requestedPermission.granted;
+        }
+        if (!permissionGranted) {
+          clapPermissionDeniedRef.current = true;
+          Alert.alert(
+            "Clap reset unavailable",
+            "Microphone access is disabled. You can still clear generated options with START OVER.",
+          );
+          return;
+        }
+
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: false,
+        });
+        if (!isMounted) return;
+
+        recording = new Audio.Recording();
+        await recording.prepareToRecordAsync({
+          ...Audio.RecordingOptionsPresets.LOW_QUALITY,
+          android: {
+            ...Audio.RecordingOptionsPresets.LOW_QUALITY.android,
+            isMeteringEnabled: true,
+          },
+          ios: {
+            ...Audio.RecordingOptionsPresets.LOW_QUALITY.ios,
+            isMeteringEnabled: true,
+          },
+        });
+        if (!isMounted) return;
+        await recording.startAsync();
+
+        pollingInterval = setInterval(async () => {
+          if (isPollingMetering || !recording) return;
+          isPollingMetering = true;
+          try {
+            const status = await recording.getStatusAsync();
+            if (!isMounted) return;
+            if (!(status as { isRecording?: boolean }).isRecording) return;
+            const metering = (status as { metering?: number }).metering;
+            if (typeof metering !== "number") {
+              return;
+            }
+
+            const verdict = evaluateClapSample({
+              state: clapStateRef.current,
+              metering,
+              nowMs: Date.now(),
+            });
+            clapStateRef.current = verdict.nextState;
+            if (verdict.shouldTrigger) {
+              requestGeneratedBatchClear("clap");
+            }
+          } catch {
+            // Keep UI functional if metering polling fails.
+          } finally {
+            isPollingMetering = false;
+          }
+        }, 180);
+      } catch {
+        // Audio sensor path is optional; keep planner fully usable without it.
+      }
+    };
+
+    void startClapListener();
+
+    return () => {
+      isMounted = false;
+      clapStateRef.current = createInitialClapDetectionState();
+      if (pollingInterval) clearInterval(pollingInterval);
+      pollingInterval = null;
+      if (recording) {
+        void recording.stopAndUnloadAsync().catch(() => {
+          // Ignore stop errors from already-stopped recorders.
+        });
+      }
+      if (Audio) {
+        void Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+        }).catch(() => {
+          // Ignore audio mode reset errors.
+        });
+      }
+    };
+  }, [hasGeneratedBatchVisible, requestGeneratedBatchClear]);
+
   return (
     <ThemedView style={styles.container}>
       {/* Header*/}
@@ -361,7 +634,6 @@ export default function GeneratedOptionsScreen() {
           blockedDaysLabel={constraintSummary.blockedDaysLabel}
           timeWindowLabel={constraintSummary.timeWindowLabel}
           preferencesLabel={constraintSummary.preferencesLabel}
-          onEditPress={goToCustomRulesFromGeneratedOptions}
         />
 
         <View style={styles.catalogNotice} accessibilityRole="text">
@@ -796,13 +1068,10 @@ export default function GeneratedOptionsScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.adjustButton}
-          onPress={() => {
-            setLastPlannerFlowRoute(null);
-            router.push(ROUTES.STUDENT.PLANNER);
-          }}
+          onPress={() => requestGeneratedBatchClear("button")}
         >
           <ThemedText style={styles.adjustButtonText}>
-            ADJUST SELECTION
+            START OVER
           </ThemedText>
         </TouchableOpacity>
       </View>
