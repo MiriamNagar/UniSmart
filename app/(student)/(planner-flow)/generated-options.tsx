@@ -31,6 +31,10 @@ import {
     uniqueLecturersForLessonSlot,
 } from "@/lib/planner-schedule-display";
 import {
+  buildPlannerGenerationFeedback,
+  classifyGenerationTimeout,
+} from "@/lib/planner-generation-feedback";
+import {
     prerequisiteScheduleDisclosure,
     virtualCompletedCourseNamesForDegreeTier,
 } from "@/lib/planner-prerequisite-eligibility";
@@ -177,111 +181,139 @@ export default function GeneratedOptionsScreen() {
     [startHour, endHour],
   );
 
-  const proposals = useMemo(() => {
+  const generationResult = useMemo(() => {
     if (!availabilityValidation.ok) {
-      return [];
+      return {
+        proposals: [] as {
+          id: string;
+          fitScore: number;
+          scoreBreakdown: ReturnType<typeof computeFitScoreBreakdown>;
+          schedule: Record<PlannerDayKey, GeneratedOptionScheduleCell[]>;
+        }[],
+        generationError: null as string | null,
+        generationTimedOut: false,
+      };
     }
+    try {
+      const semesterKey = selectedSemester === "Sem 1" ? "A" : "B";
+      const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
 
-    const semesterKey = selectedSemester === "Sem 1" ? "A" : "B";
-    const catalogYearLetter = catalogLetterForDegreeTier(activeDegreeYearTier);
-
-    const inTerm = filterCoursesForPlannerTerm(
-      catalogCourses,
-      semesterKey,
-      catalogYearLetter,
-    );
-    const coursesToSchedule = inTerm.filter((course) =>
-      selectedCourses.has(course.courseID),
-    );
-
-    const preferredInstructorsByCourse: Record<string, string> = {};
-    for (const c of coursesToSchedule) {
-      const pref = professorPreferences.get(c.courseID)?.trim();
-      if (pref) preferredInstructorsByCourse[c.courseID] = pref;
-    }
-
-    const preferences = {
-      blockedDays: Array.from(selectedDays) as Days[],
-      startHour,
-      endHour,
-      ...(Object.keys(preferredInstructorsByCourse).length > 0
-        ? { preferredInstructorsByCourse }
-        : {}),
-    };
-
-    const solverResult = generateSchedules(
-      coursesToSchedule,
-      preferences,
-      DEFAULT_MAX_PLANNER_PROPOSALS,
-    );
-
-    const seenVisual = new Set<string>();
-    const proposalsDeduped = solverResult.proposals.filter((p) => {
-      const key = lessonMultisetFingerprint(p.sections, coursesToSchedule);
-      if (seenVisual.has(key)) return false;
-      seenVisual.add(key);
-      return true;
-    });
-
-    return proposalsDeduped.map((proposal) => {
-      const scoreBreakdown = computeFitScoreBreakdown(
-        proposal.sections,
-        coursesToSchedule,
-        preferences,
+      const inTerm = filterCoursesForPlannerTerm(
+        catalogCourses,
+        semesterKey,
+        catalogYearLetter,
+      );
+      const coursesToSchedule = inTerm.filter((course) =>
+        selectedCourses.has(course.courseID),
       );
 
-      const transformedSchedule = emptyWeekSchedule();
-      proposal.sections.forEach((section) => {
-        const parentCourse = catalogCourses.find((c) =>
-          c.availableSections.some((s) => s.sectionID === section.sectionID),
-        );
-        const prereqDisclosure = parentCourse
-          ? prerequisiteScheduleDisclosure(
-              parentCourse,
-              semesterKey,
-              catalogCourses,
-              { completedCourseNames: virtualCompletedCourseNames },
-            )
-          : {
-              names: [] as string[],
-              advisoryNote: null as string | null,
-            };
-        const prerequisiteParentMissing = !parentCourse;
+      const preferredInstructorsByCourse: Record<string, string> = {};
+      for (const c of coursesToSchedule) {
+        const pref = professorPreferences.get(c.courseID)?.trim();
+        if (pref) preferredInstructorsByCourse[c.courseID] = pref;
+      }
 
-        section.lessons.forEach((lesson) => {
-          const dayKey = lesson.day.toUpperCase() as PlannerDayKey;
-          if (transformedSchedule[dayKey]) {
-            const lecturers = uniqueLecturersForLessonSlot(
-              parentCourse,
-              lesson,
-            );
-            transformedSchedule[dayKey].push({
-              id: `${section.sectionID}-${lesson.day}-${lesson.startTime}-${lesson.type}`,
-              courseCode: parentCourse?.courseID || "??",
-              courseName: parentCourse?.courseName || "Unknown",
-              shortDescription: parentCourse?.shortDescription,
-              lessonKindLabel: lessonKindShortLabel(lesson.type),
-              instructorsLine: lecturers.join(" · "),
-              location: lesson.location,
-              time: `${lesson.startTime}-${lesson.endTime}`,
-              startTime: lesson.startTime,
-              endTime: lesson.endTime,
-              calendarDay: dayKey,
-              prerequisiteNames: prereqDisclosure.names,
-              prerequisiteAdvisoryNote: prereqDisclosure.advisoryNote,
-              prerequisiteParentMissing,
-            });
-          }
-        });
+      const preferences = {
+        blockedDays: Array.from(selectedDays) as Days[],
+        startHour,
+        endHour,
+        ...(Object.keys(preferredInstructorsByCourse).length > 0
+          ? { preferredInstructorsByCourse }
+          : {}),
+      };
+
+      const generationStartedAt = Date.now();
+      const solverResult = generateSchedules(
+        coursesToSchedule,
+        preferences,
+        DEFAULT_MAX_PLANNER_PROPOSALS,
+      );
+      const generationDurationMs = Date.now() - generationStartedAt;
+      const generationTimedOut = classifyGenerationTimeout(generationDurationMs);
+
+      const seenVisual = new Set<string>();
+      const proposalsDeduped = solverResult.proposals.filter((p) => {
+        const key = lessonMultisetFingerprint(p.sections, coursesToSchedule);
+        if (seenVisual.has(key)) return false;
+        seenVisual.add(key);
+        return true;
       });
 
       return {
-        id: proposal.id,
-        fitScore: scoreBreakdown.total,
-        scoreBreakdown,
-        schedule: transformedSchedule,
+        proposals: proposalsDeduped.map((proposal) => {
+          const scoreBreakdown = computeFitScoreBreakdown(
+            proposal.sections,
+            coursesToSchedule,
+            preferences,
+          );
+
+          const transformedSchedule = emptyWeekSchedule();
+          proposal.sections.forEach((section) => {
+            const parentCourse = catalogCourses.find((c) =>
+              c.availableSections.some((s) => s.sectionID === section.sectionID),
+            );
+            const prereqDisclosure = parentCourse
+              ? prerequisiteScheduleDisclosure(
+                  parentCourse,
+                  semesterKey,
+                  catalogCourses,
+                  { completedCourseNames: virtualCompletedCourseNames },
+                )
+              : {
+                  names: [] as string[],
+                  advisoryNote: null as string | null,
+                };
+            const prerequisiteParentMissing = !parentCourse;
+
+            section.lessons.forEach((lesson) => {
+              const dayKey = lesson.day.toUpperCase() as PlannerDayKey;
+              if (transformedSchedule[dayKey]) {
+                const lecturers = uniqueLecturersForLessonSlot(
+                  parentCourse,
+                  lesson,
+                );
+                transformedSchedule[dayKey].push({
+                  id: `${section.sectionID}-${lesson.day}-${lesson.startTime}-${lesson.type}`,
+                  courseCode: parentCourse?.courseID || "??",
+                  courseName: parentCourse?.courseName || "Unknown",
+                  shortDescription: parentCourse?.shortDescription,
+                  lessonKindLabel: lessonKindShortLabel(lesson.type),
+                  instructorsLine: lecturers.join(" · "),
+                  location: lesson.location,
+                  time: `${lesson.startTime}-${lesson.endTime}`,
+                  startTime: lesson.startTime,
+                  endTime: lesson.endTime,
+                  calendarDay: dayKey,
+                  prerequisiteNames: prereqDisclosure.names,
+                  prerequisiteAdvisoryNote: prereqDisclosure.advisoryNote,
+                  prerequisiteParentMissing,
+                });
+              }
+            });
+          });
+
+          return {
+            id: proposal.id,
+            fitScore: scoreBreakdown.total,
+            scoreBreakdown,
+            schedule: transformedSchedule,
+          };
+        }),
+        generationError: null as string | null,
+          generationTimedOut,
       };
-    });
+    } catch (error) {
+      return {
+        proposals: [] as {
+          id: string;
+          fitScore: number;
+          scoreBreakdown: ReturnType<typeof computeFitScoreBreakdown>;
+          schedule: Record<PlannerDayKey, GeneratedOptionScheduleCell[]>;
+        }[],
+        generationError: error instanceof Error ? "GENERATION_FAILED" : "UNKNOWN_GENERATION_ERROR",
+        generationTimedOut: false,
+      };
+    }
   }, [
     selectedCourses,
     professorPreferences,
@@ -294,6 +326,24 @@ export default function GeneratedOptionsScreen() {
     virtualCompletedCourseNames,
     availabilityValidation,
   ]);
+  const proposals = generationResult.proposals;
+  const generationFeedbackPanel = useMemo(
+    () =>
+      buildPlannerGenerationFeedback({
+        availabilityValid: availabilityValidation.ok,
+        catalogRetryAvailable: catalogUi.showRetry,
+        proposalCount: proposals.length,
+        generationError: generationResult.generationError,
+        generationTimedOut: generationResult.generationTimedOut,
+      }),
+    [
+      availabilityValidation.ok,
+      catalogUi.showRetry,
+      proposals.length,
+      generationResult.generationError,
+      generationResult.generationTimedOut,
+    ],
+  );
 
   const selectedCourseInstructorPreferenceCount = useMemo(
     () =>
@@ -445,9 +495,9 @@ export default function GeneratedOptionsScreen() {
 
     const startShakeListener = async () => {
       try {
-        const sensorModule = await import("expo-sensors/build/Accelerometer");
+        const sensorModule = await import("expo-sensors");
         if (!isMounted) return;
-        const Accelerometer = sensorModule.default ?? sensorModule.Accelerometer;
+        const Accelerometer = sensorModule.Accelerometer;
         if (!Accelerometer) return;
 
         Accelerometer.setUpdateInterval?.(220);
@@ -720,15 +770,31 @@ export default function GeneratedOptionsScreen() {
           </View>
         ) : null}
 
-        {availabilityValidation.ok && proposals.length === 0 ? (
-          <View style={styles.emptyState}>
-            <MaterialIcons name="event-busy" size={64} color="#9B9B9B" />
-            <ThemedText style={styles.emptyStateText}>
-              No valid schedules found.
+        {generationFeedbackPanel ? (
+          <View style={styles.generationFeedbackPanel} accessibilityRole="alert">
+            <MaterialIcons
+              name={
+                generationFeedbackPanel.kind === "no-feasible-schedule"
+                  ? "event-busy"
+                  : "error-outline"
+              }
+              size={34}
+              color="#B00020"
+            />
+            <ThemedText style={styles.generationFeedbackTitle}>
+              {generationFeedbackPanel.title}
             </ThemedText>
-            <ThemedText style={styles.emptyStateSubtext}>
-              Try removing some constraints or days.
+            <ThemedText style={styles.generationFeedbackDescription}>
+              {generationFeedbackPanel.description}
             </ThemedText>
+            {generationFeedbackPanel.actions.map((action, idx) => (
+              <ThemedText
+                key={`generation-feedback-${idx}`}
+                style={styles.generationFeedbackAction}
+              >
+                • {action}
+              </ThemedText>
+            ))}
           </View>
         ) : availabilityValidation.ok ? (
           proposals.map((proposal, proposalIndex) => (
@@ -1526,22 +1592,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: "#FFFFFF",
   },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 60,
-    paddingHorizontal: 40,
+  generationFeedbackPanel: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#FFCDD2",
+    backgroundColor: "#FFEBEE",
+    padding: 16,
+    marginBottom: 24,
   },
-  emptyStateText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1A1A1A",
-    marginTop: 16,
+  generationFeedbackTitle: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#B00020",
   },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: "#9B9B9B",
-    textAlign: "center",
+  generationFeedbackDescription: {
     marginTop: 8,
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#5D4037",
+  },
+  generationFeedbackAction: {
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#5D4037",
   },
 });
