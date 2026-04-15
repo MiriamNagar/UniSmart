@@ -4,16 +4,26 @@ import { ROUTES } from "@/constants/routes";
 import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
 import { useSelection } from "@/contexts/selection-context";
 import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
+import {
+    deleteNoteAttachmentForCurrentUserFolder,
+    listNoteAttachmentsForCurrentUserFolder,
+    mapNoteAttachmentErrorToMessage,
+    uploadNoteAttachmentForCurrentUserFolder,
+} from "@/lib/note-attachments-firestore";
+import { listNoteFoldersForCurrentUser } from "@/lib/note-folders-firestore";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import * as LegacyFileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import {
+    ActivityIndicator,
     Alert,
     Image,
     Linking,
     Modal,
+    NativeModules,
     Platform,
     ScrollView,
     StyleSheet,
@@ -26,12 +36,12 @@ let Sharing: any = null;
 let IntentLauncher: any = null;
 try {
   Sharing = require("expo-sharing");
-} catch (e) {
+} catch {
   // Package not installed yet
 }
 try {
   IntentLauncher = require("expo-intent-launcher");
-} catch (e) {
+} catch {
   // Package not installed yet
 }
 
@@ -40,23 +50,97 @@ interface NoteItem {
   type: "image" | "document";
   uri: string;
   name: string;
+  storagePath?: string;
   timestamp: number;
 }
 
 export default function FolderContentScreen() {
-  const { folderName } = useLocalSearchParams<{ folderName: string }>();
-  const { userInfo, setLastNotesFolderName } = useSelection();
+  const { folderName, folderId: folderIdParam } = useLocalSearchParams<{
+    folderName: string;
+    folderId?: string;
+  }>();
+  const { setLastNotesFolderName } = useSelection();
   const [isGalleryModalVisible, setGalleryModalVisible] = useState(false);
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedNote, setSelectedNote] = useState<NoteItem | null>(null);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+  const [isUploadingNote, setIsUploadingNote] = useState(false);
+  const [isDeletingNoteId, setIsDeletingNoteId] = useState<string | null>(null);
+  const [notesErrorMessage, setNotesErrorMessage] = useState<string | null>(
+    null,
+  );
 
   const displayName = folderName || "General Notes";
+  const [resolvedFolderId, setResolvedFolderId] = useState<string | null>(
+    folderIdParam ?? null,
+  );
+
+  const resolveFolderId = useCallback(async (): Promise<string> => {
+    if (folderIdParam?.trim()) {
+      return folderIdParam.trim();
+    }
+    if (displayName === "General Notes") {
+      return "general";
+    }
+    try {
+      const folders = await listNoteFoldersForCurrentUser();
+      const match = folders.find(
+        (folder) =>
+          folder.name.trim().toLowerCase() === displayName.trim().toLowerCase(),
+      );
+      if (match) {
+        return match.id;
+      }
+    } catch (error) {
+      console.warn("Failed to resolve folder id by folder name:", error);
+    }
+    return displayName;
+  }, [displayName, folderIdParam]);
+
+  const mapAttachmentToNote = useCallback(
+    (attachment: {
+      id: string;
+      type: "image" | "document";
+      downloadUrl: string;
+      fileName: string;
+      storagePath: string;
+      createdAtMs: number;
+    }): NoteItem => {
+      return {
+        id: attachment.id,
+        type: attachment.type,
+        uri: attachment.downloadUrl,
+        name: attachment.fileName,
+        storagePath: attachment.storagePath,
+        timestamp: attachment.createdAtMs,
+      };
+    },
+    [],
+  );
+
+  const loadFolderAttachments = useCallback(async () => {
+    setIsLoadingNotes(true);
+    setNotesErrorMessage(null);
+    try {
+      const folderId = await resolveFolderId();
+      setResolvedFolderId(folderId);
+      const attachments =
+        await listNoteAttachmentsForCurrentUserFolder(folderId);
+      setNotes(attachments.map(mapAttachmentToNote));
+    } catch (error) {
+      setNotesErrorMessage(mapNoteAttachmentErrorToMessage(error));
+      console.warn("Failed to load note attachments:", error);
+    } finally {
+      setIsLoadingNotes(false);
+    }
+  }, [mapAttachmentToNote, resolveFolderId]);
 
   useFocusEffect(
     useCallback(() => {
       setLastNotesFolderName(displayName);
-    }, [displayName, setLastNotesFolderName]),
+      void loadFolderAttachments();
+    }, [displayName, loadFolderAttachments, setLastNotesFolderName]),
   );
 
   const { scrollViewProps } = usePersistedTabScroll(
@@ -75,7 +159,38 @@ export default function FolderContentScreen() {
     return true;
   };
 
+  const uploadPickedAsset = useCallback(
+    async (input: {
+      uri: string;
+      name: string;
+      type: "image" | "document";
+    }) => {
+      setIsUploadingNote(true);
+      setNotesErrorMessage(null);
+      try {
+        const uploaded = await uploadNoteAttachmentForCurrentUserFolder({
+          folderId: resolvedFolderId ?? (await resolveFolderId()),
+          folderName: displayName,
+          fileName: input.name,
+          localUri: input.uri,
+          type: input.type,
+        });
+        setNotes((previous) => [mapAttachmentToNote(uploaded), ...previous]);
+      } catch (error) {
+        const errorMessage = mapNoteAttachmentErrorToMessage(error);
+        setNotesErrorMessage(errorMessage);
+        Alert.alert("Upload failed", errorMessage);
+      } finally {
+        setIsUploadingNote(false);
+      }
+    },
+    [displayName, mapAttachmentToNote, resolveFolderId, resolvedFolderId],
+  );
+
   const handleCameraPress = async () => {
+    if (isUploadingNote) {
+      return;
+    }
     const hasPermission = await requestCameraPermission();
     if (!hasPermission) return;
 
@@ -89,18 +204,15 @@ export default function FolderContentScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const newNote: NoteItem = {
-          id: `note-${Date.now()}`,
-          type: "image",
+        await uploadPickedAsset({
           uri: asset.uri,
           name:
             asset.fileName ||
             `Photo_${new Date().toISOString().split("T")[0]}.jpg`,
-          timestamp: Date.now(),
-        };
-        setNotes((prev) => [...prev, newNote]);
+          type: "image",
+        });
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to take photo. Please try again.");
     }
   };
@@ -110,6 +222,9 @@ export default function FolderContentScreen() {
   };
 
   const handlePickFromGallery = async () => {
+    if (isUploadingNote) {
+      return;
+    }
     setGalleryModalVisible(false);
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -121,54 +236,68 @@ export default function FolderContentScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const newNote: NoteItem = {
-          id: `note-${Date.now()}`,
-          type: "image",
+        await uploadPickedAsset({
           uri: asset.uri,
           name: asset.fileName || `Image_${Date.now()}.jpg`,
-          timestamp: Date.now(),
-        };
-        setNotes((prev) => [...prev, newNote]);
+          type: "image",
+        });
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to pick image. Please try again.");
     }
   };
 
   const handlePickFromFiles = async () => {
+    if (isUploadingNote) {
+      return;
+    }
     setGalleryModalVisible(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "*/*",
-        copyToCacheDirectory: true, // Copy to cache - Sharing API will handle making it accessible
+        // Copy into app cache first so each pick has a stable file:// URI for
+        // copyAsync into document storage (avoids Android revoking prior content://).
+        copyToCacheDirectory: true,
       });
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        // Use the original URI - on Android this will be a content:// URI which is accessible
-        // On iOS it will be a file:// URI which is also accessible
-        const newNote: NoteItem = {
-          id: `note-${Date.now()}`,
-          type: "document",
+        await uploadPickedAsset({
           uri: asset.uri,
           name: asset.name,
-          timestamp: Date.now(),
-        };
-        setNotes((prev) => [...prev, newNote]);
+          type: "document",
+        });
       }
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to pick file. Please try again.");
     }
   };
 
-  const handleDeleteNote = (noteId: string) => {
+  const handleDeleteNote = (note: NoteItem) => {
     Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          setNotes((prev) => prev.filter((note) => note.id !== noteId));
+        onPress: async () => {
+          setIsDeletingNoteId(note.id);
+          setNotesErrorMessage(null);
+          try {
+            await deleteNoteAttachmentForCurrentUserFolder({
+              folderId: resolvedFolderId ?? (await resolveFolderId()),
+              attachmentId: note.id,
+              storagePath: note.storagePath,
+            });
+            setNotes((previous) =>
+              previous.filter((item) => item.id !== note.id),
+            );
+          } catch (error) {
+            const errorMessage = mapNoteAttachmentErrorToMessage(error);
+            setNotesErrorMessage(errorMessage);
+            Alert.alert("Delete failed", errorMessage);
+          } finally {
+            setIsDeletingNoteId(null);
+          }
         },
       },
     ]);
@@ -250,54 +379,122 @@ export default function FolderContentScreen() {
     } else {
       // Show "Open with" dialog (like WhatsApp)
       try {
-        // Use Sharing API which properly handles file access permissions
-        // On Android, it makes files accessible to other apps
+        const mimeType = getMimeType(note.name);
+        let externalUri = note.uri;
+
+        if (Platform.OS === "android") {
+          if (note.uri.startsWith("content://")) {
+            const cacheDirectory = LegacyFileSystem.cacheDirectory;
+            if (cacheDirectory) {
+              const extension = note.name.includes(".")
+                ? note.name.split(".").pop()
+                : "";
+              const safeExtension = extension ? `.${extension}` : "";
+              const cacheUri = `${cacheDirectory}open-${Date.now()}-${Math.random().toString(36).slice(2, 9)}${safeExtension}`;
+              try {
+                await LegacyFileSystem.copyAsync({
+                  from: note.uri,
+                  to: cacheUri,
+                });
+                externalUri =
+                  await LegacyFileSystem.getContentUriAsync(cacheUri);
+              } catch (copyError) {
+                console.log(
+                  "Failed to normalize content URI for external open:",
+                  copyError,
+                );
+                externalUri = note.uri;
+              }
+            }
+          } else if (note.uri.startsWith("file://")) {
+            try {
+              externalUri = await LegacyFileSystem.getContentUriAsync(note.uri);
+            } catch (uriError) {
+              console.log(
+                "Failed to convert file URI to content URI:",
+                uriError,
+              );
+              externalUri = note.uri;
+            }
+          }
+        }
+
+        // Android: prefer OpenDocumentModule (plain startActivity + createChooser, no
+        // startActivityForResult) so every tap shows the full “Open with” list. expo-intent-launcher
+        // keeps one pending promise; the next open often failed and fell through to Sharing
+        // (wrong targets). Linking.openURL omits FLAG_GRANT_READ_URI_PERMISSION.
+        const shareUri =
+          Platform.OS === "android" && note.uri.startsWith("file://")
+            ? note.uri
+            : externalUri;
+
+        if (Platform.OS === "android") {
+          const openDocument = NativeModules.OpenDocumentModule as
+            | {
+                openWithChooser?: (
+                  uri: string,
+                  mime: string,
+                  title: string,
+                ) => Promise<unknown>;
+              }
+            | undefined;
+          if (openDocument?.openWithChooser) {
+            try {
+              await openDocument.openWithChooser(
+                externalUri,
+                mimeType,
+                `Open ${note.name}`,
+              );
+              return;
+            } catch (nativeErr) {
+              console.log(
+                "OpenDocumentModule failed, trying IntentLauncher:",
+                nativeErr,
+              );
+            }
+          }
+        }
+
+        if (Platform.OS === "android" && IntentLauncher) {
+          const ACTION_VIEW = "android.intent.action.VIEW";
+          const FLAG_GRANT_READ_URI_PERMISSION = 1;
+          const FLAG_ACTIVITY_NEW_TASK = 268435456;
+          const intentFlags =
+            FLAG_GRANT_READ_URI_PERMISSION | FLAG_ACTIVITY_NEW_TASK;
+          try {
+            await IntentLauncher.startActivityAsync(ACTION_VIEW, {
+              data: externalUri,
+              type: mimeType,
+              flags: intentFlags,
+            });
+            return;
+          } catch (intentError: unknown) {
+            const message =
+              intentError instanceof Error
+                ? intentError.message
+                : String(intentError);
+            if (message.includes("already started")) {
+              console.log(
+                "IntentLauncher busy (stale pending); trying share sheet:",
+                intentError,
+              );
+            } else {
+              console.log(
+                "VIEW intent failed, trying share fallback:",
+                intentError,
+              );
+            }
+          }
+        }
+
         if (Sharing) {
           try {
             const isAvailable = await Sharing.isAvailableAsync();
             if (isAvailable) {
-              // Sharing API handles file access permissions automatically
-              // It creates a shareable URI that other apps can access
-              // On Android, when used with files, it shows apps that can open the file
-              await Sharing.shareAsync(note.uri, {
-                mimeType: getMimeType(note.name),
+              await Sharing.shareAsync(shareUri, {
+                mimeType,
                 dialogTitle: `Open ${note.name}`,
                 UTI: Platform.OS === "ios" ? getUTI(note.name) : undefined,
-              });
-              return;
-            }
-          } catch (shareError) {
-            console.log("Sharing failed, trying Intent Launcher:", shareError);
-          }
-        }
-
-        // Fallback: try Intent Launcher on Android
-        if (Platform.OS === "android" && IntentLauncher) {
-          try {
-            const mimeType = getMimeType(note.name);
-            await IntentLauncher.startActivityAsync(
-              IntentLauncher.ActivityAction.VIEW,
-              {
-                data: note.uri,
-                type: mimeType,
-                flags: 1, // FLAG_ACTIVITY_NEW_TASK
-              },
-            );
-            return;
-          } catch (intentError) {
-            console.log("Intent launcher failed:", intentError);
-          }
-        }
-
-        // On iOS, use Sharing API which shows "Open with" options
-        if (Platform.OS === "ios" && Sharing) {
-          try {
-            const isAvailable = await Sharing.isAvailableAsync();
-            if (isAvailable) {
-              await Sharing.shareAsync(note.uri, {
-                mimeType: getMimeType(note.name),
-                dialogTitle: `Open ${note.name}`,
-                UTI: getUTI(note.name),
               });
               return;
             }
@@ -306,15 +503,24 @@ export default function FolderContentScreen() {
           }
         }
 
-        // Fallback: try direct linking
-        try {
-          await Linking.openURL(note.uri);
-        } catch (linkError) {
+        // Last resort: iOS can open some local URIs via Linking. On Android, Linking does not
+        // grant read permission for content:// (same issue as opening with Office above).
+        if (Platform.OS === "android") {
           Alert.alert(
             "Open File",
-            `Unable to open ${note.name}.\n\nPlease ensure you have an app installed that can open ${note.name.split(".").pop()?.toUpperCase()} files.`,
+            `Unable to open ${note.name}. Try again, or use Share from the system sheet if it appears.`,
             [{ text: "OK" }],
           );
+        } else {
+          try {
+            await Linking.openURL(externalUri);
+          } catch {
+            Alert.alert(
+              "Open File",
+              `Unable to open ${note.name}.\n\nPlease ensure you have an app installed that can open ${note.name.split(".").pop()?.toUpperCase()} files.`,
+              [{ text: "OK" }],
+            );
+          }
         }
       } catch (error) {
         console.error("Error opening file:", error);
@@ -372,7 +578,33 @@ export default function FolderContentScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {notes.length === 0 ? (
+        {notesErrorMessage ? (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>
+              {notesErrorMessage}
+            </ThemedText>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => {
+                void loadFolderAttachments();
+              }}
+              activeOpacity={0.8}
+            >
+              <ThemedText style={styles.retryButtonText}>TRY AGAIN</ThemedText>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+        {isLoadingNotes || isUploadingNote ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator color="#5B4C9D" />
+            <ThemedText style={styles.loadingText}>
+              {isUploadingNote
+                ? "Uploading attachment..."
+                : "Loading attachments..."}
+            </ThemedText>
+          </View>
+        ) : null}
+        {!isLoadingNotes && notes.length === 0 ? (
           <View style={styles.emptyState}>
             <ThemedText style={styles.emptyStateText}>No notes yet.</ThemedText>
           </View>
@@ -415,10 +647,15 @@ export default function FolderContentScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.deleteButton}
-                  onPress={() => handleDeleteNote(note.id)}
+                  onPress={() => handleDeleteNote(note)}
                   activeOpacity={0.7}
+                  disabled={isDeletingNoteId === note.id}
                 >
-                  <MaterialIcons name="close" size={18} color="#FFFFFF" />
+                  {isDeletingNoteId === note.id ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <MaterialIcons name="close" size={18} color="#FFFFFF" />
+                  )}
                 </TouchableOpacity>
               </View>
             ))}
@@ -595,6 +832,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 24,
+  },
+  loadingContainer: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 10,
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: "#5B4C9D",
+    fontWeight: "500",
+  },
+  errorContainer: {
+    width: "100%",
+    borderRadius: 12,
+    backgroundColor: "#FFF4F3",
+    borderWidth: 1,
+    borderColor: "#F2C7C3",
+    padding: 12,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: "#B3261E",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  retryButton: {
+    marginTop: 10,
+    alignSelf: "flex-start",
+    backgroundColor: "#B3261E",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
   },
   emptyState: {
     flex: 1,

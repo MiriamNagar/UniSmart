@@ -102,4 +102,149 @@ describeIfEmulator('saved schedule Firestore rules', () => {
 
     await assertSucceeds(deleteDoc(ownerDoc));
   });
+
+  it('allows owner to create and read a note folder at their path', async () => {
+    const ownerDb = testEnv.authenticatedContext('student-1').firestore();
+    const ownerDoc = doc(ownerDb, 'users/student-1/noteFolders/general');
+
+    await assertSucceeds(
+      setDoc(ownerDoc, {
+        ownerUid: 'student-1',
+        scope: 'general',
+        name: 'General Notes',
+      }),
+    );
+
+    await assertSucceeds(getDoc(ownerDoc));
+  });
+
+  it('denies cross-user read for note folders', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'users/student-1/noteFolders/general'), {
+        ownerUid: 'student-1',
+        scope: 'general',
+        name: 'General Notes',
+      });
+    });
+
+    const otherUserDb = testEnv.authenticatedContext('student-2').firestore();
+    const otherUserRead = doc(otherUserDb, 'users/student-1/noteFolders/general');
+
+    await assertFails(getDoc(otherUserRead));
+  });
+
+  it('denies note folder create when name is missing', async () => {
+    const ownerDb = testEnv.authenticatedContext('student-1').firestore();
+    const ownerDoc = doc(ownerDb, 'users/student-1/noteFolders/general');
+
+    await assertFails(
+      setDoc(ownerDoc, {
+        ownerUid: 'student-1',
+        scope: 'general',
+      }),
+    );
+  });
+
+  it('denies course-scoped note folder when courseCode is missing', async () => {
+    const ownerDb = testEnv.authenticatedContext('student-1').firestore();
+    const ownerDoc = doc(ownerDb, 'users/student-1/noteFolders/course-CS101');
+
+    await assertFails(
+      setDoc(ownerDoc, {
+        ownerUid: 'student-1',
+        scope: 'course',
+        name: 'CS101: Intro to CS',
+      }),
+    );
+  });
+
+  it('allows course-scoped note folder with valid courseCode', async () => {
+    const ownerDb = testEnv.authenticatedContext('student-1').firestore();
+    const ownerDoc = doc(ownerDb, 'users/student-1/noteFolders/course-CS101');
+
+    await assertSucceeds(
+      setDoc(ownerDoc, {
+        ownerUid: 'student-1',
+        scope: 'course',
+        name: 'CS101: Intro to CS',
+        courseCode: 'CS101',
+      }),
+    );
+  });
+
+  it('allows owner to create and read note attachment metadata rows', async () => {
+    const ownerDb = testEnv.authenticatedContext('student-1').firestore();
+    const ownerDoc = doc(
+      ownerDb,
+      'users/student-1/noteFolders/general/attachments/attachment-1',
+    );
+
+    await assertSucceeds(
+      setDoc(ownerDoc, {
+        ownerUid: 'student-1',
+        folderId: 'general',
+        folderName: 'General Notes',
+        type: 'document',
+        fileName: 'Lecture 1.pdf',
+        contentType: 'application/pdf',
+        storagePath: 'users/student-1/noteAttachments/general/lecture-1.pdf',
+        downloadUrl: 'https://example.com/lecture-1.pdf',
+        createdAtMs: Date.now(),
+      }),
+    );
+
+    await assertSucceeds(getDoc(ownerDoc));
+  });
+
+  it('denies note attachment create when folderId does not match path folder', async () => {
+    const ownerDb = testEnv.authenticatedContext('student-1').firestore();
+    const ownerDoc = doc(
+      ownerDb,
+      'users/student-1/noteFolders/general/attachments/attachment-1',
+    );
+
+    await assertFails(
+      setDoc(ownerDoc, {
+        ownerUid: 'student-1',
+        folderId: 'custom-folder',
+        folderName: 'General Notes',
+        type: 'document',
+        fileName: 'Lecture 1.pdf',
+        contentType: 'application/pdf',
+        storagePath: 'users/student-1/noteAttachments/general/lecture-1.pdf',
+        downloadUrl: 'https://example.com/lecture-1.pdf',
+        createdAtMs: Date.now(),
+      }),
+    );
+  });
+
+  it('denies cross-user read for note attachments', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(
+          context.firestore(),
+          'users/student-1/noteFolders/general/attachments/attachment-1',
+        ),
+        {
+          ownerUid: 'student-1',
+          folderId: 'general',
+          folderName: 'General Notes',
+          type: 'image',
+          fileName: 'board.jpg',
+          contentType: 'image/jpeg',
+          storagePath: 'users/student-1/noteAttachments/general/board.jpg',
+          downloadUrl: 'https://example.com/board.jpg',
+          createdAtMs: Date.now(),
+        },
+      );
+    });
+
+    const otherUserDb = testEnv.authenticatedContext('student-2').firestore();
+    const otherUserRead = doc(
+      otherUserDb,
+      'users/student-1/noteFolders/general/attachments/attachment-1',
+    );
+
+    await assertFails(getDoc(otherUserRead));
+  });
 });

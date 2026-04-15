@@ -8,31 +8,67 @@ import { usePlannerCatalog } from "@/contexts/bgu-planner-catalog-context";
 import { useSelection } from "@/contexts/selection-context";
 import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import {
-  buildSavedScheduleModalDetail,
-  type PlannerCourseDetailPayload,
-  type PlannerWeekCellLike,
+    extractCourseFoldersFromSchedules,
+    mapNoteFolderErrorToMessage,
+    syncDefaultNoteFoldersForCurrentUser,
+} from "@/lib/note-folders-firestore";
+import {
+    buildSavedScheduleModalDetail,
+    type PlannerCourseDetailPayload,
+    type PlannerWeekCellLike,
 } from "@/lib/planner-course-modal-detail";
 import type { PlannerWeekDayKey } from "@/lib/planner-week-constants";
 import {
-  deleteSavedPlanForCurrentUser,
-  listSavedPlansForCurrentUser,
-  mapSavedPlanDeleteErrorToMessage,
-  mapSavedPlanReadErrorToMessage,
+    deleteSavedPlanForCurrentUser,
+    listSavedPlansForCurrentUser,
+    mapSavedPlanDeleteErrorToMessage,
+    mapSavedPlanReadErrorToMessage,
 } from "@/lib/saved-schedule-firestore";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+    Alert,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from "react-native";
+
+function mergeFolderNames(
+  previous: string[],
+  generatedFolderNames: string[],
+): string[] {
+  const existing = new Set(previous.map((name) => name.trim().toLowerCase()));
+  const merged = [...previous];
+  generatedFolderNames.forEach((name) => {
+    const key = name.trim().toLowerCase();
+    if (!existing.has(key)) {
+      existing.add(key);
+      merged.push(name);
+    }
+  });
+  return merged;
+}
 
 export default function SavedScreen() {
-  const { savedPlans, setSavedPlans } = useSelection();
+  const {
+    savedPlans,
+    setSavedPlans,
+    setCustomFolders,
+    bumpNoteFoldersSyncVersion,
+  } = useSelection();
   const { allCourses: catalogCourses } = usePlannerCatalog();
   const isFocused = useIsFocused();
-  const { scrollViewProps } = usePersistedTabScroll(TAB_SCROLL_KEYS.STUDENT_SAVED);
+  const { scrollViewProps } = usePersistedTabScroll(
+    TAB_SCROLL_KEYS.STUDENT_SAVED,
+  );
   const [isLoadingPlans, setIsLoadingPlans] = useState(false);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
-  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(null);
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  );
   const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
 
@@ -50,18 +86,40 @@ export default function SavedScreen() {
     setDeleteErrorMessage(null);
 
     void listSavedPlansForCurrentUser()
-      .then((plans) => {
+      .then(async (plans) => {
         if (isCancelled) {
           return;
         }
         setSavedPlans(plans);
+        const folders = extractCourseFoldersFromSchedules(
+          plans.map((plan) => plan.schedule as Record<string, unknown>),
+        );
+        if (folders.length === 0) {
+          return;
+        }
+        await syncDefaultNoteFoldersForCurrentUser(folders);
+        if (isCancelled) {
+          return;
+        }
+        const generatedFolderNames = folders.map((course) => {
+          const cleanCourseName = course.courseName.replace(/\.\.\.$/, "");
+          return `${course.courseCode}: ${cleanCourseName}`;
+        });
+        setCustomFolders((previous) =>
+          mergeFolderNames(previous, generatedFolderNames),
+        );
+        bumpNoteFoldersSyncVersion();
       })
       .catch((error: unknown) => {
         if (isCancelled) {
           return;
         }
+        const message =
+          error instanceof Error && error.message.includes("sync note folders")
+            ? mapNoteFolderErrorToMessage(error)
+            : mapSavedPlanReadErrorToMessage(error);
         console.error("[UniSmart] Failed to load saved plans", error);
-        setLoadErrorMessage(mapSavedPlanReadErrorToMessage(error));
+        setLoadErrorMessage(message);
       })
       .finally(() => {
         if (isCancelled) {
@@ -73,7 +131,13 @@ export default function SavedScreen() {
     return () => {
       isCancelled = true;
     };
-  }, [isFocused, reloadNonce, setSavedPlans]);
+  }, [
+    bumpNoteFoldersSyncVersion,
+    isFocused,
+    reloadNonce,
+    setCustomFolders,
+    setSavedPlans,
+  ]);
 
   function confirmDeletePlan(planId: string) {
     if (deletingPlanId !== null) {
@@ -101,7 +165,9 @@ export default function SavedScreen() {
     setDeleteErrorMessage(null);
     try {
       await deleteSavedPlanForCurrentUser(planId);
-      setSavedPlans((previousPlans) => previousPlans.filter((entry) => entry.id !== planId));
+      setSavedPlans((previousPlans) =>
+        previousPlans.filter((entry) => entry.id !== planId),
+      );
     } catch (error: unknown) {
       console.error("[UniSmart] Failed to delete saved plan", error);
       setDeleteErrorMessage(mapSavedPlanDeleteErrorToMessage(error));
@@ -139,7 +205,9 @@ export default function SavedScreen() {
           </View>
         ) : loadErrorMessage ? (
           <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyStateText}>{loadErrorMessage}</ThemedText>
+            <ThemedText style={styles.emptyStateText}>
+              {loadErrorMessage}
+            </ThemedText>
             <TouchableOpacity
               style={styles.createButton}
               activeOpacity={0.8}
@@ -178,60 +246,77 @@ export default function SavedScreen() {
               </View>
             ) : null}
             {savedPlans.map((plan) => {
-            const weekSchedule = plan.schedule as Record<
-              PlannerWeekDayKey,
-              PlannerWeekCellLike[]
-            >;
-            return (
-              <View key={plan.id} style={styles.planCard}>
-                <TouchableOpacity
-                  activeOpacity={0.92}
-                  onPress={() => router.push(ROUTES.STUDENT.savedDetail(plan.id))}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open saved plan from ${plan.date}`}
-                >
-                  <View style={styles.planHeader}>
-                    <ThemedText style={styles.compiledText}>
-                      COMPILED {plan.date}
+              const weekSchedule = plan.schedule as Record<
+                PlannerWeekDayKey,
+                PlannerWeekCellLike[]
+              >;
+              return (
+                <View key={plan.id} style={styles.planCard}>
+                  <TouchableOpacity
+                    activeOpacity={0.92}
+                    onPress={() =>
+                      router.push(ROUTES.STUDENT.savedDetail(plan.id))
+                    }
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open saved plan from ${plan.date}`}
+                  >
+                    <View style={styles.planHeader}>
+                      <ThemedText style={styles.compiledText}>
+                        COMPILED {plan.date}
+                      </ThemedText>
+                      {plan.fitScore > 0 ? (
+                        <ThemedText style={styles.fitScore}>
+                          Fit {plan.fitScore}
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                    <ThemedText style={styles.planHint}>
+                      Tap to open full plan — or scroll and tap a course for
+                      quick details.
                     </ThemedText>
-                    {plan.fitScore > 0 ? (
-                      <ThemedText style={styles.fitScore}>Fit {plan.fitScore}</ThemedText>
-                    ) : null}
-                  </View>
-                  <ThemedText style={styles.planHint}>
-                    Tap to open full plan — or scroll and tap a course for quick details.
-                  </ThemedText>
-                </TouchableOpacity>
-                <PlannerFullWeekSchedule
-                  schedule={weekSchedule}
-                  hydrateFromCatalog
-                  catalogCourses={catalogCourses}
-                  onCellPress={(cell, day) =>
-                    setCourseDetailModal(
-                      buildSavedScheduleModalDetail(cell, day, catalogCourses),
-                    )
-                  }
-                />
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  style={[
-                    styles.deletePlanButton,
-                    deletingPlanId === plan.id ? styles.deletePlanButtonDisabled : null,
-                  ]}
-                  disabled={deletingPlanId !== null}
-                  onPress={() => confirmDeletePlan(plan.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Delete saved plan from ${plan.date}`}
-                >
-                  <View style={styles.deletePlanButtonInner}>
-                    <MaterialIcons name="delete-outline" size={14} color="#B3261E" />
-                    <ThemedText style={styles.deletePlanButtonText}>
-                      {deletingPlanId === plan.id ? "Deleting..." : "Delete plan"}
-                    </ThemedText>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            );
+                  </TouchableOpacity>
+                  <PlannerFullWeekSchedule
+                    schedule={weekSchedule}
+                    hydrateFromCatalog
+                    catalogCourses={catalogCourses}
+                    onCellPress={(cell, day) =>
+                      setCourseDetailModal(
+                        buildSavedScheduleModalDetail(
+                          cell,
+                          day,
+                          catalogCourses,
+                        ),
+                      )
+                    }
+                  />
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={[
+                      styles.deletePlanButton,
+                      deletingPlanId === plan.id
+                        ? styles.deletePlanButtonDisabled
+                        : null,
+                    ]}
+                    disabled={deletingPlanId !== null}
+                    onPress={() => confirmDeletePlan(plan.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Delete saved plan from ${plan.date}`}
+                  >
+                    <View style={styles.deletePlanButtonInner}>
+                      <MaterialIcons
+                        name="delete-outline"
+                        size={14}
+                        color="#B3261E"
+                      />
+                      <ThemedText style={styles.deletePlanButtonText}>
+                        {deletingPlanId === plan.id
+                          ? "Deleting..."
+                          : "Delete plan"}
+                      </ThemedText>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              );
             })}
           </>
         )}

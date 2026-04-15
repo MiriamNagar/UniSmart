@@ -67,6 +67,8 @@ interface SelectionContextType {
   /** When set, restoring the Notes tab opens this folder; null means last focused screen was the notes hub. */
   lastNotesFolderName: string | null;
   setLastNotesFolderName: (name: string | null) => void;
+  noteFoldersSyncVersion: number;
+  bumpNoteFoldersSyncVersion: () => void;
   professorPreferences: Map<string, string>;
   setProfessorPreferences: (
     prefs:
@@ -121,6 +123,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
   const [lastNotesFolderName, setLastNotesFolderName] = useState<string | null>(
     null,
   );
+  const [noteFoldersSyncVersion, setNoteFoldersSyncVersion] = useState(0);
   const [professorPreferences, setProfessorPreferencesState] = useState<
     Map<string, string>
   >(new Map());
@@ -189,6 +192,10 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const bumpNoteFoldersSyncVersion = () => {
+    setNoteFoldersSyncVersion((prev) => prev + 1);
+  };
+
   return (
     <SelectionContext.Provider
       value={{
@@ -216,6 +223,8 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
         setLastPlannerFlowRoute,
         lastNotesFolderName,
         setLastNotesFolderName,
+        noteFoldersSyncVersion,
+        bumpNoteFoldersSyncVersion,
         professorPreferences,
         setProfessorPreferences,
       }}
