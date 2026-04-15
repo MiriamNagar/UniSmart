@@ -18,6 +18,8 @@ export const ROUTES = {
   STUDENT: {
     PLANNER: "/(student)/planner",
     SAVED: "/(student)/saved",
+    /** Open a single saved plan (course descriptions, detail modal). */
+    savedDetail: (id: string) => `/(student)/saved/${encodeURIComponent(id)}`,
     NOTES: "/(student)/notes",
     ALERTS: "/(student)/alerts",
     ACCOUNT: "/(student)/account",

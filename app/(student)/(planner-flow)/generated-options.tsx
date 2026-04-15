@@ -1,3 +1,5 @@
+import { PlannerCourseDetailModal } from "@/components/planner-course-detail-modal";
+import { PlannerFullWeekSchedule } from "@/components/planner-full-week-schedule";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { PlannerConstraintSummaryStrip } from "@/components/planner-constraint-summary-strip";
@@ -11,8 +13,6 @@ import { useIsFocused } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Alert,
-    Modal,
-    Pressable,
     ScrollView,
     StyleSheet,
     TouchableOpacity,
@@ -51,6 +51,11 @@ import {
 } from "@/logic/solver";
 import { Days } from "@/types/courses";
 import { buildConstraintSummary } from "@/lib/planner-constraint-summary";
+import { plannerModalDetailFromGenerated } from "@/lib/planner-course-modal-detail";
+import {
+  mapSavedPlanWriteErrorToMessage,
+  saveGeneratedPlanForCurrentUser,
+} from "@/lib/saved-schedule-firestore";
 import {
   buildRestartPlannerState,
   createInitialClapDetectionState,
@@ -134,13 +139,13 @@ export default function GeneratedOptionsScreen() {
     [catalogCourses, activeDegreeYearTier],
   );
 
-  // מצב למעקב אחרי ריחוף עכבר
-  const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
   /** Full details for a timetable cell (tap / short blocks). */
   const [courseDetailModal, setCourseDetailModal] = useState<
     GeneratedOptionScheduleCell | null
   >(null);
   const [isClearingBatch, setIsClearingBatch] = useState(false);
+  const [savingProposalId, setSavingProposalId] = useState<string | null>(null);
+  const isSaveInFlightRef = useRef(false);
   const clapStateRef = useRef(createInitialClapDetectionState());
   const shakeLastTriggeredAtRef = useRef(0);
   const clapPermissionDeniedRef = useRef(false);
@@ -371,39 +376,34 @@ export default function GeneratedOptionsScreen() {
   const hasGeneratedBatchVisible =
     isFocused && availabilityValidation.ok && proposals.length > 0;
 
-  const timeSlots = [
-    "8:00",
-    "9:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-    "19:00",
-    "20:00",
-    "21:00",
-    "22:00",
-  ];
-  const days = ["SUN", "MON", "TUE", "WED", "THU", "FRI"];
-
-  // לוגיקת מיקום משופרת
-  const HOUR_HEIGHT = 55; // הגדלתי למראה פחות צפוף
-  const START_HOUR_INT = 8;
-
-  const getTopOffset = (time: string) => {
-    const [hours, minutes] = time.split(":").map(Number);
-    return (hours - START_HOUR_INT + minutes / 60) * HOUR_HEIGHT;
-  };
-
-  const getBlockHeight = (startTime: string, endTime: string) => {
-    const [startH, startM] = startTime.split(":").map(Number);
-    const [endH, endM] = endTime.split(":").map(Number);
-    const duration = endH * 60 + endM - (startH * 60 + startM);
-    return (duration / 60) * HOUR_HEIGHT;
-  };
+  const handleSavePlan = useCallback(
+    async (proposal: {
+      id: string;
+      fitScore: number;
+      schedule: Record<PlannerDayKey, GeneratedOptionScheduleCell[]>;
+    }) => {
+      if (isSaveInFlightRef.current) {
+        return;
+      }
+      isSaveInFlightRef.current = true;
+      setSavingProposalId(proposal.id);
+      try {
+        const savedPlan = await saveGeneratedPlanForCurrentUser({
+          fitScore: proposal.fitScore,
+          schedule: proposal.schedule,
+        });
+        setSavedPlans((prev) => [...prev, savedPlan]);
+        router.push(ROUTES.STUDENT.savedDetail(savedPlan.id));
+      } catch (error) {
+        console.error("[UniSmart] Save plan failed", error);
+        Alert.alert("Couldn't save this plan", mapSavedPlanWriteErrorToMessage(error));
+      } finally {
+        isSaveInFlightRef.current = false;
+        setSavingProposalId(null);
+      }
+    },
+    [setSavedPlans],
+  );
 
   const clearGeneratedBatchAndRestart = useCallback(() => {
     if (isClearingBatch) return;
@@ -822,307 +822,42 @@ export default function GeneratedOptionsScreen() {
                   style={styles.saveButton}
                   activeOpacity={0.8}
                   onPress={() => {
-                    const newPlan = {
-                      id: `plan-${Date.now()}`,
-                      date: new Date().toLocaleDateString("en-GB"),
-                      fitScore: proposal.fitScore,
-                      schedule: proposal.schedule,
-                    };
-                    setSavedPlans((prev) => [...prev, newPlan]);
-                    router.push(ROUTES.STUDENT.SAVED);
+                    void handleSavePlan(proposal);
                   }}
+                  disabled={savingProposalId !== null}
                 >
                   <ThemedText style={styles.saveButtonText}>
-                    SAVE PLAN
+                    {savingProposalId === proposal.id ? "SAVING..." : "SAVE PLAN"}
                   </ThemedText>
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.scheduleCard}>
-                <View style={styles.scheduleContainer}>
-                  {/* Time Column */}
-                  <View style={styles.fixedTimeSection}>
-                    <View style={styles.timeHeaderFixed}>
-                      <ThemedText style={styles.gridHeaderText}>
-                        TIME
-                      </ThemedText>
-                    </View>
-                    <View style={styles.timeColumnFixed}>
-                      {timeSlots.map((time, index) => (
-                        <View
-                          key={index}
-                          style={[styles.timeSlot, { height: HOUR_HEIGHT }]}
-                        >
-                          <ThemedText style={styles.timeText}>
-                            {time}
-                          </ThemedText>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Scrollable Days */}
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={true}
-                    style={styles.daysScrollView}
-                  >
-                    <View style={{ flexDirection: "column" }}>
-                      <View style={styles.daysHeaderContainer}>
-                        {days.map((day, index) => (
-                          <View
-                            key={day}
-                            style={[
-                              styles.dayHeader,
-                              index === days.length - 1 && styles.dayHeaderLast,
-                            ]}
-                          >
-                            <ThemedText style={styles.gridHeaderText}>
-                              {day}
-                            </ThemedText>
-                          </View>
-                        ))}
-                      </View>
-
-                      <View style={styles.daysBodyContainer}>
-                        {days.map((day, dayIndex) => (
-                          <View
-                            key={day}
-                            style={[
-                              styles.dayColumn,
-                              { position: "relative", width: 130 },
-                              dayIndex === days.length - 1 &&
-                                styles.dayColumnLast,
-                            ]}
-                          >
-                            {/* Background Grid Lines */}
-                            {timeSlots.map((_, i) => (
-                              <View
-                                key={i}
-                                style={[
-                                  styles.gridCell,
-                                  { height: HOUR_HEIGHT },
-                                ]}
-                              >
-                                <View style={styles.gridLine} />
-                              </View>
-                            ))}
-
-                            {/* Absolute Positioned Courses */}
-                            {proposal.schedule[day]?.map((course: any) => {
-                              const isHovered = hoveredCourseId === course.id;
-                              return (
-                                <Pressable
-                                  key={course.id}
-                                  accessibilityRole="button"
-                                  accessibilityLabel={`${course.courseCode}, ${course.courseName}, ${course.lessonKindLabel}. Tap for full details.`}
-                                  onPress={() => setCourseDetailModal(course)}
-                                  onHoverIn={() =>
-                                    setHoveredCourseId(course.id)
-                                  }
-                                  onHoverOut={() => setHoveredCourseId(null)}
-                                  style={[
-                                    styles.courseBlock,
-                                    {
-                                      position: "absolute",
-                                      top: getTopOffset(course.startTime) + 2,
-                                      height:
-                                        getBlockHeight(
-                                          course.startTime,
-                                          course.endTime,
-                                        ) - 4,
-                                      left: 4,
-                                      right: 4,
-                                      zIndex: isHovered ? 100 : 10,
-                                      // אפקט ויזואלי לריחוף
-                                      transform: [
-                                        { scale: isHovered ? 1.02 : 1 },
-                                      ],
-                                      shadowOpacity: isHovered ? 0.2 : 0.08,
-                                      elevation: isHovered ? 8 : 3,
-                                      backgroundColor: isHovered
-                                        ? "#EFEEFF"
-                                        : "#E0E0FF",
-                                    },
-                                  ]}
-                                >
-                                  <View style={styles.courseContent}>
-                                    <ThemedText
-                                      style={styles.courseCode}
-                                      numberOfLines={1}
-                                    >
-                                      {course.courseCode}
-                                    </ThemedText>
-                                    <ThemedText
-                                      style={[
-                                        styles.courseName,
-                                        { fontSize: isHovered ? 12 : 11 },
-                                      ]}
-                                      numberOfLines={isHovered ? 3 : 2}
-                                    >
-                                      {course.courseName}
-                                    </ThemedText>
-                                    {course.shortDescription ? (
-                                      <ThemedText
-                                        style={styles.courseShortDescription}
-                                        numberOfLines={isHovered ? 3 : 1}
-                                      >
-                                        {course.shortDescription}
-                                      </ThemedText>
-                                    ) : null}
-                                    <ThemedText
-                                      style={styles.lessonKindTag}
-                                      numberOfLines={1}
-                                    >
-                                      {course.lessonKindLabel}
-                                    </ThemedText>
-                                    <ThemedText
-                                      style={styles.instructorsLine}
-                                      numberOfLines={isHovered ? 4 : 2}
-                                    >
-                                      {course.instructorsLine || "—"}
-                                    </ThemedText>
-
-                                    {isHovered ? (
-                                      <View
-                                        style={[
-                                          styles.courseDetails,
-                                          { marginTop: 4 },
-                                        ]}
-                                      >
-                                        <View
-                                          style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            gap: 2,
-                                          }}
-                                        >
-                                          <MaterialIcons
-                                            name="location-on"
-                                            size={10}
-                                            color="#5B4C9D"
-                                          />
-                                          <ThemedText
-                                            style={styles.courseDetailTextBold}
-                                          >
-                                            {course.location}
-                                          </ThemedText>
-                                        </View>
-                                      </View>
-                                    ) : null}
-                                  </View>
-                                </Pressable>
-                              );
-                            })}
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  </ScrollView>
-                </View>
-              </View>
+              <ThemedText style={styles.generatedWeekHint}>
+                Full week — Sun–Fri at once. Scroll for hours. Tap a block for details.
+              </ThemedText>
+              <PlannerFullWeekSchedule
+                schedule={proposal.schedule}
+                hydrateFromCatalog={false}
+                catalogCourses={[]}
+                slotHeight={55}
+                onCellPress={(cell, _day) =>
+                  setCourseDetailModal(cell as GeneratedOptionScheduleCell)
+                }
+              />
             </View>
           ))
         ) : null}
       </ScrollView>
 
-      {courseDetailModal ? (
-        <Modal
-          visible
-          transparent
-          animationType="fade"
-          onRequestClose={() => setCourseDetailModal(null)}
-        >
-          <View style={styles.courseDetailModalRoot}>
-            <Pressable
-              style={styles.courseDetailModalBackdrop}
-              onPress={() => setCourseDetailModal(null)}
-              accessibilityRole="button"
-              accessibilityLabel="Close details"
-            />
-            <View
-              style={styles.courseDetailModalCard}
-              accessibilityViewIsModal
-            >
-              <View style={styles.courseDetailModalHeader}>
-                <ThemedText style={styles.courseDetailModalTitle}>
-                  {courseDetailModal.courseCode} · {courseDetailModal.courseName}
-                </ThemedText>
-                <TouchableOpacity
-                  onPress={() => setCourseDetailModal(null)}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                >
-                  <MaterialIcons name="close" size={22} color="#666666" />
-                </TouchableOpacity>
-              </View>
-              <ScrollView
-                style={styles.courseDetailModalBody}
-                showsVerticalScrollIndicator={false}
-              >
-                <ThemedText style={styles.courseDetailModalMeta}>
-                  {courseDetailModal.calendarDay} · {courseDetailModal.time}
-                </ThemedText>
-                <ThemedText style={styles.courseDetailModalRowLabel}>
-                  Description
-                </ThemedText>
-                {courseDetailModal.shortDescription ? (
-                  <ThemedText style={styles.courseDetailModalRowValue}>
-                    {courseDetailModal.shortDescription}
-                  </ThemedText>
-                ) : (
-                  <ThemedText style={styles.courseDetailModalRowValueMuted}>
-                    No short catalog description available for this course.
-                  </ThemedText>
-                )}
-                <ThemedText style={styles.courseDetailModalRowLabel}>
-                  Session
-                </ThemedText>
-                <ThemedText style={styles.courseDetailModalRowValue}>
-                  {courseDetailModal.lessonKindLabel}
-                </ThemedText>
-                <ThemedText style={styles.courseDetailModalRowLabel}>
-                  Instructors
-                </ThemedText>
-                <ThemedText style={styles.courseDetailModalRowValue}>
-                  {courseDetailModal.instructorsLine || "—"}
-                </ThemedText>
-                <ThemedText style={styles.courseDetailModalRowLabel}>
-                  Location
-                </ThemedText>
-                <ThemedText style={styles.courseDetailModalRowValue}>
-                  {courseDetailModal.location || "—"}
-                </ThemedText>
-                <ThemedText style={styles.courseDetailModalRowLabel}>
-                  Prerequisites
-                </ThemedText>
-                {courseDetailModal.prerequisiteParentMissing ? (
-                  <ThemedText style={styles.courseDetailModalRowValueMuted}>
-                    Could not match this section to a catalog course. Prerequisite
-                    list unavailable.
-                  </ThemedText>
-                ) : (courseDetailModal.prerequisiteNames ?? []).length > 0 ? (
-                  <ThemedText style={styles.courseDetailModalRowValue}>
-                    {(courseDetailModal.prerequisiteNames ?? []).join(" · ")}
-                  </ThemedText>
-                ) : (
-                  <ThemedText style={styles.courseDetailModalRowValueMuted}>
-                    No prerequisites listed in the catalog for this course.
-                  </ThemedText>
-                )}
-                {courseDetailModal.prerequisiteAdvisoryNote ? (
-                  <View style={styles.prerequisiteAdvisoryBox}>
-                    <ThemedText style={styles.prerequisiteAdvisoryText}>
-                      {courseDetailModal.prerequisiteAdvisoryNote}
-                    </ThemedText>
-                  </View>
-                ) : null}
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
-      ) : null}
+      <PlannerCourseDetailModal
+        visible={courseDetailModal !== null}
+        detail={
+          courseDetailModal
+            ? plannerModalDetailFromGenerated(courseDetailModal)
+            : null
+        }
+        onClose={() => setCourseDetailModal(null)}
+      />
 
       {/* Bottom Buttons */}
       <View style={styles.adjustButtonContainer}>
@@ -1332,229 +1067,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: "#FFFFFF",
   },
-  scheduleCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    overflow: "hidden",
-  },
-  scheduleContainer: {
-    flexDirection: "row",
-  },
-  fixedTimeSection: {
-    borderRightWidth: 2,
-    borderRightColor: "#E0E0E0",
-  },
-  timeHeaderFixed: {
-    width: 60,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: "#E0E0E0",
-    backgroundColor: "#F8F8F8",
-  },
-  daysScrollView: {
-    flex: 1,
-  },
-  daysHeaderContainer: {
-    flexDirection: "row",
-    borderBottomWidth: 2,
-    borderBottomColor: "#E0E0E0",
-    backgroundColor: "#F8F8F8",
-  },
-  dayHeader: {
-    width: 130,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRightWidth: 1,
-    borderRightColor: "#E0E0E0",
-    alignItems: "center",
-  },
-  dayHeaderLast: {
-    borderRightWidth: 0,
-  },
-  dayColumnLast: {
-    borderRightWidth: 0,
-  },
-  gridHeaderText: {
+  generatedWeekHint: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#1A1A1A",
-    textAlign: "center",
-  },
-  daysBodyContainer: {
-    flexDirection: "row",
-  },
-  timeColumnFixed: {
-    width: 60,
-    backgroundColor: "#FAFAFA",
-  },
-  timeSlot: {
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  timeText: {
-    fontSize: 11,
-    color: "#9B9B9B",
-  },
-  dayColumn: {
-    borderRightWidth: 1,
-    borderRightColor: "#E0E0E0",
-  },
-  gridCell: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  gridLine: {
-    height: 1,
-    backgroundColor: "#F0F0F0",
-  },
-  courseBlock: {
-    borderRadius: 8,
-    padding: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    overflow: "hidden",
-    borderLeftWidth: 4,
-    borderLeftColor: "#5B4C9D",
-  },
-  courseContent: {
-    padding: 6,
-  },
-  courseCode: {
-    fontSize: 10,
-    fontWeight: "bold",
-    color: "#5B4C9D",
-    marginBottom: 2,
-  },
-  courseName: {
-    color: "#4A4A6A",
-    fontWeight: "600",
-    lineHeight: 14,
-  },
-  courseShortDescription: {
-    marginTop: 1,
-    fontSize: 9,
     color: "#6C6C80",
-    lineHeight: 12,
-  },
-  lessonKindTag: {
-    marginTop: 2,
-    fontSize: 9,
-    fontWeight: "700",
-    color: "#5B4C9D",
-    letterSpacing: 0.3,
-    textTransform: "uppercase",
-  },
-  instructorsLine: {
-    marginTop: 1,
-    fontSize: 9,
-    color: "#555555",
-    lineHeight: 12,
-  },
-  courseDetails: {
-    gap: 2,
-  },
-  courseDetailText: {
-    fontSize: 10,
-    color: "#9B9B9B",
-  },
-  courseDetailTextBold: {
-    fontSize: 10,
-    color: "#4A4A6A",
-    fontWeight: "700",
-  },
-  courseDetailModalRoot: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-  courseDetailModalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  courseDetailModalCard: {
-    width: "100%",
-    maxWidth: 400,
-    maxHeight: "80%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 0,
-    overflow: "hidden",
-    zIndex: 2,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-  },
-  courseDetailModalHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-  },
-  courseDetailModalTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    lineHeight: 22,
-  },
-  courseDetailModalBody: {
-    maxHeight: 360,
-    paddingHorizontal: 18,
-    paddingBottom: 20,
-    paddingTop: 12,
-  },
-  courseDetailModalMeta: {
-    fontSize: 13,
-    color: "#5B4C9D",
-    fontWeight: "600",
-    marginBottom: 16,
-  },
-  courseDetailModalRowLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#9B9B9B",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  courseDetailModalRowValue: {
-    fontSize: 15,
-    color: "#333333",
-    lineHeight: 22,
-  },
-  courseDetailModalRowValueMuted: {
-    fontSize: 14,
-    color: "#888888",
-    lineHeight: 20,
-    fontStyle: "italic",
-  },
-  prerequisiteAdvisoryBox: {
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: "#FFF8E1",
-    borderWidth: 1,
-    borderColor: "#FFE082",
-  },
-  prerequisiteAdvisoryText: {
-    fontSize: 13,
-    color: "#5D4037",
-    lineHeight: 18,
+    lineHeight: 16,
+    marginBottom: 10,
   },
   adjustButtonContainer: {
     flexDirection: "row",

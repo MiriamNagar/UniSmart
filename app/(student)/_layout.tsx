@@ -2,6 +2,7 @@ import {
     AdminBottomNavigation,
     StudentBottomNavigation,
 } from "@/components/bottom-navigation";
+import { BguPlannerCatalogProvider } from "@/contexts/bgu-planner-catalog-context";
 import { useSelection } from "@/contexts/selection-context";
 import { useStudentShellRoleGate } from "@/hooks/use-role-gate";
 import { Stack } from "expo-router";
@@ -12,28 +13,30 @@ export default function StudentLayout() {
   useStudentShellRoleGate();
 
   return (
-    <View style={{ flex: 1 }}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="planner" />
-        <Stack.Screen name="saved" />
-        <Stack.Screen name="notes" />
-        <Stack.Screen name="alerts" />
-        <Stack.Screen name="account" />
-        <Stack.Screen name="folder-content" />
-        <Stack.Screen
-          name="(planner-flow)"
-          options={{ presentation: "modal" }}
-        />
-      </Stack>
-      {userInfo.userType === "admin" ? (
-        <AdminBottomNavigation />
-      ) : (
-        <StudentBottomNavigation />
-      )}
-    </View>
+    <BguPlannerCatalogProvider>
+      <View style={{ flex: 1 }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="planner" />
+          <Stack.Screen name="saved" />
+          <Stack.Screen name="notes" />
+          <Stack.Screen name="alerts" />
+          <Stack.Screen name="account" />
+          <Stack.Screen name="folder-content" />
+          <Stack.Screen
+            name="(planner-flow)"
+            options={{ presentation: "modal" }}
+          />
+        </Stack>
+        {userInfo.userType === "admin" ? (
+          <AdminBottomNavigation />
+        ) : (
+          <StudentBottomNavigation />
+        )}
+      </View>
+    </BguPlannerCatalogProvider>
   );
 }

@@ -1,6 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
 
     function userProfileRoleValid() {
       return !('role' in request.resource.data)
@@ -10,11 +17,27 @@ service cloud.firestore {
 
     // User profile: self only; optional role must be student or admin when present.
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow create, update: if request.auth != null
-        && request.auth.uid == userId
+      allow read: if isSelf(userId);
+      allow create, update: if isSelf(userId)
         && userProfileRoleValid();
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow delete: if isSelf(userId);
+    }
+
+    // Student saved schedules are owner-scoped.
+    // Path and owner field must both match `request.auth.uid`.
+    match /users/{userId}/savedSchedules/{scheduleId} {
+      allow read: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+
+      allow create: if isSelf(userId)
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
     }
 
     // BGU CS catalog (seeded by scripts/seed-firestore-3nf.mjs). Reads only from clients; writes via Admin SDK.
