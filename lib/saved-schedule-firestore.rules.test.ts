@@ -133,6 +133,21 @@ describeIfEmulator('saved schedule Firestore rules', () => {
     await assertFails(getDoc(otherUserRead));
   });
 
+  it('allows admin to create and read owner-scoped note folders', async () => {
+    const adminDb = testEnv.authenticatedContext('admin-1').firestore();
+    const adminDoc = doc(adminDb, 'users/admin-1/noteFolders/general');
+
+    await assertSucceeds(
+      setDoc(adminDoc, {
+        ownerUid: 'admin-1',
+        scope: 'general',
+        name: 'General Notes',
+      }),
+    );
+
+    await assertSucceeds(getDoc(adminDoc));
+  });
+
   it('denies note folder create when name is missing', async () => {
     const ownerDb = testEnv.authenticatedContext('student-1').firestore();
     const ownerDoc = doc(ownerDb, 'users/student-1/noteFolders/general');
@@ -246,5 +261,35 @@ describeIfEmulator('saved schedule Firestore rules', () => {
     );
 
     await assertFails(getDoc(otherUserRead));
+  });
+
+  it('denies admin cross-user reads for student note attachments', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(
+          context.firestore(),
+          'users/student-1/noteFolders/general/attachments/attachment-2',
+        ),
+        {
+          ownerUid: 'student-1',
+          folderId: 'general',
+          folderName: 'General Notes',
+          type: 'document',
+          fileName: 'lecture.pdf',
+          contentType: 'application/pdf',
+          storagePath: 'users/student-1/noteAttachments/general/lecture.pdf',
+          downloadUrl: 'https://example.com/lecture.pdf',
+          createdAtMs: Date.now(),
+        },
+      );
+    });
+
+    const adminDb = testEnv.authenticatedContext('admin-1').firestore();
+    const crossUserRead = doc(
+      adminDb,
+      'users/student-1/noteFolders/general/attachments/attachment-2',
+    );
+
+    await assertFails(getDoc(crossUserRead));
   });
 });

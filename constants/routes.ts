@@ -32,5 +32,7 @@ export const ROUTES = {
   },
   ADMIN: {
     DASHBOARD: "/(admin)/admin-dashboard",
+    NOTES: "/(admin)/notes",
+    FOLDER_CONTENT: "/(admin)/folder-content",
   },
 } as const;

@@ -49,6 +49,7 @@ export default function NotesScreen() {
     setLastNotesFolderName,
     noteFoldersSyncVersion,
     bumpNoteFoldersSyncVersion,
+    userInfo,
   } = useSelection();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -393,15 +394,17 @@ export default function NotesScreen() {
               </View>
             </View>
           ) : null}
-          <TouchableOpacity
-            style={[styles.generateButton]}
-            activeOpacity={0.85}
-            onPress={() => router.push(ROUTES.STUDENT.SAVED)}
-          >
-            <ThemedText style={styles.generateButtonText}>
-              GENERATE FROM SAVED TAB
-            </ThemedText>
-          </TouchableOpacity>
+          {userInfo.userType !== "admin" ? (
+            <TouchableOpacity
+              style={[styles.generateButton]}
+              activeOpacity={0.85}
+              onPress={() => router.push(ROUTES.STUDENT.SAVED)}
+            >
+              <ThemedText style={styles.generateButtonText}>
+                GENERATE FROM SAVED TAB
+              </ThemedText>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* Folder Grid */}

@@ -15,6 +15,8 @@ export default function AdminLayout() {
           headerShown: false,
         }}>
         <Stack.Screen name="admin-dashboard" />
+        <Stack.Screen name="notes" />
+        <Stack.Screen name="folder-content" />
       </Stack>
       <AdminBottomNavigation />
     </View>

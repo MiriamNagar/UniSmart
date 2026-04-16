@@ -265,14 +265,13 @@ export function AdminBottomNavigation() {
 
   const isActive = (route: string) => {
     const currentPath = `/${segments.join("/")}`;
-    // For admin navigation, also check student routes (notes/account are shared)
-    if (route === ROUTES.STUDENT.NOTES) {
+    if (route === ROUTES.ADMIN.NOTES) {
       // Notes tab should be active when in notes or folder-content
       return (
-        currentPath === ROUTES.STUDENT.NOTES ||
-        currentPath.startsWith(ROUTES.STUDENT.NOTES + "/") ||
-        currentPath === ROUTES.STUDENT.FOLDER_CONTENT ||
-        currentPath.startsWith(ROUTES.STUDENT.FOLDER_CONTENT + "/")
+        currentPath === ROUTES.ADMIN.NOTES ||
+        currentPath.startsWith(ROUTES.ADMIN.NOTES + "/") ||
+        currentPath === ROUTES.ADMIN.FOLDER_CONTENT ||
+        currentPath.startsWith(ROUTES.ADMIN.FOLDER_CONTENT + "/")
       );
     }
     if (route === ROUTES.STUDENT.ACCOUNT) {
@@ -285,26 +284,26 @@ export function AdminBottomNavigation() {
   };
 
   const handleNavigation = (route: string) => {
-    if (route === ROUTES.STUDENT.NOTES) {
+    if (route === ROUTES.ADMIN.NOTES) {
       const currentPath = `/${segments.join("/")}`;
       const activeFolderName = paramToString(globalParams.folderName);
 
       const onNotesHub =
-        currentPath === ROUTES.STUDENT.NOTES ||
-        currentPath.startsWith(ROUTES.STUDENT.NOTES + "/");
+        currentPath === ROUTES.ADMIN.NOTES ||
+        currentPath.startsWith(ROUTES.ADMIN.NOTES + "/");
       const onFolder =
-        currentPath === ROUTES.STUDENT.FOLDER_CONTENT ||
-        currentPath.startsWith(ROUTES.STUDENT.FOLDER_CONTENT + "/");
+        currentPath === ROUTES.ADMIN.FOLDER_CONTENT ||
+        currentPath.startsWith(ROUTES.ADMIN.FOLDER_CONTENT + "/");
       const outsideNotes = !onNotesHub && !onFolder;
 
       if (outsideNotes) {
         if (lastNotesFolderName) {
           router.push({
-            pathname: ROUTES.STUDENT.FOLDER_CONTENT,
+            pathname: ROUTES.ADMIN.FOLDER_CONTENT,
             params: { folderName: lastNotesFolderName },
           });
         } else {
-          router.push(ROUTES.STUDENT.NOTES);
+          router.push(ROUTES.ADMIN.NOTES);
         }
         return;
       }
@@ -314,7 +313,7 @@ export function AdminBottomNavigation() {
         lastNotesFolderName &&
         activeFolderName === lastNotesFolderName
       ) {
-        router.push(ROUTES.STUDENT.NOTES);
+        router.push(ROUTES.ADMIN.NOTES);
         return;
       }
 
@@ -361,18 +360,18 @@ export function AdminBottomNavigation() {
         activeOpacity={0.7}
         accessibilityRole="tab"
         accessibilityLabel="Notes"
-        accessibilityState={{ selected: isActive(ROUTES.STUDENT.NOTES) }}
+        accessibilityState={{ selected: isActive(ROUTES.ADMIN.NOTES) }}
         hitSlop={TAB_HIT_SLOP}
-        onPress={() => handleNavigation(ROUTES.STUDENT.NOTES)}
+        onPress={() => handleNavigation(ROUTES.ADMIN.NOTES)}
       >
         <MaterialIcons
           name="description"
           size={24}
-          color={iconColor(ROUTES.STUDENT.NOTES)}
+          color={iconColor(ROUTES.ADMIN.NOTES)}
         />
         <ThemedText
           style={
-            isActive(ROUTES.STUDENT.NOTES)
+            isActive(ROUTES.ADMIN.NOTES)
               ? styles.navItemTextActive
               : styles.navItemText
           }
