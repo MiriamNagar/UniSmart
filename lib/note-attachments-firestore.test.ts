@@ -63,6 +63,28 @@ describe("listNoteAttachmentsForCurrentUserFolder", () => {
 
     expect(attachments.map((attachment) => attachment.id)).toEqual(["a-2", "a-1"]);
   });
+
+  it("skips malformed docs instead of throwing", async () => {
+    const attachments = await listNoteAttachmentsForCurrentUserFolder("general", {
+      getCurrentUserUid: () => "student-1",
+      readAttachmentDocs: async () => [
+        {
+          id: "bad-1",
+          ownerUid: "student-1",
+          folderId: "general",
+          folderName: "General Notes",
+          type: "image",
+          fileName: "   ",
+          contentType: "image/jpeg",
+          storagePath: "users/student-1/noteAttachments/general/bad.jpg",
+          downloadUrl: "https://example.com/bad.jpg",
+          createdAtMs: 100,
+        },
+      ],
+    });
+
+    expect(attachments).toEqual([]);
+  });
 });
 
 describe("uploadNoteAttachmentForCurrentUserFolder", () => {
@@ -119,13 +141,52 @@ describe("uploadNoteAttachmentForCurrentUserFolder", () => {
       }),
     );
   });
+
+  it("attempts storage cleanup if metadata creation fails", async () => {
+    const uploadFile = jest.fn().mockResolvedValue({
+      storagePath: "users/student-1/noteAttachments/general/board.jpg",
+      downloadUrl: "https://example.com/board.jpg",
+    });
+    const createAttachmentDoc = jest
+      .fn()
+      .mockRejectedValue(new Error("metadata create failed"));
+    const deleteStorageObject = jest.fn().mockResolvedValue(undefined);
+
+    await expect(
+      uploadNoteAttachmentForCurrentUserFolder(
+        {
+          folderId: "general",
+          folderName: "General Notes",
+          fileName: "board.jpg",
+          localUri: "file:///tmp/board.jpg",
+          type: "image",
+        },
+        {
+          getCurrentUserUid: () => "student-1",
+          uploadFile,
+          createAttachmentDoc,
+          deleteStorageObject,
+        },
+      ),
+    ).rejects.toThrow("metadata create failed");
+
+    expect(deleteStorageObject).toHaveBeenCalledWith({
+      storagePath: "users/student-1/noteAttachments/general/board.jpg",
+    });
+  });
 });
 
 describe("mapNoteAttachmentErrorToMessage", () => {
   it("maps permission errors", () => {
-    expect(mapNoteAttachmentErrorToMessage({ code: "permission-denied" })).toContain(
-      "permission",
-    );
+    expect(
+      mapNoteAttachmentErrorToMessage({ code: "permission-denied" }, "upload"),
+    ).toContain("permission");
+    expect(
+      mapNoteAttachmentErrorToMessage({ code: "permission-denied" }, "list"),
+    ).toContain("view");
+    expect(
+      mapNoteAttachmentErrorToMessage({ code: "permission-denied" }, "delete"),
+    ).toContain("delete");
   });
 });
 
@@ -148,5 +209,54 @@ describe("deleteNoteAttachmentForCurrentUserFolder", () => {
       folderId: "general",
       attachmentId: "attachment-1",
     });
+  });
+
+  it("deletes storage before deleting attachment doc", async () => {
+    const callOrder: string[] = [];
+    const deleteStorageObject = jest.fn().mockImplementation(async () => {
+      callOrder.push("storage");
+    });
+    const deleteAttachmentDoc = jest.fn().mockImplementation(async () => {
+      callOrder.push("doc");
+    });
+
+    await deleteNoteAttachmentForCurrentUserFolder(
+      {
+        folderId: "general",
+        attachmentId: "attachment-1",
+        storagePath: "users/student-1/noteAttachments/general/board.jpg",
+      },
+      {
+        getCurrentUserUid: () => "student-1",
+        deleteAttachmentDoc,
+        deleteStorageObject,
+      },
+    );
+
+    expect(callOrder).toEqual(["storage", "doc"]);
+  });
+
+  it("does not delete firestore doc when storage deletion fails", async () => {
+    const deleteAttachmentDoc = jest.fn().mockResolvedValue(undefined);
+    const deleteStorageObject = jest
+      .fn()
+      .mockRejectedValue(new Error("storage failure"));
+
+    await expect(
+      deleteNoteAttachmentForCurrentUserFolder(
+        {
+          folderId: "general",
+          attachmentId: "attachment-1",
+          storagePath: "users/student-1/noteAttachments/general/board.jpg",
+        },
+        {
+          getCurrentUserUid: () => "student-1",
+          deleteAttachmentDoc,
+          deleteStorageObject,
+        },
+      ),
+    ).rejects.toThrow("Failed to delete attachment file from storage.");
+
+    expect(deleteAttachmentDoc).not.toHaveBeenCalled();
   });
 });

@@ -50,6 +50,10 @@ type SyncNoteFoldersDeps = {
   }) => Promise<void>;
 };
 
+export type SyncDefaultNoteFoldersResult = {
+  addedCount: number;
+};
+
 type DeleteNoteFoldersDeps = {
   getCurrentUserUid: () => string | undefined;
   deleteFolderDocs: (input: {
@@ -367,7 +371,7 @@ async function createCustomFolderWithFirebase(
 
 async function syncDefaultFoldersWithFirebase(
   courseFolders: CourseFolderSeed[],
-): Promise<void> {
+): Promise<SyncDefaultNoteFoldersResult> {
   const { auth, db } = await import("@/lib/firebase");
   if (typeof auth?.authStateReady === "function") {
     await auth.authStateReady();
@@ -397,6 +401,9 @@ async function syncDefaultFoldersWithFirebase(
     ),
   );
   const existingFolderIds = new Set(existingDocs.docs.map((doc) => doc.id));
+  const addedCount = folders.filter(
+    (folder) => !existingFolderIds.has(folder.id),
+  ).length;
   const batch = writeBatch(db);
   for (const folder of folders) {
     const folderRef = doc(
@@ -430,6 +437,7 @@ async function syncDefaultFoldersWithFirebase(
     batch.set(folderRef, folderPayload, { merge: true });
   }
   await batch.commit();
+  return { addedCount };
 }
 
 async function deleteNoteFoldersWithFirebase(
@@ -530,7 +538,7 @@ export async function createCustomNoteFolderForCurrentUser(
 export async function syncDefaultNoteFoldersForCurrentUser(
   courseFolders: CourseFolderSeed[],
   deps?: SyncNoteFoldersDeps,
-): Promise<void> {
+): Promise<SyncDefaultNoteFoldersResult> {
   if (!deps) {
     return syncDefaultFoldersWithFirebase(courseFolders);
   }
@@ -541,6 +549,7 @@ export async function syncDefaultNoteFoldersForCurrentUser(
   }
   const folders = seedDefaultFolders(courseFolders, uid);
   await deps.upsertFolderDocs({ uid, folders });
+  return { addedCount: folders.length };
 }
 
 export async function deleteNoteFoldersForCurrentUser(

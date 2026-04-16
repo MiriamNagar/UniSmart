@@ -37,6 +37,7 @@ async function persistPickedFileToAppDocumentDirectory(
 }
 
 export type NoteAttachmentType = "image" | "document";
+export type NoteAttachmentAction = "list" | "upload" | "delete";
 
 export type NoteAttachmentRecord = {
   id: string;
@@ -96,6 +97,7 @@ type UploadAttachmentDeps = {
     folderId: string;
     payload: Omit<NoteAttachmentRecord, "id">;
   }) => Promise<{ id: string; createdAtMs?: number }>;
+  deleteStorageObject?: (input: { storagePath: string }) => Promise<void>;
 };
 
 type DeleteAttachmentDeps = {
@@ -204,13 +206,19 @@ function mapAttachmentDocToRecord(
     asTimestampMs(doc.createdAtMs) ??
     asTimestampMs(doc.createdAt) ??
     Date.now();
+  let normalizedFileName: string;
+  try {
+    normalizedFileName = normalizeFileName(doc.fileName);
+  } catch {
+    return null;
+  }
   return {
     id: doc.id,
     ownerUid: doc.ownerUid,
     folderId: doc.folderId,
     folderName: doc.folderName,
     type,
-    fileName: normalizeFileName(doc.fileName),
+    fileName: normalizedFileName,
     contentType: doc.contentType,
     storagePath: doc.storagePath,
     downloadUrl: doc.downloadUrl,
@@ -340,21 +348,33 @@ export async function uploadNoteAttachmentForCurrentUserFolder(
       type: input.type,
       contentType,
     });
-    const created = await deps.createAttachmentDoc({
-      uid,
-      folderId,
-      payload: {
-        ownerUid: uid,
+    let created: { id: string; createdAtMs?: number };
+    try {
+      created = await deps.createAttachmentDoc({
+        uid,
         folderId,
-        folderName,
-        type: input.type,
-        fileName,
-        contentType,
-        storagePath: uploaded.storagePath,
-        downloadUrl: uploaded.downloadUrl,
-        createdAtMs,
-      },
-    });
+        payload: {
+          ownerUid: uid,
+          folderId,
+          folderName,
+          type: input.type,
+          fileName,
+          contentType,
+          storagePath: uploaded.storagePath,
+          downloadUrl: uploaded.downloadUrl,
+          createdAtMs,
+        },
+      });
+    } catch (createError) {
+      if (deps.deleteStorageObject) {
+        try {
+          await deps.deleteStorageObject({ storagePath: uploaded.storagePath });
+        } catch (cleanupError) {
+          console.warn("Failed to clean up orphaned uploaded file:", cleanupError);
+        }
+      }
+      throw createError;
+    }
     const resolvedCreatedAtMs =
       typeof created.createdAtMs === "number"
         ? created.createdAtMs
@@ -411,14 +431,19 @@ export async function deleteNoteAttachmentForCurrentUserFolder(
     if (!uid) {
       throw new Error("You must be signed in to delete attachments.");
     }
+    if (input.storagePath && deps.deleteStorageObject) {
+      try {
+        await deps.deleteStorageObject({ storagePath: input.storagePath });
+      } catch (error) {
+        console.warn("Failed to delete storage object:", error);
+        throw new Error("Failed to delete attachment file from storage.");
+      }
+    }
     await deps.deleteAttachmentDoc({
       uid,
       folderId,
       attachmentId,
     });
-    if (input.storagePath && deps.deleteStorageObject) {
-      await deps.deleteStorageObject({ storagePath: input.storagePath });
-    }
     return;
   }
 
@@ -426,16 +451,31 @@ export async function deleteNoteAttachmentForCurrentUserFolder(
   deleteLocalAttachment(uid, folderId, attachmentId);
 }
 
-export function mapNoteAttachmentErrorToMessage(error: unknown): string {
+export function mapNoteAttachmentErrorToMessage(
+  error: unknown,
+  action: NoteAttachmentAction = "upload",
+): string {
   if (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
     (error as { code?: unknown }).code === "permission-denied"
   ) {
+    if (action === "list") {
+      return "You do not have permission to view attachments in this folder.";
+    }
+    if (action === "delete") {
+      return "You do not have permission to delete attachments in this folder.";
+    }
     return "You do not have permission to upload attachments in this folder.";
   }
   if (error instanceof Error && error.message.includes("signed in")) {
+    if (action === "list") {
+      return "Please sign in again, then reload this folder.";
+    }
+    if (action === "delete") {
+      return "Please sign in again, then retry deleting this attachment.";
+    }
     return "Please sign in again, then retry this attachment action.";
   }
   if (
@@ -446,9 +486,21 @@ export function mapNoteAttachmentErrorToMessage(error: unknown): string {
   }
   if (
     error instanceof Error &&
+    error.message.includes("Failed to delete attachment file from storage")
+  ) {
+    return "Could not remove the stored attachment file. Please try again.";
+  }
+  if (
+    error instanceof Error &&
     error.message.includes("Could not save a local copy")
   ) {
     return error.message;
+  }
+  if (action === "list") {
+    return "We could not load attachments right now. Please try again.";
+  }
+  if (action === "delete") {
+    return "We could not delete this attachment right now. Please try again.";
   }
   return "We could not upload this attachment right now. Please try again.";
 }

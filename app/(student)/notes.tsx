@@ -7,13 +7,10 @@ import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
 import {
     createCustomNoteFolderForCurrentUser,
     deleteNoteFoldersForCurrentUser,
-    extractCourseFoldersFromSchedules,
     listNoteFoldersForCurrentUser,
     mapNoteFolderErrorToMessage,
-    syncDefaultNoteFoldersForCurrentUser,
     type NoteFolderRecord,
 } from "@/lib/note-folders-firestore";
-import { listSavedPlansForCurrentUser } from "@/lib/saved-schedule-firestore";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import { router, useFocusEffect } from "expo-router";
@@ -99,13 +96,6 @@ export default function NotesScreen() {
     setIsFoldersLoading(true);
     setFoldersErrorMessage(null);
     try {
-      const savedPlans = await listSavedPlansForCurrentUser();
-      const seededFolders = extractCourseFoldersFromSchedules(
-        savedPlans.map((plan) => plan.schedule as Record<string, unknown>),
-      );
-      if (seededFolders.length > 0) {
-        await syncDefaultNoteFoldersForCurrentUser(seededFolders);
-      }
       const folders = await listNoteFoldersForCurrentUser();
       setPersistedFolders(folders);
       noteFoldersPermissionBlockedRef.current = false;

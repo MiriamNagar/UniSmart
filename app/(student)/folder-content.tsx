@@ -10,13 +10,14 @@ import {
     mapNoteAttachmentErrorToMessage,
     uploadNoteAttachmentForCurrentUserFolder,
 } from "@/lib/note-attachments-firestore";
+import type { NoteAttachmentAction } from "@/lib/note-attachments-firestore";
 import { listNoteFoldersForCurrentUser } from "@/lib/note-folders-firestore";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as LegacyFileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -75,10 +76,22 @@ export default function FolderContentScreen() {
   const [resolvedFolderId, setResolvedFolderId] = useState<string | null>(
     folderIdParam ?? null,
   );
+  const latestLoadRequestIdRef = useRef(0);
+  const deleteInFlightRef = useRef(false);
+
+  const mapAttachmentErrorForAction = useCallback(
+    (error: unknown, action: NoteAttachmentAction) =>
+      mapNoteAttachmentErrorToMessage(error, action),
+    [],
+  );
 
   const resolveFolderId = useCallback(async (): Promise<string> => {
-    if (folderIdParam?.trim()) {
-      return folderIdParam.trim();
+    const normalizedParam = folderIdParam?.trim();
+    if (normalizedParam) {
+      if (normalizedParam.includes("/")) {
+        throw new Error("This folder reference is invalid. Please reopen it.");
+      }
+      return normalizedParam;
     }
     if (displayName === "General Notes") {
       return "general";
@@ -92,10 +105,18 @@ export default function FolderContentScreen() {
       if (match) {
         return match.id;
       }
+      throw new Error(
+        "Could not resolve this folder. Please reopen it from Notes and retry.",
+      );
     } catch (error) {
       console.warn("Failed to resolve folder id by folder name:", error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(
+        "Could not resolve this folder. Please reopen it from Notes and retry.",
+      );
     }
-    return displayName;
   }, [displayName, folderIdParam]);
 
   const mapAttachmentToNote = useCallback(
@@ -120,21 +141,33 @@ export default function FolderContentScreen() {
   );
 
   const loadFolderAttachments = useCallback(async () => {
+    const requestId = ++latestLoadRequestIdRef.current;
     setIsLoadingNotes(true);
     setNotesErrorMessage(null);
     try {
       const folderId = await resolveFolderId();
+      if (requestId !== latestLoadRequestIdRef.current) {
+        return;
+      }
       setResolvedFolderId(folderId);
       const attachments =
         await listNoteAttachmentsForCurrentUserFolder(folderId);
+      if (requestId !== latestLoadRequestIdRef.current) {
+        return;
+      }
       setNotes(attachments.map(mapAttachmentToNote));
     } catch (error) {
-      setNotesErrorMessage(mapNoteAttachmentErrorToMessage(error));
+      if (requestId !== latestLoadRequestIdRef.current) {
+        return;
+      }
+      setNotesErrorMessage(mapAttachmentErrorForAction(error, "list"));
       console.warn("Failed to load note attachments:", error);
     } finally {
-      setIsLoadingNotes(false);
+      if (requestId === latestLoadRequestIdRef.current) {
+        setIsLoadingNotes(false);
+      }
     }
-  }, [mapAttachmentToNote, resolveFolderId]);
+  }, [mapAttachmentErrorForAction, mapAttachmentToNote, resolveFolderId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -177,14 +210,20 @@ export default function FolderContentScreen() {
         });
         setNotes((previous) => [mapAttachmentToNote(uploaded), ...previous]);
       } catch (error) {
-        const errorMessage = mapNoteAttachmentErrorToMessage(error);
+        const errorMessage = mapAttachmentErrorForAction(error, "upload");
         setNotesErrorMessage(errorMessage);
         Alert.alert("Upload failed", errorMessage);
       } finally {
         setIsUploadingNote(false);
       }
     },
-    [displayName, mapAttachmentToNote, resolveFolderId, resolvedFolderId],
+    [
+      displayName,
+      mapAttachmentErrorForAction,
+      mapAttachmentToNote,
+      resolveFolderId,
+      resolvedFolderId,
+    ],
   );
 
   const handleCameraPress = async () => {
@@ -274,12 +313,19 @@ export default function FolderContentScreen() {
   };
 
   const handleDeleteNote = (note: NoteItem) => {
+    if (deleteInFlightRef.current) {
+      return;
+    }
     Alert.alert("Delete Note", "Are you sure you want to delete this note?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
+          if (deleteInFlightRef.current) {
+            return;
+          }
+          deleteInFlightRef.current = true;
           setIsDeletingNoteId(note.id);
           setNotesErrorMessage(null);
           try {
@@ -292,10 +338,11 @@ export default function FolderContentScreen() {
               previous.filter((item) => item.id !== note.id),
             );
           } catch (error) {
-            const errorMessage = mapNoteAttachmentErrorToMessage(error);
+            const errorMessage = mapAttachmentErrorForAction(error, "delete");
             setNotesErrorMessage(errorMessage);
             Alert.alert("Delete failed", errorMessage);
           } finally {
+            deleteInFlightRef.current = false;
             setIsDeletingNoteId(null);
           }
         },
@@ -649,7 +696,7 @@ export default function FolderContentScreen() {
                   style={styles.deleteButton}
                   onPress={() => handleDeleteNote(note)}
                   activeOpacity={0.7}
-                  disabled={isDeletingNoteId === note.id}
+                  disabled={isDeletingNoteId !== null}
                 >
                   {isDeletingNoteId === note.id ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />

@@ -70,6 +70,9 @@ export default function SavedScreen() {
     null,
   );
   const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
+  const [generatingFoldersPlanId, setGeneratingFoldersPlanId] = useState<
+    string | null
+  >(null);
   const [reloadNonce, setReloadNonce] = useState(0);
 
   const [courseDetailModal, setCourseDetailModal] =
@@ -86,40 +89,18 @@ export default function SavedScreen() {
     setDeleteErrorMessage(null);
 
     void listSavedPlansForCurrentUser()
-      .then(async (plans) => {
+      .then((plans) => {
         if (isCancelled) {
           return;
         }
         setSavedPlans(plans);
-        const folders = extractCourseFoldersFromSchedules(
-          plans.map((plan) => plan.schedule as Record<string, unknown>),
-        );
-        if (folders.length === 0) {
-          return;
-        }
-        await syncDefaultNoteFoldersForCurrentUser(folders);
-        if (isCancelled) {
-          return;
-        }
-        const generatedFolderNames = folders.map((course) => {
-          const cleanCourseName = course.courseName.replace(/\.\.\.$/, "");
-          return `${course.courseCode}: ${cleanCourseName}`;
-        });
-        setCustomFolders((previous) =>
-          mergeFolderNames(previous, generatedFolderNames),
-        );
-        bumpNoteFoldersSyncVersion();
       })
       .catch((error: unknown) => {
         if (isCancelled) {
           return;
         }
-        const message =
-          error instanceof Error && error.message.includes("sync note folders")
-            ? mapNoteFolderErrorToMessage(error)
-            : mapSavedPlanReadErrorToMessage(error);
         console.error("[UniSmart] Failed to load saved plans", error);
-        setLoadErrorMessage(message);
+        setLoadErrorMessage(mapSavedPlanReadErrorToMessage(error));
       })
       .finally(() => {
         if (isCancelled) {
@@ -131,13 +112,7 @@ export default function SavedScreen() {
     return () => {
       isCancelled = true;
     };
-  }, [
-    bumpNoteFoldersSyncVersion,
-    isFocused,
-    reloadNonce,
-    setCustomFolders,
-    setSavedPlans,
-  ]);
+  }, [isFocused, reloadNonce, setSavedPlans]);
 
   function confirmDeletePlan(planId: string) {
     if (deletingPlanId !== null) {
@@ -173,6 +148,48 @@ export default function SavedScreen() {
       setDeleteErrorMessage(mapSavedPlanDeleteErrorToMessage(error));
     } finally {
       setDeletingPlanId(null);
+    }
+  }
+
+  async function generateFoldersFromPlan(
+    plan: (typeof savedPlans)[number],
+  ): Promise<void> {
+    if (generatingFoldersPlanId !== null) {
+      return;
+    }
+    setGeneratingFoldersPlanId(plan.id);
+    try {
+      const folders = extractCourseFoldersFromSchedules([
+        plan.schedule as Record<string, unknown>,
+      ]);
+      if (folders.length === 0) {
+        Alert.alert(
+          "No folders generated",
+          "This schedule has no course entries to turn into note folders.",
+        );
+        return;
+      }
+      const syncResult = await syncDefaultNoteFoldersForCurrentUser(folders);
+      const generatedFolderNames = folders.map((course) => {
+        const cleanCourseName = course.courseName.replace(/\.\.\.$/, "");
+        return `${course.courseCode}: ${cleanCourseName}`;
+      });
+      setCustomFolders((previous) =>
+        mergeFolderNames(previous, generatedFolderNames),
+      );
+      if (syncResult.addedCount > 0) {
+        bumpNoteFoldersSyncVersion();
+      }
+      Alert.alert(
+        "Folders generated",
+        syncResult.addedCount > 0
+          ? `Added ${syncResult.addedCount} new folder${syncResult.addedCount === 1 ? "" : "s"} from this schedule.`
+          : "All folders from this schedule already exist.",
+      );
+    } catch (error) {
+      Alert.alert("Folder generation failed", mapNoteFolderErrorToMessage(error));
+    } finally {
+      setGeneratingFoldersPlanId(null);
     }
   }
 
@@ -289,32 +306,62 @@ export default function SavedScreen() {
                       )
                     }
                   />
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    style={[
-                      styles.deletePlanButton,
-                      deletingPlanId === plan.id
-                        ? styles.deletePlanButtonDisabled
-                        : null,
-                    ]}
-                    disabled={deletingPlanId !== null}
-                    onPress={() => confirmDeletePlan(plan.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Delete saved plan from ${plan.date}`}
-                  >
-                    <View style={styles.deletePlanButtonInner}>
-                      <MaterialIcons
-                        name="delete-outline"
-                        size={14}
-                        color="#B3261E"
-                      />
-                      <ThemedText style={styles.deletePlanButtonText}>
-                        {deletingPlanId === plan.id
-                          ? "Deleting..."
-                          : "Delete plan"}
-                      </ThemedText>
-                    </View>
-                  </TouchableOpacity>
+                  <View style={styles.planActionsRow}>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      style={[
+                        styles.generateFoldersButton,
+                        generatingFoldersPlanId === plan.id
+                          ? styles.generateFoldersButtonDisabled
+                          : null,
+                      ]}
+                      disabled={generatingFoldersPlanId !== null}
+                      onPress={() => {
+                        void generateFoldersFromPlan(plan);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Generate note folders from plan ${plan.date}`}
+                    >
+                      <View style={styles.generateFoldersButtonInner}>
+                        <MaterialIcons
+                          name="folder-open"
+                          size={14}
+                          color="#4A3FA8"
+                        />
+                        <ThemedText style={styles.generateFoldersButtonText}>
+                          {generatingFoldersPlanId === plan.id
+                            ? "Generating..."
+                            : "Generate folders"}
+                        </ThemedText>
+                      </View>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      style={[
+                        styles.deletePlanButton,
+                        deletingPlanId === plan.id
+                          ? styles.deletePlanButtonDisabled
+                          : null,
+                      ]}
+                      disabled={deletingPlanId !== null}
+                      onPress={() => confirmDeletePlan(plan.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Delete saved plan from ${plan.date}`}
+                    >
+                      <View style={styles.deletePlanButtonInner}>
+                        <MaterialIcons
+                          name="delete-outline"
+                          size={14}
+                          color="#B3261E"
+                        />
+                        <ThemedText style={styles.deletePlanButtonText}>
+                          {deletingPlanId === plan.id
+                            ? "Deleting..."
+                            : "Delete plan"}
+                        </ThemedText>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               );
             })}
@@ -462,15 +509,41 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 18,
   },
+  planActionsRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+  },
   deletePlanButton: {
-    marginTop: 10,
-    alignSelf: "flex-end",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: "#E4A9A4",
     backgroundColor: "#FFF6F5",
+  },
+  generateFoldersButton: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "#CFC6F5",
+    backgroundColor: "#F4F1FF",
+  },
+  generateFoldersButtonDisabled: {
+    opacity: 0.6,
+  },
+  generateFoldersButtonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  generateFoldersButtonText: {
+    color: "#4A3FA8",
+    fontSize: 11,
+    fontWeight: "600",
   },
   deletePlanButtonDisabled: {
     opacity: 0.6,
