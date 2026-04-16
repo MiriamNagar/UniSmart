@@ -395,27 +395,13 @@ export default function FolderContentScreen() {
 
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const diffInDays = Math.floor(diffInHours / 24);
-
-    if (diffInSeconds < 60) {
-      return "Just now";
-    } else if (diffInMinutes < 60) {
-      return `${diffInMinutes} ${diffInMinutes === 1 ? "minute" : "minutes"} ago`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours} ${diffInHours === 1 ? "hour" : "hours"} ago`;
-    } else if (diffInDays < 7) {
-      return `${diffInDays} ${diffInDays === 1 ? "day" : "days"} ago`;
-    } else {
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-      });
-    }
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
   const handleOpenNote = async (note: NoteItem) => {
@@ -677,19 +663,23 @@ export default function FolderContentScreen() {
                       </View>
                     </>
                   ) : (
-                    <View style={styles.documentItem}>
-                      <MaterialIcons
-                        name="description"
-                        size={48}
-                        color="#5B4C9D"
-                      />
-                      <ThemedText style={styles.documentName} numberOfLines={2}>
-                        {note.name}
-                      </ThemedText>
-                      <ThemedText style={styles.documentTimestamp}>
-                        {formatTimestamp(note.timestamp)}
-                      </ThemedText>
-                    </View>
+                    <>
+                      <View style={styles.documentItem}>
+                        <MaterialIcons
+                          name="description"
+                          size={48}
+                          color="#5B4C9D"
+                        />
+                        <ThemedText style={styles.documentName} numberOfLines={2}>
+                          {note.name}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.documentInfo}>
+                        <ThemedText style={styles.documentTimestamp}>
+                          {formatTimestamp(note.timestamp)}
+                        </ThemedText>
+                      </View>
+                    </>
                   )}
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -975,11 +965,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: "center",
   },
+  documentInfo: {
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
   documentTimestamp: {
     fontSize: 11,
     color: "#9B9B9B",
-    marginTop: 6,
-    textAlign: "center",
+    textAlign: "left",
     fontWeight: "400",
   },
   modalOverlay: {
