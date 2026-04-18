@@ -12,11 +12,17 @@ import {
 } from "@/lib/note-attachments-firestore";
 import type { NoteAttachmentAction } from "@/lib/note-attachments-firestore";
 import { listNoteFoldersForCurrentUser } from "@/lib/note-folders-firestore";
+import { formatNoteTimestamp } from "@/lib/note-timestamp";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as LegacyFileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import {
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+  useSegments,
+} from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -56,6 +62,9 @@ interface NoteItem {
 }
 
 export default function FolderContentScreen() {
+  const segments = useSegments();
+  const isAdminShell = segments[0] === "(admin)";
+  const notesHubRoute = isAdminShell ? ROUTES.ADMIN.NOTES : ROUTES.STUDENT.NOTES;
   const { folderName, folderId: folderIdParam } = useLocalSearchParams<{
     folderName: string;
     folderId?: string;
@@ -393,17 +402,6 @@ export default function FolderContentScreen() {
     return utis[extension || ""] || "public.data";
   };
 
-  const formatTimestamp = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
-
   const handleOpenNote = async (note: NoteItem) => {
     if (note.type === "image") {
       // Open image in full screen modal
@@ -580,7 +578,7 @@ export default function FolderContentScreen() {
       <View style={styles.navBar}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.push(ROUTES.STUDENT.NOTES)}
+          onPress={() => router.push(notesHubRoute)}
           activeOpacity={0.7}
         >
           <MaterialIcons name="chevron-left" size={24} color="#1A1A1A" />
@@ -658,7 +656,7 @@ export default function FolderContentScreen() {
                       />
                       <View style={styles.noteInfo}>
                         <ThemedText style={styles.noteTimestamp}>
-                          {formatTimestamp(note.timestamp)}
+                          {formatNoteTimestamp(note.timestamp)}
                         </ThemedText>
                       </View>
                     </>
@@ -676,7 +674,7 @@ export default function FolderContentScreen() {
                       </View>
                       <View style={styles.documentInfo}>
                         <ThemedText style={styles.documentTimestamp}>
-                          {formatTimestamp(note.timestamp)}
+                          {formatNoteTimestamp(note.timestamp)}
                         </ThemedText>
                       </View>
                     </>

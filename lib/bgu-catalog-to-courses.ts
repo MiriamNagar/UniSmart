@@ -11,7 +11,15 @@ export interface BguOfferingRow {
   time: string;
   credits: number;
   weekly_hours: number;
-  places: number;
+  /**
+   * Optional explicit registrar group identifier that couples offerings
+   * (e.g. lecture + one or more tutorial/lab rows) into the same section.
+   */
+  sectionGroupKey?: string;
+  /** Room/section capacity when the registrar (or seed) provides explicit counts. */
+  capacity?: number;
+  /** Registered / taken seats; remaining = max(0, capacity - occupancy) when both are set. */
+  occupancy?: number;
 }
 
 export interface BguCatalogCourse {
@@ -36,11 +44,56 @@ export interface BguToCoursesOptions {
    * Same seed → same output (useful for tests / stable UI).
    */
   seed?: number;
-  /**
-   * When true (default), if `places` is missing or 0, pick a random availability 5–40.
-   * Always encoded in `location` for display (algorithm ignores it).
-   */
-  randomizeAvailabilityWhenZero?: boolean;
+}
+
+/**
+ * Minimal fields for seat math — shared by catalog rows, Firestore `bgu_cs_offerings` docs,
+ * and push / enrollment notification logic (`capacity − occupancy`).
+ */
+export type OfferingSeatCountFields = {
+  capacity?: number;
+  occupancy?: number;
+};
+
+/**
+ * Firestore / manual console edits sometimes store numeric fields as strings.
+ * Accept finite numbers and numeric strings so seat math still runs.
+ */
+export function coerceFirestoreFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const t = value.trim();
+    if (!t) return null;
+    const n = Number(t);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Seats remaining for one row: `max(0, capacity − occupancy)` when both values are present.
+ * Coerces Firestore/string numerics like {@link coerceFirestoreFiniteNumber}.
+ */
+export function remainingSeatsFromOfferingFields(
+  row: OfferingSeatCountFields,
+): number | null {
+  const cap = coerceFirestoreFiniteNumber(row.capacity as unknown);
+  const occ = coerceFirestoreFiniteNumber(row.occupancy as unknown);
+  if (cap === null || occ === null) {
+    return null;
+  }
+  return Math.max(0, cap - occ);
+}
+
+/**
+ * Seats remaining for one offering row: `capacity - occupancy` when both are set.
+ */
+export function reportedRemainingSeatsFromOfferingRow(
+  row: BguOfferingRow,
+): number | null {
+  return remainingSeatsFromOfferingFields(row);
 }
 
 const HEBREW_DAY_TO_EN: Record<string, Days> = {
@@ -159,60 +212,164 @@ function sortParsed(rows: ParsedOffering[]): ParsedOffering[] {
 function buildSectionsForGroup(
   rows: ParsedOffering[],
   rng: () => number,
-  randomizeZeroPlaces: boolean,
 ): CourseSection[] {
-  const lectures = sortParsed(rows.filter((r) => isLectureRow(r.type)));
-  const tutorials = sortParsed(rows.filter((r) => isTutorialRow(r.type)));
-  const labs = sortParsed(rows.filter((r) => isLabRow(r.type)));
-
   const sections: CourseSection[] = [];
   let sectionCounter = 0;
 
-  const availabilityFor = (row: BguOfferingRow): number => {
-    let p = row.places;
-    if (randomizeZeroPlaces && (!p || p <= 0)) {
-      p = 5 + Math.floor(rng() * 36);
-    }
-    return Math.max(0, p);
+  const normalizedGroupKey = (row: ParsedOffering): string | null => {
+    if (typeof row.sectionGroupKey !== "string") return null;
+    const key = row.sectionGroupKey.trim();
+    return key.length > 0 ? key : null;
   };
 
   const loc = (row: ParsedOffering): string => {
     const room = 100 + Math.floor(rng() * 900);
-    const av = availabilityFor(row);
-    return av > 0 ? `חדר ${room} · ${av} מקומות` : `חדר ${room}`;
+    const rem = reportedRemainingSeatsFromOfferingRow(row);
+    if (rem === 0) {
+      return `חדר ${room} · מלא`;
+    }
+    return typeof rem === "number" && rem > 0
+      ? `חדר ${room} · ${rem} מקומות`
+      : `חדר ${room}`;
   };
 
-  const n = Math.min(lectures.length, tutorials.length);
+  /**
+   * Seat / waitlist policy for one planner section (one `sectionGroupKey` group, or one
+   * unkeyed lecture+tutorial pair, etc.):
+   *
+   * - Only rows with both `capacity` and `occupancy` (after coercion) contribute seat counts.
+   * - **Lecture** rows in this section: take the **minimum** remaining among them (every
+   *   lecture line in the group must have seats for that “slot” to count).
+   * - **Tutorial** rows: take the **maximum** remaining — multiple exercises are alternatives;
+   *   one full exercise and one open exercise still counts as having tutorial capacity if the max > 0.
+   * - **Lab** rows: same as tutorials (**maximum**).
+   * - Section **remainingSeats** = minimum across the kinds that exist (lecture bucket, tutorial
+   *   bucket, lab bucket). So you need a positive lecture minimum **and** a positive tutorial max
+   *   (when tutorials exist), etc. — matching “lecture has space and at least one exercise has space”.
+   * - **isFull** ⇔ `remainingSeats <= 0`. With no seat data on any row, we still enable waitlist
+   *   and treat the section as full (`isFull: true`) so the UI is not dead.
+   */
+  const sectionMetaFromRows = (
+    sectionRows: ParsedOffering[],
+  ): Pick<CourseSection, "remainingSeats" | "isFull" | "waitlistSupported"> => {
+    const rowsWithSeats = sectionRows
+      .map((row) => ({
+        row,
+        remaining: reportedRemainingSeatsFromOfferingRow(row),
+      }))
+      .filter(
+        (item): item is { row: ParsedOffering; remaining: number } =>
+          item.remaining !== null,
+      );
+    if (rowsWithSeats.length === 0) {
+      // No capacity/occupancy (e.g. null in Firestore): still expose waitlist so the
+      // planner does not silently drop actions when the registrar omits seat fields.
+      return {
+        waitlistSupported: true,
+        isFull: true,
+        remainingSeats: undefined,
+      };
+    }
+
+    const lectureSeats = rowsWithSeats
+      .filter((item) => item.row.lessonKind === "Lecture")
+      .map((item) => item.remaining);
+    const tutorialSeats = rowsWithSeats
+      .filter((item) => item.row.lessonKind === "Tutorial")
+      .map((item) => item.remaining);
+    const labSeats = rowsWithSeats
+      .filter((item) => item.row.lessonKind === "Lab")
+      .map((item) => item.remaining);
+
+    // With explicit grouping, multiple tutorials/labs are alternatives.
+    // A section is considered open when at least one option in each required
+    // lesson kind remains available.
+    const requiredKindSeats: number[] = [];
+    if (lectureSeats.length > 0) {
+      requiredKindSeats.push(Math.min(...lectureSeats));
+    }
+    if (tutorialSeats.length > 0) {
+      requiredKindSeats.push(Math.max(...tutorialSeats));
+    }
+    if (labSeats.length > 0) {
+      requiredKindSeats.push(Math.max(...labSeats));
+    }
+
+    const remainingSeats =
+      requiredKindSeats.length > 0
+        ? Math.min(...requiredKindSeats)
+        : Math.min(...rowsWithSeats.map((item) => item.remaining));
+    return {
+      remainingSeats,
+      isFull: remainingSeats <= 0,
+      waitlistSupported: true,
+    };
+  };
+
+  // Preferred path: when source rows provide explicit coupling keys, build sections by key.
+  // This supports one lecture coupled with multiple tutorials/labs naturally.
+  const keyedRows = rows.filter((row) => normalizedGroupKey(row) !== null);
+  if (keyedRows.length > 0) {
+    const byKey = new Map<string, ParsedOffering[]>();
+    for (const row of keyedRows) {
+      const key = normalizedGroupKey(row)!;
+      const list = byKey.get(key) ?? [];
+      list.push(row);
+      byKey.set(key, list);
+    }
+    for (const [, sectionRows] of byKey) {
+      sectionCounter += 1;
+      const orderedRows = sortParsed(sectionRows);
+      sections.push({
+        sectionID: `sec-${sectionCounter}`,
+        lessons: orderedRows.map((row) => toLesson(row, loc(row))),
+        ...sectionMetaFromRows(orderedRows),
+      });
+    }
+  }
+
+  // Backward-compatible fallback for rows without explicit coupling keys.
+  const unkeyedRows = rows.filter((row) => normalizedGroupKey(row) === null);
+  const unkeyedLectures = sortParsed(unkeyedRows.filter((r) => isLectureRow(r.type)));
+  const unkeyedTutorials = sortParsed(unkeyedRows.filter((r) => isTutorialRow(r.type)));
+  const unkeyedLabs = sortParsed(unkeyedRows.filter((r) => isLabRow(r.type)));
+
+  const n = Math.min(unkeyedLectures.length, unkeyedTutorials.length);
   for (let i = 0; i < n; i++) {
     sectionCounter += 1;
-    const lec = lectures[i];
-    const tut = tutorials[i];
+    const lec = unkeyedLectures[i];
+    const tut = unkeyedTutorials[i];
+    const sectionRows = [lec, tut];
     sections.push({
       sectionID: `sec-${sectionCounter}`,
       lessons: [toLesson(lec, loc(lec)), toLesson(tut, loc(tut))],
+      ...sectionMetaFromRows(sectionRows),
     });
   }
-  for (let i = n; i < lectures.length; i++) {
+  for (let i = n; i < unkeyedLectures.length; i++) {
     sectionCounter += 1;
-    const lec = lectures[i];
+    const lec = unkeyedLectures[i];
     sections.push({
       sectionID: `sec-${sectionCounter}`,
       lessons: [toLesson(lec, loc(lec))],
+      ...sectionMetaFromRows([lec]),
     });
   }
-  for (let i = n; i < tutorials.length; i++) {
+  for (let i = n; i < unkeyedTutorials.length; i++) {
     sectionCounter += 1;
-    const tut = tutorials[i];
+    const tut = unkeyedTutorials[i];
     sections.push({
       sectionID: `sec-${sectionCounter}`,
       lessons: [toLesson(tut, loc(tut))],
+      ...sectionMetaFromRows([tut]),
     });
   }
-  for (const lab of labs) {
+  for (const lab of unkeyedLabs) {
     sectionCounter += 1;
     sections.push({
       sectionID: `sec-${sectionCounter}`,
       lessons: [toLesson(lab, loc(lab))],
+      ...sectionMetaFromRows([lab]),
     });
   }
 
@@ -258,7 +415,6 @@ export function bguCatalogToCourses(
 ): Course[] {
   const seed = options.seed ?? 0x9e3779b9;
   const rng = mulberry32(seed);
-  const randomizeZero = options.randomizeAvailabilityWhenZero !== false;
 
   const out: Course[] = [];
 
@@ -287,7 +443,7 @@ export function bguCatalogToCourses(
       const [semHeb, yearHeb] = semYearKey.split("|");
       const semester = mapSemester(semHeb);
       const degreeCatalogYear = (yearHeb ?? "").trim();
-      const sections = buildSectionsForGroup(groupRows, rng, randomizeZero);
+      const sections = buildSectionsForGroup(groupRows, rng);
       if (sections.length === 0) continue;
 
       // Stable ID without Hebrew in IDs (safe for URLs / keys)

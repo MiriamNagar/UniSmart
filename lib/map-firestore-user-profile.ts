@@ -26,6 +26,7 @@ export function mapFirestoreDataToUserProfile(data: Record<string, unknown>): Us
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
     fullName: readTrimmedString(data, 'fullName'),
+    birthDate: readTrimmedString(data, 'birthDate'),
     age: readTrimmedString(data, 'age'),
     faculty: readTrimmedString(data, 'faculty'),
     major: readTrimmedString(data, 'major'),

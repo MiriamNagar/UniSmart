@@ -5,8 +5,14 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { getRoleRedirect, parseAppPathSegments } from '@/lib/auth-routing';
+import {
+  registerPushTokenForCurrentUser,
+  resolvePushTokenFromConfig,
+} from '@/lib/push-token-lifecycle';
 import { getUserProfile } from '@/lib/user-profile-firestore';
 import type { UserProfileDoc } from '@/types/user-profile';
+
+const PUSH_TOKEN_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
 
 function delay(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -37,7 +43,7 @@ async function loadUserProfileResilient(uid: string): Promise<UserProfileDoc | n
 
 const emptyUserInfo = {
   fullName: '',
-  age: '',
+  birthDate: '',
   faculty: '',
   major: '',
   academicLevel: '',
@@ -59,11 +65,46 @@ export function AuthProfileSync({ children }: { children: ReactNode }) {
       return;
     }
 
+    let pushRefreshTimer: ReturnType<typeof setInterval> | null = null;
+    const clearPushRefreshTimer = () => {
+      if (!pushRefreshTimer) {
+        return;
+      }
+      clearInterval(pushRefreshTimer);
+      pushRefreshTimer = null;
+    };
+
+    const registerTokenForUser = async (expectedUid: string) => {
+      try {
+        if (auth.currentUser?.uid !== expectedUid) {
+          return;
+        }
+        const registration = await registerPushTokenForCurrentUser(resolvePushTokenFromConfig);
+        if (!registration) {
+          return;
+        }
+        if (auth.currentUser?.uid !== registration.uid) {
+          return;
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.warn('[auth] Push token registration skipped/failed.', error);
+        }
+      }
+    };
+
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
+        clearPushRefreshTimer();
         setUserInfo({ ...emptyUserInfo });
         return;
       }
+
+      clearPushRefreshTimer();
+      void registerTokenForUser(user.uid);
+      pushRefreshTimer = setInterval(() => {
+        void registerTokenForUser(user.uid);
+      }, PUSH_TOKEN_REFRESH_INTERVAL_MS);
 
       const display =
         user.displayName?.trim() || (user.email?.split('@')[0] ?? '').trim() || '';
@@ -82,7 +123,7 @@ export function AuthProfileSync({ children }: { children: ReactNode }) {
         setUserInfo({
           ...ref,
           fullName: profile.fullName || ref.fullName || display,
-          age: profile.age || ref.age,
+          birthDate: profile.birthDate || ref.birthDate,
           faculty: profile.faculty || ref.faculty,
           major: profile.major || ref.major,
           academicLevel: profile.academicLevel || ref.academicLevel,
@@ -97,7 +138,10 @@ export function AuthProfileSync({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => unsub();
+    return () => {
+      clearPushRefreshTimer();
+      unsub();
+    };
   }, [setUserInfo]);
 
   const role = userInfo.userType;

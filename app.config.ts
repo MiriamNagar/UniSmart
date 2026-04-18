@@ -35,15 +35,31 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ]
       : ["@react-native-google-signin/google-signin"];
 
+  const baseWeb =
+    typeof config.web === "object" && config.web !== null ? config.web : {};
+
   return {
     ...config,
+    /**
+     * Single-page web output avoids multi-route static chunk edge cases where
+     * the browser fails to fetch follow-up bundles (often reported as "Could not load bundle").
+     */
+    web: {
+      ...baseWeb,
+      bundler: "metro",
+      output: "single",
+    },
     android: {
       ...config.android,
       // Lets Expo inject the Google services Gradle plugin on prebuild (no manual build.gradle edits).
       // Use the JSON downloaded from Firebase when you register the Android app.
       googleServicesFile: "./google-services.json",
     },
-    plugins: [...(config.plugins ?? []), googleSignInPlugin],
+    plugins: [
+      ...(config.plugins ?? []),
+      googleSignInPlugin,
+      "@react-native-community/datetimepicker",
+    ],
     extra: {
       ...extra,
       firebase: firebaseExtraFromEnv(),

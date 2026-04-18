@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useSelection } from '@/contexts/selection-context';
 import { ROUTES } from '@/constants/routes';
 import { auth } from '@/lib/firebase';
+import { evaluateBirthDateForStudentPolicy } from '@/lib/birth-date-policy';
 import { mapUserProfileWriteErrorToMessage, mergeUserPassport } from '@/lib/user-profile-firestore';
 
 export default function IdentityHubScreen() {
@@ -14,9 +15,18 @@ export default function IdentityHubScreen() {
   const isAdmin = userType === 'admin';
   const { userInfo, setUserInfo } = useSelection();
   const [fullName, setFullName] = useState('');
-  const [age, setAge] = useState('');
+  const [birthDate, setBirthDate] = useState('');
 
-  const isFormValid = fullName.trim().length > 0 && age.trim().length > 0;
+  const policyEvaluation = evaluateBirthDateForStudentPolicy(birthDate);
+  const isFormValid = fullName.trim().length > 0 && policyEvaluation.accepted;
+  const birthDateHint =
+    policyEvaluation.reason === 'invalid-format'
+      ? 'Use YYYY-MM-DD format (for example: 2005-09-14).'
+      : policyEvaluation.reason === 'future-date'
+        ? 'Birth date cannot be in the future.'
+        : policyEvaluation.reason === 'under-13'
+          ? 'Students under 13 cannot continue in this app flow. Use your institutional support path.'
+          : null;
 
   const handleContinue = () => {
     if (!isFormValid) {
@@ -27,7 +37,7 @@ export default function IdentityHubScreen() {
         setUserInfo({
           ...userInfo,
           fullName,
-          age,
+          birthDate: policyEvaluation.normalizedBirthDate ?? birthDate.trim(),
           faculty: '',
           major: '',
           academicLevel: '',
@@ -35,7 +45,10 @@ export default function IdentityHubScreen() {
         });
         if (auth?.currentUser) {
           try {
-            await mergeUserPassport(auth.currentUser.uid, { fullName, age });
+            await mergeUserPassport(auth.currentUser.uid, {
+              fullName,
+              birthDate: policyEvaluation.normalizedBirthDate ?? birthDate.trim(),
+            });
           } catch (e: unknown) {
             Alert.alert('Could not save profile', mapUserProfileWriteErrorToMessage(e));
             return;
@@ -46,12 +59,15 @@ export default function IdentityHubScreen() {
         setUserInfo({
           ...userInfo,
           fullName,
-          age,
+          birthDate: policyEvaluation.normalizedBirthDate ?? birthDate.trim(),
           userType: 'student',
         });
         if (auth?.currentUser) {
           try {
-            await mergeUserPassport(auth.currentUser.uid, { fullName, age });
+            await mergeUserPassport(auth.currentUser.uid, {
+              fullName,
+              birthDate: policyEvaluation.normalizedBirthDate ?? birthDate.trim(),
+            });
           } catch (e: unknown) {
             Alert.alert('Could not save profile', mapUserProfileWriteErrorToMessage(e));
             return;
@@ -99,17 +115,19 @@ export default function IdentityHubScreen() {
           />
         </View>
 
-        {/* Age Input */}
+        {/* Birth Date Input */}
         <View style={styles.inputContainer}>
-          <ThemedText style={styles.label}>AGE</ThemedText>
+          <ThemedText style={styles.label}>BIRTH DATE (YYYY-MM-DD)</ThemedText>
           <TextInput
             style={styles.input}
-            value={age}
-            onChangeText={setAge}
-            placeholder="20"
+            value={birthDate}
+            onChangeText={setBirthDate}
+            placeholder="2005-09-14"
             placeholderTextColor="#9B9B9B"
-            keyboardType="numeric"
+            keyboardType="numbers-and-punctuation"
+            autoCapitalize="none"
           />
+          {birthDateHint ? <ThemedText style={styles.hintText}>{birthDateHint}</ThemedText> : null}
         </View>
 
         {/* Continue Button */}
@@ -193,6 +211,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     marginBottom: 24,
+  },
+  hintText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#B45309',
   },
   label: {
     fontSize: 12,

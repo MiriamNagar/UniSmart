@@ -2,6 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { designTokens } from "@/constants/design-tokens";
 import { ROUTES } from "@/constants/routes";
 import { useSelection } from "@/contexts/selection-context";
+import { formatUnreadBadgeText, getUnreadAlertCount } from "@/lib/alerts-read-state";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router, useGlobalSearchParams, useSegments } from "expo-router";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
@@ -26,7 +27,8 @@ export function StudentBottomNavigation() {
   const globalParams = useGlobalSearchParams();
   const { alerts, lastPlannerFlowRoute, lastNotesFolderName } = useSelection();
 
-  const unreadAlertCount = alerts.filter((alert) => !alert.isRead).length;
+  const unreadAlertCount = getUnreadAlertCount(alerts);
+  const unreadBadgeText = formatUnreadBadgeText(unreadAlertCount);
 
   const isActive = (route: string) => {
     const currentPath = `/${segments.join("/")}`;
@@ -104,6 +106,11 @@ export function StudentBottomNavigation() {
         lastNotesFolderName &&
         activeFolderName === lastNotesFolderName
       ) {
+        router.push(ROUTES.STUDENT.NOTES);
+        return;
+      }
+
+      if (onFolder) {
         router.push(ROUTES.STUDENT.NOTES);
         return;
       }
@@ -212,12 +219,14 @@ export function StudentBottomNavigation() {
             size={24}
             color={iconColor(ROUTES.STUDENT.ALERTS)}
           />
-          {unreadAlertCount > 0 && (
+          {unreadBadgeText && (
             <View
-              style={styles.alertDot}
+              style={styles.alertBadge}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
-            />
+            >
+              <ThemedText style={styles.alertBadgeText}>{unreadBadgeText}</ThemedText>
+            </View>
           )}
         </View>
         <ThemedText
@@ -313,6 +322,11 @@ export function AdminBottomNavigation() {
         lastNotesFolderName &&
         activeFolderName === lastNotesFolderName
       ) {
+        router.push(ROUTES.ADMIN.NOTES);
+        return;
+      }
+
+      if (onFolder) {
         router.push(ROUTES.ADMIN.NOTES);
         return;
       }
@@ -443,15 +457,24 @@ const styles = StyleSheet.create({
   alertIconContainer: {
     position: "relative",
   },
-  alertDot: {
+  alertBadge: {
     position: "absolute",
-    top: -2,
-    right: -2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    top: -7,
+    right: -10,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: C.alert,
     borderWidth: 1,
     borderColor: C.surfaceCard,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  alertBadgeText: {
+    color: C.surfaceCard,
+    fontSize: 9,
+    fontWeight: "700",
+    lineHeight: 11,
   },
 });

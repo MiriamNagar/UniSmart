@@ -21,11 +21,12 @@ interface Alert {
   title: string;
   message: string;
   isRead: boolean;
+  createdAtMs: number;
 }
 
 interface UserInfo {
   fullName: string;
-  age: string;
+  birthDate: string;
   faculty: string;
   major: string;
   academicLevel: string;
@@ -100,6 +101,7 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       message:
         "Enrollment for Semester 2 is now officially open for Engineering students.",
       isRead: false,
+      createdAtMs: Date.UTC(2026, 3, 16, 8, 30),
     },
     {
       id: "2",
@@ -107,11 +109,12 @@ export function SelectionProvider({ children }: { children: ReactNode }) {
       message:
         "Your current draft for ENG205 has a professor update. Review your preferences.",
       isRead: false,
+      createdAtMs: Date.UTC(2026, 3, 16, 10, 0),
     },
   ]);
   const [userInfo, setUserInfoState] = useState<UserInfo>({
     fullName: "",
-    age: "",
+    birthDate: "",
     faculty: "",
     major: "",
     academicLevel: "",

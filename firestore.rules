@@ -9,6 +9,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     function userProfileRoleValid() {
       return !('role' in request.resource.data)
         || request.resource.data.role == 'student'
@@ -82,6 +87,23 @@ service cloud.firestore {
         && resource.data.ownerUid == request.auth.uid;
     }
 
+    // Student waitlist interests are owner-scoped.
+    // Path and owner field must both match `request.auth.uid`.
+    match /users/{userId}/waitlistInterests/{interestId} {
+      allow read: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+
+      allow create: if isSelf(userId)
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
     // Student note folders are owner-scoped.
     // Path and owner field must both match `request.auth.uid`.
     match /users/{userId}/noteFolders/{folderId} {
@@ -120,6 +142,23 @@ service cloud.firestore {
       }
     }
 
+    // Student alerts are owner-scoped.
+    // Path and owner field must both match `request.auth.uid`.
+    match /users/{userId}/alerts/{alertId} {
+      allow read: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+
+      allow create: if isSelf(userId)
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
     // BGU CS catalog (seeded by scripts/seed-firestore-3nf.mjs). Reads only from clients; writes via Admin SDK.
     match /bgu_cs_courses/{courseId} {
       allow read: if true;
@@ -131,6 +170,13 @@ service cloud.firestore {
     }
     match /bgu_cs_prerequisite_edges/{edgeId} {
       allow read: if true;
+      allow write: if false;
+    }
+
+    // Admin rollup metrics for analysis dashboards (planner usage, cohorts, exports).
+    // Keep this read-only from clients; writes are expected from privileged tooling.
+    match /adminAnalyticsRollups/{rollupId} {
+      allow read: if isAdmin();
       allow write: if false;
     }
   }

@@ -9,6 +9,9 @@ export interface UserProfileDoc {
   updatedAt?: unknown;
   /** Student passport / identity — optional until onboarding completes */
   fullName?: string;
+  /** ISO date string (YYYY-MM-DD). */
+  birthDate?: string;
+  /** Legacy field kept for compatibility with older seeded profiles. */
   age?: string;
   /** Department (faculty) */
   faculty?: string;
@@ -19,5 +22,5 @@ export interface UserProfileDoc {
 
 /** Subset merged into `users/{uid}` alongside `role` (owner-only writes; see firestore.rules). */
 export type UserPassportMerge = Partial<
-  Pick<UserProfileDoc, 'fullName' | 'age' | 'faculty' | 'major' | 'academicLevel'>
+  Pick<UserProfileDoc, 'fullName' | 'birthDate' | 'age' | 'faculty' | 'major' | 'academicLevel'>
 >;

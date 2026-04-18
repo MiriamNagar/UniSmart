@@ -6,10 +6,11 @@ import {
 	type Firestore,
 } from 'firebase/firestore';
 
-import type {
-	BguCatalogCourse,
-	BguCatalogJson,
-	BguOfferingRow,
+import {
+	coerceFirestoreFiniteNumber,
+	type BguCatalogCourse,
+	type BguCatalogJson,
+	type BguOfferingRow,
 } from '@/lib/bgu-catalog-to-courses';
 
 /** Matches `program` in `mockData/bgu-cs-catalog.json` and seed script `seed-firestore-3nf.mjs`. */
@@ -40,7 +41,10 @@ interface OfferingDoc {
 	timeText?: string;
 	credits?: number;
 	weeklyHours?: number;
-	places?: number;
+	/** Optional registrar coupling key for section assembly (lecture + exercises/labs). */
+	sectionGroupKey?: string;
+	capacity?: number;
+	occupancy?: number;
 }
 
 interface EdgeDoc {
@@ -143,7 +147,10 @@ export async function fetchBguCatalogJsonFromFirestore(
 	offeringsSnap.forEach((docSnap) => {
 		const d = docSnap.data() as OfferingDoc;
 		if (!matchesProgram(d, programKey)) return;
-		const cid = d.courseId;
+		const cid =
+			typeof d.courseId === 'string' && d.courseId.trim().length > 0
+				? d.courseId.trim()
+				: undefined;
 		if (!cid) return;
 		const list = byCourseId.get(cid) ?? [];
 		list.push(d);
@@ -154,8 +161,8 @@ export async function fetchBguCatalogJsonFromFirestore(
 		const displayName = idToName.get(courseId);
 		if (!displayName || !courses[displayName]) continue;
 		rows.sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
-		courses[displayName].offerings = rows.map(
-			(row): BguOfferingRow => ({
+		courses[displayName].offerings = rows.map((row): BguOfferingRow => {
+			const out: BguOfferingRow = {
 				type: row.sessionType ?? '',
 				lecturer: mergeOfferingLecturerFields(row),
 				language: row.language ?? undefined,
@@ -164,16 +171,35 @@ export async function fetchBguCatalogJsonFromFirestore(
 				time: row.timeText ?? '',
 				credits: row.credits ?? 0,
 				weekly_hours: row.weeklyHours ?? 0,
-				places: row.places ?? 0,
-			}),
-		);
+				sectionGroupKey:
+					typeof row.sectionGroupKey === 'string'
+						? row.sectionGroupKey.trim() || undefined
+						: undefined,
+			};
+			const cap = coerceFirestoreFiniteNumber(row.capacity);
+			const occ = coerceFirestoreFiniteNumber(row.occupancy);
+			if (cap !== null) {
+				out.capacity = cap;
+			}
+			if (occ !== null) {
+				out.occupancy = occ;
+			}
+			return out;
+		});
 	}
 
 	edgesSnap.forEach((docSnap) => {
 		const d = docSnap.data() as EdgeDoc;
 		if (!matchesProgram(d, programKey)) return;
-		const cid = d.courseId;
-		const prereqId = d.prerequisiteCourseId;
+		const cid =
+			typeof d.courseId === 'string' && d.courseId.trim().length > 0
+				? d.courseId.trim()
+				: undefined;
+		const prereqId =
+			typeof d.prerequisiteCourseId === 'string' &&
+			d.prerequisiteCourseId.trim().length > 0
+				? d.prerequisiteCourseId.trim()
+				: undefined;
 		if (!cid || !prereqId) return;
 		const name = idToName.get(cid);
 		const prereqName = idToName.get(prereqId);

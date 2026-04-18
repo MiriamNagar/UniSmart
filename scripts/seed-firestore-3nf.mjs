@@ -4,6 +4,7 @@
  * Collections (same project; namespaced for this program):
  *   bgu_cs_courses/{courseId}           — one doc per course (display name lives here once).
  *   bgu_cs_offerings/{offeringId}       — one doc per schedule row (FK: courseId).
+ *     Seat counts use `capacity` + `occupancy` (remaining = capacity - occupancy in the app).
  *   bgu_cs_prerequisite_edges/{edgeId}  — one doc per (course → prerequisite) pair (two FKs).
  *
  * Prerequisites reference courses by courseId; resolve names via bgu_cs_courses.displayName
@@ -165,7 +166,7 @@ async function main() {
 			const row = list[i];
 			const oid = stableOfferingId(courseId, i);
 			const ref = colOfferings.doc(oid);
-			await setDoc(ref, {
+			const payload = {
 				programKey,
 				courseId,
 				orderIndex: i,
@@ -177,8 +178,20 @@ async function main() {
 				timeText: row.time,
 				credits: row.credits,
 				weeklyHours: row.weekly_hours,
-				places: row.places,
-			});
+			};
+			if (typeof row.sectionGroupKey === 'string' && row.sectionGroupKey.trim()) {
+				payload.sectionGroupKey = row.sectionGroupKey.trim();
+			}
+			const hasCapOcc =
+				typeof row.capacity === 'number' &&
+				!Number.isNaN(row.capacity) &&
+				typeof row.occupancy === 'number' &&
+				!Number.isNaN(row.occupancy);
+			if (hasCapOcc) {
+				payload.capacity = row.capacity;
+				payload.occupancy = row.occupancy;
+			}
+			await setDoc(ref, payload);
 		}
 	}
 

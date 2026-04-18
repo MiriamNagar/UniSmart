@@ -108,11 +108,38 @@ export const db: Firestore | undefined = firebaseApp
 /**
  * Firebase Analytics (web only). Loaded only on web so the Analytics SDK is not bundled/evaluated on native.
  * Requires `measurementId` in config (optional field in Firebase console).
+ *
+ * Guard `window` so Expo static / SSR web bundles do not evaluate Analytics during Node render
+ * (`getAnalytics` touches `window` immediately).
  */
 export const analytics: Analytics | undefined =
-  Platform.OS === "web" && firebaseApp
-    ? // eslint-disable-next-line @typescript-eslint/no-require-imports -- web-only; avoids pulling analytics into native bundles
-      (
-        require("firebase/analytics") as typeof import("firebase/analytics")
-      ).getAnalytics(firebaseApp)
+  Platform.OS === "web" && firebaseApp && typeof window !== "undefined"
+    ? (() => {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports -- web-only; avoids pulling analytics into native bundles
+          return (
+            require("firebase/analytics") as typeof import("firebase/analytics")
+          ).getAnalytics(firebaseApp);
+        } catch {
+          return undefined;
+        }
+      })()
     : undefined;
+
+/** Lazy analytics for web after hydration; safe when `analytics` was skipped during SSR. */
+export function getFirebaseAnalytics(): Analytics | undefined {
+  if (Platform.OS !== "web" || !firebaseApp || typeof window === "undefined") {
+    return undefined;
+  }
+  if (analytics !== undefined) {
+    return analytics;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- web-only
+    return (
+      require("firebase/analytics") as typeof import("firebase/analytics")
+    ).getAnalytics(firebaseApp);
+  } catch {
+    return undefined;
+  }
+}

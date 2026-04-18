@@ -23,7 +23,7 @@ export async function mergeUserPassport(uid: string, partial: UserPassportMerge)
   if (!db) {
     throw new Error('Firestore is not configured.');
   }
-  const keys = ['fullName', 'age', 'faculty', 'major', 'academicLevel'] as const;
+  const keys = ['fullName', 'birthDate', 'age', 'faculty', 'major', 'academicLevel'] as const;
   const payload: Record<string, unknown> = {};
   for (const k of keys) {
     if (k in partial && partial[k] !== undefined) {

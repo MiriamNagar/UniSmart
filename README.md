@@ -65,4 +65,34 @@ References: [Expo: Using Firebase](https://docs.expo.dev/guides/using-firebase),
 
 ---
 
+## Testing Layers
+
+UniSmart uses two automated test layers:
+
+1. Jest tests (`npm test`) for app logic and module-level behavior.
+2. Firestore rules emulator tests (`npm run test:rules`) for owner/role isolation and path-level security behavior.
+
+### Run all checks locally
+
+```bash
+npm run lint
+npm run test:ci
+```
+
+`npm run test:ci` runs both layers (`npm test` + `npm run test:rules`) so CI and local verification use the same flow. Firestore rules tests require the emulator host (`FIRESTORE_EMULATOR_HOST`) and are skipped locally when it is not set.
+
+---
+
+## Birth Date Policy (COPPA)
+
+UniSmart onboarding now collects **birth date** (`YYYY-MM-DD`) and enforces a documented minors policy:
+
+* Students younger than 13 are blocked from self-service onboarding.
+* The UX gate is implemented in `app/(onboarding)/identity-hub.tsx` with explicit format/future-date validation and a clear support-path message.
+* Profile writes store `birthDate` in `users/{uid}`; legacy `age` is still tolerated for existing records.
+
+This decision keeps profile collection explicit, auditable, and aligned with under-13 handling requirements.
+
+---
+
 Hope the app will ease your scheduling process!

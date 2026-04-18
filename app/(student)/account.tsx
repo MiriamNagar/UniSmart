@@ -58,7 +58,7 @@ export default function AccountScreen() {
             setTimeout(() => {
               setUserInfo({
                 fullName: '',
-                age: '',
+                birthDate: '',
                 faculty: '',
                 major: '',
                 academicLevel: '',
@@ -120,9 +120,9 @@ export default function AccountScreen() {
                 </ThemedText>
               </View>
               <View style={styles.passportRow}>
-                <ThemedText style={styles.passportLabel}>AGE</ThemedText>
+                <ThemedText style={styles.passportLabel}>BIRTH DATE</ThemedText>
                 <ThemedText style={styles.passportValue}>
-                  {userInfo.age?.trim() ? userInfo.age : 'Not set'}
+                  {userInfo.birthDate?.trim() ? userInfo.birthDate : 'Not set'}
                 </ThemedText>
               </View>
               <View style={styles.passportRow}>

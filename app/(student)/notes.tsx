@@ -13,7 +13,7 @@ import {
 } from "@/lib/note-folders-firestore";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useSegments } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -43,6 +43,11 @@ function mergeFolderNameOnce(previous: string[], nextName: string): string[] {
 }
 
 export default function NotesScreen() {
+  const segments = useSegments();
+  const isAdminShell = segments[0] === "(admin)";
+  const folderContentRoute = isAdminShell
+    ? ROUTES.ADMIN.FOLDER_CONTENT
+    : ROUTES.STUDENT.FOLDER_CONTENT;
   const {
     customFolders,
     setCustomFolders,
@@ -450,7 +455,7 @@ export default function NotesScreen() {
                   return;
                 }
                 router.push({
-                  pathname: ROUTES.STUDENT.FOLDER_CONTENT,
+                  pathname: folderContentRoute,
                   params: { folderName: folder.name, folderId: folder.id },
                 });
               }}

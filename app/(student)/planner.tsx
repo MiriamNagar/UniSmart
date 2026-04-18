@@ -61,13 +61,19 @@ export default function PlannerScreen() {
       >
         {/* Icon */}
         <View style={styles.iconContainer}>
-          <View style={styles.iconSquare}>
+          <View
+            style={styles.iconSquare}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             <MaterialIcons name="schedule" size={64} color="#5B4C9D" />
           </View>
         </View>
 
         {/* Title */}
-        <ThemedText style={styles.title}>Smart Planner</ThemedText>
+        <ThemedText style={styles.title} accessibilityRole="header">
+          Smart Planner
+        </ThemedText>
 
         {/* Description */}
         <View style={styles.descriptionContainer}>
@@ -103,7 +109,11 @@ export default function PlannerScreen() {
           <ThemedText style={styles.sectionLabel}>
             SELECT DEGREE YEAR
           </ThemedText>
-          <View style={styles.degreeYearGrid}>
+          <View
+            style={styles.degreeYearGrid}
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Degree year selection"
+          >
             {DEGREE_YEAR_PLANNER_OPTIONS.map((opt) => (
               <TouchableOpacity
                 key={opt.tier}
@@ -116,6 +126,10 @@ export default function PlannerScreen() {
                   setActiveDegreeYearTier(opt.tier);
                   resetPlannerSelectionsForTermChange();
                 }}
+                accessibilityRole="radio"
+                accessibilityLabel={opt.label}
+                accessibilityHint="Filters available courses to this degree year"
+                accessibilityState={{ selected: activeDegreeYearTier === opt.tier }}
                 activeOpacity={0.7}
               >
                 <ThemedText
@@ -137,7 +151,11 @@ export default function PlannerScreen() {
           <ThemedText style={styles.sectionLabel}>
             SELECT SEMESTER (A = FIRST, B = SECOND)
           </ThemedText>
-          <View style={styles.semesterButtons}>
+          <View
+            style={styles.semesterButtons}
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Semester selection"
+          >
             <TouchableOpacity
               style={[
                 styles.semesterButton,
@@ -147,6 +165,10 @@ export default function PlannerScreen() {
                 setSelectedSemester("Sem 1");
                 resetPlannerSelectionsForTermChange();
               }}
+              accessibilityRole="radio"
+              accessibilityLabel="Semester A"
+              accessibilityHint="Shows courses for the first semester"
+              accessibilityState={{ selected: selectedSemester === "Sem 1" }}
               activeOpacity={0.7}
             >
               <ThemedText
@@ -168,6 +190,10 @@ export default function PlannerScreen() {
                 setSelectedSemester("Sem 2");
                 resetPlannerSelectionsForTermChange();
               }}
+              accessibilityRole="radio"
+              accessibilityLabel="Semester B"
+              accessibilityHint="Shows courses for the second semester"
+              accessibilityState={{ selected: selectedSemester === "Sem 2" }}
               activeOpacity={0.7}
             >
               <ThemedText
@@ -187,6 +213,9 @@ export default function PlannerScreen() {
         <TouchableOpacity
           style={styles.beginButton}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Begin course selection"
+          accessibilityHint="Opens the course selection step for the planner flow"
           onPress={() => {
             // Clear any previous flow route when starting fresh
             setLastPlannerFlowRoute(
@@ -224,7 +253,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#9B9B9B",
+    color: "#6B7280",
     letterSpacing: 1,
     textTransform: "uppercase",
   },
@@ -260,7 +289,7 @@ const styles = StyleSheet.create({
   },
   descriptionText: {
     fontSize: 16,
-    color: "#9B9B9B",
+    color: "#4B5563",
     textAlign: "center",
     lineHeight: 24,
   },
@@ -274,7 +303,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#9B9B9B",
+    color: "#4B5563",
     marginBottom: 16,
     letterSpacing: 0.5,
     textTransform: "uppercase",

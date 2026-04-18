@@ -21,6 +21,12 @@ export interface Lesson { // A single lesson within a course section - could be 
 export interface CourseSection { // A specific section of a course: A course can have multiple sections, each with its own schedule and lecturer
 	sectionID: string;
 	lessons: Lesson[];
+	/** Known remaining seats for this section when catalog provides capacity. */
+	remainingSeats?: number;
+	/** True when catalog explicitly marks the section as full (0 seats). */
+	isFull?: boolean;
+	/** True when the catalog supports waitlist/interest actions for this section. */
+	waitlistSupported?: boolean;
 }
 
 export interface Course {

@@ -14,7 +14,7 @@ describe('mapFirestoreDataToUserProfile', () => {
     const doc = mapFirestoreDataToUserProfile({
       role: 'student',
       fullName: '  Alex  ',
-      age: '20',
+      birthDate: '2006-04-17',
       faculty: 'ENGINEERING',
       major: 'Computer Science',
       academicLevel: 'JUNIOR',
@@ -24,20 +24,32 @@ describe('mapFirestoreDataToUserProfile', () => {
       createdAt: undefined,
       updatedAt: undefined,
       fullName: 'Alex',
-      age: '20',
+      birthDate: '2006-04-17',
+      age: undefined,
       faculty: 'ENGINEERING',
       major: 'Computer Science',
       academicLevel: 'JUNIOR',
     });
   });
 
+  it('does not infer birthDate from legacy age', () => {
+    const doc = mapFirestoreDataToUserProfile({
+      role: 'student',
+      age: '20',
+    });
+    expect(doc?.birthDate).toBeUndefined();
+    expect(doc?.age).toBe('20');
+  });
+
   it('treats blank strings as absent', () => {
     const doc = mapFirestoreDataToUserProfile({
       role: 'student',
       fullName: '   ',
+      birthDate: '',
       age: '',
     });
     expect(doc?.fullName).toBeUndefined();
+    expect(doc?.birthDate).toBeUndefined();
     expect(doc?.age).toBeUndefined();
   });
 });

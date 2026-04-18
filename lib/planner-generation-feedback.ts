@@ -28,18 +28,19 @@ export function buildPlannerGenerationFeedback(input: {
     return null;
   }
 
-  const commonRecoveryActions = ["Retry generation.", "Adjust constraints.", "Widen time window in Availability."];
+  const commonRecoveryActions = [
+    "Retry generation.",
+    "Adjust constraints.",
+    "Widen time window in Availability.",
+  ];
 
   if (input.catalogRetryAvailable && input.proposalCount === 0) {
     return {
       kind: "catalog-failure",
       title: "Catalog data could not be refreshed",
       description:
-        "The app is using bundled sample data right now. Retry the catalog load, then regenerate options.",
-      actions: [
-        "Retry catalog load from Firestore.",
-        ...commonRecoveryActions,
-      ],
+        "The app is using embedded sample data right now. Retry the catalog load, then regenerate options.",
+      actions: ["Retry catalog load from Firestore.", ...commonRecoveryActions],
     };
   }
 
