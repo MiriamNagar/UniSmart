@@ -48,6 +48,49 @@ import {
     filterCoursesForPlannerTerm,
 } from "@/lib/planner-active-term";
 import { buildPlannerCatalogUiModel } from "@/lib/planner-catalog-ui-messages";
+
+type WaitlistNotifySectionRow = {
+  catalogFull: boolean;
+  courseId: string;
+};
+
+/**
+ * After a seat-open push for a course, stay quiet until the catalog again shows
+ * every section this user waitlisted on that course as full — otherwise each
+ * registrar tweak / multi-row offering update can look like another opening.
+ */
+function rearmSeatNotifyWhenAllUserWaitlistSectionsBlocked(
+  armedByCourse: Map<string, boolean>,
+  waitlistedSectionIds: ReadonlySet<string>,
+  sectionMeta: ReadonlyMap<string, WaitlistNotifySectionRow>,
+) {
+  const touchedCourseIds = new Set<string>();
+  for (const sectionId of waitlistedSectionIds) {
+    const row = sectionMeta.get(sectionId);
+    if (row) {
+      touchedCourseIds.add(row.courseId);
+    }
+  }
+  for (const courseId of touchedCourseIds) {
+    const sectionIdsOnCourse: string[] = [];
+    for (const sectionId of waitlistedSectionIds) {
+      const row = sectionMeta.get(sectionId);
+      if (row?.courseId === courseId) {
+        sectionIdsOnCourse.push(sectionId);
+      }
+    }
+    if (sectionIdsOnCourse.length === 0) {
+      continue;
+    }
+    const allAppearFull = sectionIdsOnCourse.every(
+      (sectionId) => sectionMeta.get(sectionId)?.catalogFull === true,
+    );
+    if (allAppearFull) {
+      armedByCourse.set(courseId, true);
+    }
+  }
+}
+
 export default function CourseSelectionScreen() {
   const {
     selectedCourses,
@@ -106,6 +149,8 @@ export default function CourseSelectionScreen() {
   const previousWaitlistedCourseAllFullRef = useRef<Map<string, boolean>>(
     new Map(),
   );
+  /** `false` = already notified for current "open wave"; re-arm when all user sections read full again. */
+  const seatOpenNotifyArmedByCourseRef = useRef<Map<string, boolean>>(new Map());
   const recentNotificationMsByKeyRef = useRef<Map<string, number>>(new Map());
   /** Avoid firing “seat opened” on first catalog snapshot or when waitlist membership changes. */
   const seatOpenNotifyBaselineReadyRef = useRef(false);
@@ -129,6 +174,33 @@ export default function CourseSelectionScreen() {
     const semLabel = selectedSemester === "Sem 1" ? "Semester A" : "Semester B";
     return `${yearLabel} · ${semLabel}`;
   }, [activeDegreeYearTier, selectedSemester]);
+
+  const catalogWaitlistSectionNotifyMeta = useMemo(() => {
+    const sectionMeta = new Map<
+      string,
+      {
+        catalogFull: boolean;
+        remainingSeats: number | null;
+        courseId: string;
+        courseName: string;
+      }
+    >();
+    for (const course of courses) {
+      for (const section of course.availableSections) {
+        sectionMeta.set(section.sectionID, {
+          catalogFull: sectionAppearsFullForWaitlistUi(section),
+          remainingSeats:
+            typeof section.remainingSeats === "number" &&
+            !Number.isNaN(section.remainingSeats)
+              ? section.remainingSeats
+              : null,
+          courseId: course.courseID,
+          courseName: course.courseName,
+        });
+      }
+    }
+    return sectionMeta;
+  }, [courses]);
 
   const catalogUi = useMemo(
     () =>
@@ -184,13 +256,15 @@ export default function CourseSelectionScreen() {
       ? `${courseName} (${sectionId}) now has open seats.`
       : `${courseName} now has open seats.`;
 
-  const shouldEmitEnrollmentNotification = (
-    courseId: string,
-    sectionId: string,
-  ) => {
+  /**
+   * One push per course per window: both section-level and course-level waitlist
+   * listeners can detect the same opening (multi-section courses), and section ids
+   * used in each path may differ, so dedupe must be course-scoped.
+   */
+  const shouldEmitEnrollmentNotification = (courseId: string) => {
     const now = Date.now();
-    const ttlMs = 15000;
-    const key = `${courseId}|${sectionId}|opened`;
+    const ttlMs = 120_000;
+    const key = `${courseId}|seat-opened`;
     const recent = recentNotificationMsByKeyRef.current;
     for (const [k, ts] of Array.from(recent.entries())) {
       if (now - ts > ttlMs) {
@@ -513,29 +587,13 @@ export default function CourseSelectionScreen() {
 
   useEffect(() => {
     const previous = previousSectionIsFullRef.current;
-    const sectionMeta = new Map<
-      string,
-      {
-        catalogFull: boolean;
-        remainingSeats: number | null;
-        courseId: string;
-        courseName: string;
-      }
-    >();
-    for (const course of courses) {
-      for (const section of course.availableSections) {
-        sectionMeta.set(section.sectionID, {
-          catalogFull: sectionAppearsFullForWaitlistUi(section),
-          remainingSeats:
-            typeof section.remainingSeats === "number" &&
-            !Number.isNaN(section.remainingSeats)
-              ? section.remainingSeats
-              : null,
-          courseId: course.courseID,
-          courseName: course.courseName,
-        });
-      }
-    }
+    const sectionMeta = catalogWaitlistSectionNotifyMeta;
+
+    rearmSeatNotifyWhenAllUserWaitlistSectionsBlocked(
+      seatOpenNotifyArmedByCourseRef.current,
+      waitlistedSectionIds,
+      sectionMeta,
+    );
 
     for (const trackedSectionId of Array.from(previous.keys())) {
       if (!waitlistedSectionIds.has(trackedSectionId)) {
@@ -568,6 +626,15 @@ export default function CourseSelectionScreen() {
       if (wasFull !== true || current.catalogFull) {
         return;
       }
+      if (seatOpenNotifyArmedByCourseRef.current.get(current.courseId) === false) {
+        if (__DEV__) {
+          console.log("[waitlist] seat opening suppressed (already notified wave)", {
+            courseId: current.courseId,
+            sectionId: waitlistedSectionId,
+          });
+        }
+        return;
+      }
       if (__DEV__) {
         console.log("[waitlist] seat opening detected", {
           sectionId: waitlistedSectionId,
@@ -593,12 +660,7 @@ export default function CourseSelectionScreen() {
       if (!event) {
         return;
       }
-      if (
-        !shouldEmitEnrollmentNotification(
-          current.courseId,
-          waitlistedSectionId,
-        )
-      ) {
+      if (!shouldEmitEnrollmentNotification(current.courseId)) {
         if (__DEV__) {
           console.log("[waitlist] duplicate notification suppressed", {
             courseId: current.courseId,
@@ -607,6 +669,7 @@ export default function CourseSelectionScreen() {
         }
         return;
       }
+      seatOpenNotifyArmedByCourseRef.current.set(current.courseId, false);
       const detailedMessage = enrollmentOpenedMessage(
         current.courseName,
         waitlistedSectionId,
@@ -662,7 +725,7 @@ export default function CourseSelectionScreen() {
     }
   }, [
     catalogLoading,
-    courses,
+    catalogWaitlistSectionNotifyMeta,
     setAlerts,
     waitlistedSectionIds,
     waitlistedSectionIdsKey,
@@ -670,6 +733,12 @@ export default function CourseSelectionScreen() {
 
   useEffect(() => {
     const previous = previousWaitlistedCourseAllFullRef.current;
+
+    rearmSeatNotifyWhenAllUserWaitlistSectionsBlocked(
+      seatOpenNotifyArmedByCourseRef.current,
+      waitlistedSectionIds,
+      catalogWaitlistSectionNotifyMeta,
+    );
     for (const trackedCourseId of Array.from(previous.keys())) {
       if (!waitlistedCourseIds.has(trackedCourseId)) {
         previous.delete(trackedCourseId);
@@ -699,6 +768,15 @@ export default function CourseSelectionScreen() {
         sectionAppearsFullForWaitlistUi(section),
       );
       if (wasAllFull !== true || currentlyAllFull) {
+        return;
+      }
+      if (seatOpenNotifyArmedByCourseRef.current.get(waitlistedCourseId) === false) {
+        if (__DEV__) {
+          console.log(
+            "[waitlist] course-level opening suppressed (already notified wave)",
+            { courseId: waitlistedCourseId },
+          );
+        }
         return;
       }
       const currentRemaining = waitlistSupportedSections.reduce<
@@ -742,12 +820,7 @@ export default function CourseSelectionScreen() {
       if (!event) {
         return;
       }
-      if (
-        !shouldEmitEnrollmentNotification(
-          waitlistedCourseId,
-          fallbackSectionId,
-        )
-      ) {
+      if (!shouldEmitEnrollmentNotification(waitlistedCourseId)) {
         if (__DEV__) {
           console.log("[waitlist] duplicate notification suppressed", {
             courseId: waitlistedCourseId,
@@ -756,6 +829,7 @@ export default function CourseSelectionScreen() {
         }
         return;
       }
+      seatOpenNotifyArmedByCourseRef.current.set(waitlistedCourseId, false);
       const detailedMessage = enrollmentOpenedMessage(
         course.courseName,
         fallbackSectionId,
@@ -831,10 +905,11 @@ export default function CourseSelectionScreen() {
     }
   }, [
     catalogLoading,
-    courses,
+    catalogWaitlistSectionNotifyMeta,
     setAlerts,
     waitlistedCourseIds,
     waitlistedCourseIdsKey,
+    waitlistedSectionIds,
     waitlistedSectionsByCourse,
   ]);
 
