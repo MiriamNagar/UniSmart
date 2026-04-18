@@ -559,8 +559,8 @@ export default function AdminDashboardScreen() {
               No scoped records for this filter combination.
             </ThemedText>
           ) : (
-            courseTrends.map((course) => (
-              <View key={course.code} style={styles.courseRow}>
+            courseTrends.map((course, index) => (
+              <View key={`${course.code}-${index}`} style={styles.courseRow}>
                 <View style={styles.courseInfo}>
                   <ThemedText style={styles.courseCode}>{course.code}</ThemedText>
                   <ThemedText style={styles.courseName}>{course.name}</ThemedText>
@@ -605,8 +605,8 @@ export default function AdminDashboardScreen() {
                 No high-demand courses in this scope.
               </ThemedText>
             ) : (
-              highDemandCourses.map((course) => (
-                <View key={course.name} style={styles.demandItem}>
+              highDemandCourses.map((course, index) => (
+                <View key={`${course.name}-${index}`} style={styles.demandItem}>
                   <ThemedText style={styles.demandCourseName}>
                     {course.name}
                   </ThemedText>
