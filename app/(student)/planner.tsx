@@ -1,46 +1,20 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { ROUTES } from "@/constants/routes";
-import { TAB_SCROLL_KEYS } from "@/constants/tab-scroll-keys";
-import { useSelection } from "@/contexts/selection-context";
-import { usePersistedTabScroll } from "@/hooks/use-persisted-tab-scroll";
-import { DEGREE_YEAR_PLANNER_OPTIONS } from "@/lib/planner-active-term";
+import { usePlannerViewModel } from "@/view-models/use-planner-view-model";
 import { MaterialIcons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
-import { useCallback } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function PlannerScreen() {
   const {
     selectedSemester,
-    setSelectedSemester,
     activeDegreeYearTier,
-    setActiveDegreeYearTier,
-    lastPlannerFlowRoute,
-    setLastPlannerFlowRoute,
-    setSelectedCourses,
     userInfo,
-  } = useSelection();
-
-  const { scrollViewProps } = usePersistedTabScroll(
-    TAB_SCROLL_KEYS.STUDENT_PLANNER,
-  );
-
-  const resetPlannerSelectionsForTermChange = () => {
-    setSelectedCourses(new Set());
-  };
-
-  // Clear saved route when explicitly navigating to main planner screen
-  // This allows users to start fresh when they come back to main planner
-  useFocusEffect(
-    useCallback(() => {
-      if (lastPlannerFlowRoute) {
-        // Clear the saved route when we're explicitly on the main planner screen
-        // This means the user wants to see the main planner, not the saved state
-        setLastPlannerFlowRoute(null);
-      }
-    }, [lastPlannerFlowRoute, setLastPlannerFlowRoute]),
-  );
+    scrollViewProps,
+    degreeYearOptions,
+    selectDegreeYear,
+    selectSemester,
+    beginCourseSelection,
+  } = usePlannerViewModel();
 
   return (
     <ThemedView style={styles.container}>
@@ -92,7 +66,7 @@ export default function PlannerScreen() {
             ) : null}
             . Active term:{" "}
             <ThemedText style={styles.highlightedText}>
-              {DEGREE_YEAR_PLANNER_OPTIONS.find(
+              {degreeYearOptions.find(
                 (o) => o.tier === activeDegreeYearTier,
               )?.label ?? "Year 1"}
             </ThemedText>
@@ -114,7 +88,7 @@ export default function PlannerScreen() {
             accessibilityRole="radiogroup"
             accessibilityLabel="Degree year selection"
           >
-            {DEGREE_YEAR_PLANNER_OPTIONS.map((opt) => (
+            {degreeYearOptions.map((opt) => (
               <TouchableOpacity
                 key={opt.tier}
                 style={[
@@ -123,8 +97,7 @@ export default function PlannerScreen() {
                     styles.semesterButtonSelected,
                 ]}
                 onPress={() => {
-                  setActiveDegreeYearTier(opt.tier);
-                  resetPlannerSelectionsForTermChange();
+                  selectDegreeYear(opt.tier);
                 }}
                 accessibilityRole="radio"
                 accessibilityLabel={opt.label}
@@ -162,8 +135,7 @@ export default function PlannerScreen() {
                 selectedSemester === "Sem 1" && styles.semesterButtonSelected,
               ]}
               onPress={() => {
-                setSelectedSemester("Sem 1");
-                resetPlannerSelectionsForTermChange();
+                selectSemester("Sem 1");
               }}
               accessibilityRole="radio"
               accessibilityLabel="Semester A"
@@ -187,8 +159,7 @@ export default function PlannerScreen() {
                 selectedSemester === "Sem 2" && styles.semesterButtonSelected,
               ]}
               onPress={() => {
-                setSelectedSemester("Sem 2");
-                resetPlannerSelectionsForTermChange();
+                selectSemester("Sem 2");
               }}
               accessibilityRole="radio"
               accessibilityLabel="Semester B"
@@ -216,13 +187,7 @@ export default function PlannerScreen() {
           accessibilityRole="button"
           accessibilityLabel="Begin course selection"
           accessibilityHint="Opens the course selection step for the planner flow"
-          onPress={() => {
-            // Clear any previous flow route when starting fresh
-            setLastPlannerFlowRoute(
-              ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION,
-            );
-            router.push(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
-          }}
+          onPress={beginCourseSelection}
         >
           <ThemedText style={styles.beginButtonText}>
             Begin Course Selection

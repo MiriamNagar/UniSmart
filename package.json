@@ -9,7 +9,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint app components lib hooks contexts -- --no-error-on-unmatched-pattern",
+    "lint": "expo lint app components lib hooks contexts view-models -- --no-error-on-unmatched-pattern",
     "test": "jest",
     "test:rules": "node scripts/run-rules-tests.js",
     "test:ci": "npm run test && npm run test:rules",

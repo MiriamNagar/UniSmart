@@ -1,56 +1,25 @@
-import { Alert, StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
-import { auth } from '@/lib/firebase';
-import { mapUserProfileWriteErrorToMessage, mergeUserPassport } from '@/lib/user-profile-firestore';
+import { useAcademicLevelViewModel } from '@/view-models/use-academic-level-view-model';
 
 export default function AcademicLevelScreen() {
-  const { userInfo, setUserInfo } = useSelection();
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-
-  const academicLevels = [
-    'FRESHMAN',
-    'SOPHOMORE',
-    'JUNIOR',
-    'SENIOR',
-    'MASTER',
-    'PHD',
-  ];
-
-  const isFormValid = selectedLevel !== null;
-
-  const handleContinue = () => {
-    if (!isFormValid || !selectedLevel) {
-      return;
-    }
-    void (async () => {
-      setUserInfo({
-        ...userInfo,
-        academicLevel: selectedLevel,
-      });
-      if (auth?.currentUser) {
-        try {
-          await mergeUserPassport(auth.currentUser.uid, { academicLevel: selectedLevel });
-        } catch (e: unknown) {
-          Alert.alert('Could not save profile', mapUserProfileWriteErrorToMessage(e));
-          return;
-        }
-      }
-      router.push(ROUTES.ONBOARDING.SETUP_COMPLETE);
-    })();
-  };
+  const {
+    academicLevels,
+    selectedLevel,
+    setSelectedLevel,
+    isFormValid,
+    handleContinue,
+    goBack,
+  } = useAcademicLevelViewModel();
 
   return (
     <ThemedView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.back()}
+        onPress={goBack}
         activeOpacity={0.7}>
         <MaterialIcons name="chevron-left" size={28} color="#9B9B9B" />
       </TouchableOpacity>
@@ -104,7 +73,7 @@ export default function AcademicLevelScreen() {
       <View style={styles.bottomButtons}>
         <TouchableOpacity
           style={styles.backButtonBottom}
-          onPress={() => router.back()}
+          onPress={goBack}
           activeOpacity={0.7}>
           <ThemedText style={styles.backButtonText}>BACK</ThemedText>
         </TouchableOpacity>

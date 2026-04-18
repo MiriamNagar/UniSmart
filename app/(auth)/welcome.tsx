@@ -1,18 +1,12 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { designTokens } from '@/constants/design-tokens';
-import { getWelcomeEntryHrefs } from '@/lib/welcome-entry-paths';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const { signIn, createAccount } = getWelcomeEntryHrefs();
+import { useWelcomeViewModel } from '@/view-models/use-welcome-view-model';
 
 export default function WelcomeScreen() {
-  const insets = useSafeAreaInsets();
-  const primary = designTokens.color.primary;
-  const textSecondary = designTokens.color.textSecondary;
+  const { insets, primary, textSecondary, goSignIn, goCreateAccount } =
+    useWelcomeViewModel();
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
@@ -40,7 +34,7 @@ export default function WelcomeScreen() {
             styles.primaryButton,
             { backgroundColor: primary, opacity: pressed ? 0.88 : 1 },
           ]}
-          onPress={() => router.push(signIn)}>
+          onPress={goSignIn}>
           <MaterialIcons name="login" size={22} color="#FFFFFF" />
           <ThemedText style={styles.primaryButtonText}>Sign in</ThemedText>
         </Pressable>
@@ -52,7 +46,7 @@ export default function WelcomeScreen() {
             styles.outlineButton,
             { borderColor: primary, opacity: pressed ? 0.88 : 1 },
           ]}
-          onPress={() => router.push(createAccount)}>
+          onPress={goCreateAccount}>
           <MaterialIcons name="person-add" size={22} color={primary} />
           <ThemedText style={[styles.outlineButtonText, { color: primary }]}>Create account</ThemedText>
         </Pressable>

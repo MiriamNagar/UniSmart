@@ -1,8 +1,7 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { router } from 'expo-router';
 import {
   ActivityIndicator,
   Image,
@@ -11,209 +10,30 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { ROUTES } from '@/constants/routes';
-import { useSelection } from '@/contexts/selection-context';
-import { auth, isFirebaseConfigured } from '@/lib/firebase';
-import { mapFirebaseAuthErrorToMessage } from '@/lib/firebase-auth-error-message';
-import {
-  isEmailPasswordRegistrationFormValid,
-  isValidAuthEmail,
-  isValidAuthPassword,
-  passwordsMatch,
-} from '@/lib/email-password-auth-validation';
-import { googleSignInUnavailableReason, isGoogleSignInAvailableOnThisRuntime } from '@/lib/google-sign-in-config';
-import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-message';
-import { signInWithGoogle } from '@/lib/google-sign-in';
-import { normalizeSearchParam } from '@/lib/router-search-param';
-import {
-  ensureAdminProfile,
-  ensureStudentProfile,
-  mapUserProfileWriteErrorToMessage,
-} from '@/lib/user-profile-firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { useNewMemberViewModel } from '@/view-models/use-new-member-view-model';
 
 export default function NewMemberScreen() {
-  const { userType: userTypeRaw } = useLocalSearchParams<{ userType?: string | string[] }>();
-  const userType = normalizeSearchParam(userTypeRaw);
-  const isAdmin = userType === 'admin';
-  const { setUserInfo, userInfo } = useSelection();
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
-
-  /** Registration: valid email + password + matching confirmation (student and admin). */
-  const formValid = isEmailPasswordRegistrationFormValid(email, password, confirmPassword);
-  const configOk = isFirebaseConfigured() && auth !== undefined;
-  const canSubmit = configOk && formValid && !isRegistering && !isGoogleSigningIn;
-  const googleHint = configOk ? googleSignInUnavailableReason() : null;
-  const canUseGoogle =
-    configOk && isGoogleSignInAvailableOnThisRuntime() && !isRegistering && !isGoogleSigningIn;
-
-  const emailHint =
-    email.length > 0 && !isValidAuthEmail(email)
-      ? 'Use your full institutional email (check @ and domain).'
-      : null;
-  const passwordHint =
-    password.length > 0 && !isValidAuthPassword(password)
-      ? 'Password must be at least 6 characters.'
-      : null;
-  const confirmPasswordHint =
-    confirmPassword.length > 0 && !passwordsMatch(password, confirmPassword)
-      ? 'Passwords do not match. Re-enter to match the field above.'
-      : null;
-
-  const handleGoogleContinue = async () => {
-    if (isGoogleSigningIn || isRegistering) return;
-    setSubmitError(null);
-
-    if (!configOk) {
-      setSubmitError(
-        'Registration requires Firebase configuration. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
-      );
-      return;
-    }
-
-    if (!auth) {
-      setSubmitError(
-        'Registration requires Firebase configuration. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
-      );
-      return;
-    }
-
-    if (!isGoogleSignInAvailableOnThisRuntime()) {
-      setSubmitError(
-        googleSignInUnavailableReason() ??
-          'Google sign-in is not available. Check configuration (see README).',
-      );
-      return;
-    }
-
-    /** Already signed in (e.g. just registered with email/password). Do not call Google again — it conflicts and yields a generic Firebase error. */
-    if (auth.currentUser) {
-      const u = auth.currentUser;
-      if (isAdmin) {
-        try {
-          await ensureAdminProfile(u.uid);
-        } catch (e: unknown) {
-          setSubmitError(mapUserProfileWriteErrorToMessage(e));
-          return;
-        }
-      } else {
-        try {
-          await ensureStudentProfile(u.uid);
-        } catch (e: unknown) {
-          setSubmitError(mapUserProfileWriteErrorToMessage(e));
-          return;
-        }
-      }
-      const display =
-        u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || (isAdmin ? 'Admin' : 'Student');
-      setUserInfo({
-        ...userInfo,
-        fullName: userInfo.fullName || display,
-        userType: isAdmin ? 'admin' : 'student',
-      });
-      router.push({ pathname: ROUTES.ONBOARDING.IDENTITY_HUB, params: { userType: userType || 'student' } });
-      return;
-    }
-
-    setIsGoogleSigningIn(true);
-    try {
-      const cred = await signInWithGoogle(auth);
-      const u = cred.user;
-      if (isAdmin) {
-        try {
-          await ensureAdminProfile(u.uid);
-        } catch (e: unknown) {
-          setSubmitError(mapUserProfileWriteErrorToMessage(e));
-          return;
-        }
-      } else {
-        try {
-          await ensureStudentProfile(u.uid);
-        } catch (e: unknown) {
-          setSubmitError(mapUserProfileWriteErrorToMessage(e));
-          return;
-        }
-      }
-      const display =
-        u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || (isAdmin ? 'Admin' : 'Student');
-
-      setUserInfo({
-        ...userInfo,
-        fullName: userInfo.fullName || display,
-        userType: isAdmin ? 'admin' : 'student',
-      });
-
-      router.push({ pathname: ROUTES.ONBOARDING.IDENTITY_HUB, params: { userType: userType || 'student' } });
-    } catch (e: unknown) {
-      setSubmitError(mapGoogleSignInFlowErrorToMessage(e, { flow: 'sign-up' }));
-    } finally {
-      setIsGoogleSigningIn(false);
-    }
-  };
-
-  const handleCreateProfile = async () => {
-    if (isRegistering || isGoogleSigningIn) return;
-    setSubmitError(null);
-
-    if (!configOk) {
-      setSubmitError(
-        'Registration requires Firebase configuration. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
-      );
-      return;
-    }
-
-    if (!formValid) return;
-
-    if (!auth) {
-      setSubmitError(
-        'Registration requires Firebase configuration. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
-      );
-      return;
-    }
-
-    setIsRegistering(true);
-    try {
-      await createUserWithEmailAndPassword(auth, email.trim(), password);
-
-      if (auth.currentUser) {
-        if (isAdmin) {
-          try {
-            await ensureAdminProfile(auth.currentUser.uid);
-          } catch (e: unknown) {
-            setSubmitError(mapUserProfileWriteErrorToMessage(e));
-            return;
-          }
-        } else {
-          try {
-            await ensureStudentProfile(auth.currentUser.uid);
-          } catch (e: unknown) {
-            setSubmitError(mapUserProfileWriteErrorToMessage(e));
-            return;
-          }
-        }
-      }
-
-      const trimmed = email.trim();
-      const nameFromEmail = trimmed.split('@')[0] || (isAdmin ? 'Admin' : 'Student');
-      setUserInfo({
-        ...userInfo,
-        fullName: userInfo.fullName || nameFromEmail,
-        userType: isAdmin ? 'admin' : 'student',
-      });
-
-      router.push({ pathname: ROUTES.ONBOARDING.IDENTITY_HUB, params: { userType: userType || 'student' } });
-    } catch (e: unknown) {
-      setSubmitError(mapFirebaseAuthErrorToMessage(e, { flow: 'sign-up' }));
-    } finally {
-      setIsRegistering(false);
-    }
-  };
+  const {
+    isAdmin,
+    email,
+    password,
+    confirmPassword,
+    submitError,
+    isRegistering,
+    isGoogleSigningIn,
+    configOk,
+    canSubmit,
+    googleHint,
+    canUseGoogle,
+    emailHint,
+    passwordHint,
+    confirmPasswordHint,
+    setEmail,
+    setPassword,
+    setConfirmPassword,
+    googleContinue,
+    createProfile,
+  } = useNewMemberViewModel();
 
   return (
     <ThemedView style={styles.container}>
@@ -252,10 +72,7 @@ export default function NewMemberScreen() {
           <TextInput
             style={styles.emailInput}
             value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              setSubmitError(null);
-            }}
+            onChangeText={setEmail}
             placeholder={isAdmin ? 'admin@msmail.ariel.ac.il' : 'student-name@msmail.ariel.ac.il'}
             placeholderTextColor="#9B9B9B"
             autoCapitalize="none"
@@ -276,10 +93,7 @@ export default function NewMemberScreen() {
           <TextInput
             style={styles.passwordInput}
             value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              setSubmitError(null);
-            }}
+            onChangeText={setPassword}
             placeholder="...."
             placeholderTextColor="#9B9B9B"
             secureTextEntry
@@ -301,10 +115,7 @@ export default function NewMemberScreen() {
           <TextInput
             style={styles.passwordInput}
             value={confirmPassword}
-            onChangeText={(t) => {
-              setConfirmPassword(t);
-              setSubmitError(null);
-            }}
+            onChangeText={setConfirmPassword}
             placeholder="...."
             placeholderTextColor="#9B9B9B"
             secureTextEntry
@@ -337,7 +148,7 @@ export default function NewMemberScreen() {
           ]}
           activeOpacity={canSubmit && !isRegistering ? 0.8 : 1}
           onPress={() => {
-            void handleCreateProfile();
+            void createProfile();
           }}
           disabled={!canSubmit || isRegistering}
           accessibilityLabel="Create profile"
@@ -375,7 +186,7 @@ export default function NewMemberScreen() {
           activeOpacity={canUseGoogle ? 0.8 : 1}
           disabled={!canUseGoogle}
           onPress={() => {
-            void handleGoogleContinue();
+            void googleContinue();
           }}
           accessibilityLabel="Continue with Google"
           accessibilityState={{ disabled: !canUseGoogle }}>

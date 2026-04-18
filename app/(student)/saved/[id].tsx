@@ -2,101 +2,24 @@ import { PlannerCourseDetailModal } from "@/components/planner-course-detail-mod
 import { PlannerFullWeekSchedule } from "@/components/planner-full-week-schedule";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { usePlannerCatalog } from "@/contexts/bgu-planner-catalog-context";
-import { useSelection } from "@/contexts/selection-context";
-import {
-  buildSavedScheduleModalDetail,
-  type PlannerCourseDetailPayload,
-  type PlannerWeekCellLike,
-} from "@/lib/planner-course-modal-detail";
-import type { PlannerWeekDayKey } from "@/lib/planner-week-constants";
-import {
-  getSavedPlanByIdForCurrentUser,
-  mapSavedPlanReadErrorToMessage,
-  type SavedPlanRecord,
-} from "@/lib/saved-schedule-firestore";
+import { useSavedPlanDetailViewModel } from "@/view-models/use-saved-plan-detail-view-model";
 import { MaterialIcons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
-function planIdFromRouteParam(raw: string | string[] | undefined): string {
-  if (typeof raw === "string") {
-    return raw;
-  }
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "string") {
-    return raw[0];
-  }
-  return "";
-}
-
 export default function SavedPlanDetailScreen() {
-  const { id: rawId } = useLocalSearchParams<{ id: string | string[] }>();
-  const planId = planIdFromRouteParam(rawId);
-  const { savedPlans } = useSelection();
-  const { allCourses: catalogCourses } = usePlannerCatalog();
+  const {
+    phase,
+    navigateBackOrSaved,
+    plan,
+    weekSchedule,
+    catalogCourses,
+    courseDetailModal,
+    setCourseDetailModal,
+    onCellPress,
+    errorMessage,
+  } = useSavedPlanDetailViewModel();
 
-  const fromContext = useMemo(
-    () => savedPlans.find((p) => p.id === planId),
-    [savedPlans, planId],
-  );
-
-  const [plan, setPlan] = useState<SavedPlanRecord | null>(fromContext ?? null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(!fromContext && planId.length > 0);
-
-  const navigateBackOrSaved = () => {
-    const navRouter = router as typeof router & { canGoBack?: () => boolean };
-    if (typeof navRouter.canGoBack === "function" && navRouter.canGoBack()) {
-      router.back();
-      return;
-    }
-    router.replace(ROUTES.STUDENT.SAVED);
-  };
-
-  useEffect(() => {
-    if (fromContext) {
-      setPlan(fromContext);
-      setIsLoading(false);
-      setLoadError(null);
-      return;
-    }
-    if (!planId) {
-      setPlan(null);
-      setIsLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setIsLoading(true);
-    setLoadError(null);
-    void getSavedPlanByIdForCurrentUser(planId)
-      .then((record) => {
-        if (cancelled) {
-          return;
-        }
-        setPlan(record);
-      })
-      .catch((e: unknown) => {
-        if (cancelled) {
-          return;
-        }
-        setLoadError(mapSavedPlanReadErrorToMessage(e));
-        setPlan(null);
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [fromContext, planId]);
-
-  const [courseDetailModal, setCourseDetailModal] =
-    useState<PlannerCourseDetailPayload | null>(null);
-
-  if (!planId) {
+  if (phase === "missing") {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.topBar}>
@@ -116,7 +39,7 @@ export default function SavedPlanDetailScreen() {
     );
   }
 
-  if (isLoading) {
+  if (phase === "loading") {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.topBar}>
@@ -136,7 +59,7 @@ export default function SavedPlanDetailScreen() {
     );
   }
 
-  if (loadError || !plan) {
+  if (phase === "error") {
     return (
       <ThemedView style={styles.container}>
         <View style={styles.topBar}>
@@ -150,15 +73,15 @@ export default function SavedPlanDetailScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.centerMessage}>
-          <ThemedText style={styles.muted}>
-            {loadError ?? "We could not find this saved plan."}
-          </ThemedText>
+          <ThemedText style={styles.muted}>{errorMessage}</ThemedText>
         </View>
       </ThemedView>
     );
   }
 
-  const weekSchedule = plan.schedule as Record<PlannerWeekDayKey, PlannerWeekCellLike[]>;
+  if (!plan || !weekSchedule) {
+    return null;
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -195,9 +118,7 @@ export default function SavedPlanDetailScreen() {
           schedule={weekSchedule}
           hydrateFromCatalog
           catalogCourses={catalogCourses}
-          onCellPress={(cell, day) =>
-            setCourseDetailModal(buildSavedScheduleModalDetail(cell, day, catalogCourses))
-          }
+          onCellPress={onCellPress}
         />
       </ScrollView>
 

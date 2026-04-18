@@ -1,7 +1,8 @@
-import { ROUTES } from '@/constants/routes';
 import { Redirect } from 'expo-router';
+import { useAdminLoginViewModel } from '@/view-models/use-admin-login-view-model';
 
 /** Legacy route: unified sign-in resolves home from Firestore `role`. */
 export default function AdminLoginRedirectScreen() {
-  return <Redirect href={ROUTES.AUTH.SIGN_IN} />;
+  const { redirectHref } = useAdminLoginViewModel();
+  return <Redirect href={redirectHref} />;
 }

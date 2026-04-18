@@ -3,8 +3,10 @@ import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useModalViewModel } from '@/view-models/use-modal-view-model';
 
 export default function ModalScreen() {
+  useModalViewModel();
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title">This is a modal</ThemedText>

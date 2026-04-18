@@ -1,10 +1,10 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { ROUTES } from '@/constants/routes';
+import { useAdminSessionViewModel } from '@/view-models/use-admin-session-view-model';
 
 export default function AdminSessionScreen() {
+  const { goSignIn, goCreateAccount } = useAdminSessionViewModel();
   return (
     <ThemedView style={styles.container}>
       {/* Content Container */}
@@ -19,7 +19,7 @@ export default function AdminSessionScreen() {
         <TouchableOpacity
           style={styles.signInButton}
           activeOpacity={0.8}
-          onPress={() => router.push(ROUTES.AUTH.SIGN_IN)}>
+          onPress={goSignIn}>
           <ThemedText style={styles.signInButtonText}>SIGN IN</ThemedText>
         </TouchableOpacity>
 
@@ -27,7 +27,7 @@ export default function AdminSessionScreen() {
         <TouchableOpacity
           style={styles.createAccountButton}
           activeOpacity={0.8}
-          onPress={() => router.push(ROUTES.AUTH.CREATE_ACCOUNT)}>
+          onPress={goCreateAccount}>
           <ThemedText style={styles.createAccountButtonText}>CREATE ACCOUNT</ThemedText>
         </TouchableOpacity>
       </View>

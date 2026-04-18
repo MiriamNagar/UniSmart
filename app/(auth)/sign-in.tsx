@@ -10,159 +10,27 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { ROUTES } from '@/constants/routes';
-import { useSelection } from '@/contexts/selection-context';
-import { auth, isFirebaseConfigured } from '@/lib/firebase';
-import { mapFirebaseAuthErrorToMessage } from '@/lib/firebase-auth-error-message';
-import {
-  isEmailPasswordAuthFormValid,
-  isValidAuthEmail,
-  isValidAuthPassword,
-} from '@/lib/email-password-auth-validation';
-import { googleSignInUnavailableReason, isGoogleSignInAvailableOnThisRuntime } from '@/lib/google-sign-in-config';
-import { mapGoogleSignInFlowErrorToMessage } from '@/lib/google-sign-in-error-message';
-import { signInWithGoogle } from '@/lib/google-sign-in';
-import {
-  AUTH_POST_SIGN_IN_MISSING_PROFILE,
-  resolvePostSignInNavigation,
-} from '@/lib/auth-post-sign-in';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useSignInViewModel } from '@/view-models/use-sign-in-view-model';
 
 export default function SignInScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
-  const { setUserInfo, userInfo } = useSelection();
-
-  const configOk = isFirebaseConfigured() && auth !== undefined;
-  const formValid = isEmailPasswordAuthFormValid(email, password);
-  const canSubmit = configOk && formValid && !isSigningIn && !isGoogleSigningIn;
-  const googleHint = configOk ? googleSignInUnavailableReason() : null;
-  const canUseGoogle = configOk && isGoogleSignInAvailableOnThisRuntime() && !isSigningIn && !isGoogleSigningIn;
-
-  const emailHint =
-    email.length > 0 && !isValidAuthEmail(email)
-      ? 'Use your full institutional email (check @ and domain).'
-      : null;
-  const passwordHint =
-    password.length > 0 && !isValidAuthPassword(password)
-      ? 'Password must be at least 6 characters.'
-      : null;
-
-  const handleGoogleSignIn = async () => {
-    if (isGoogleSigningIn || isSigningIn) return;
-    setSubmitError(null);
-
-    if (!configOk) {
-      setSubmitError(
-        'Sign-in is not available until Firebase is configured. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
-      );
-      return;
-    }
-
-    if (!auth) {
-      setSubmitError(
-        'Sign-in is not available until Firebase is configured. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
-      );
-      return;
-    }
-
-    if (!isGoogleSignInAvailableOnThisRuntime()) {
-      setSubmitError(
-        googleSignInUnavailableReason() ??
-          'Google sign-in is not available. Check configuration (see README).',
-      );
-      return;
-    }
-
-    setIsGoogleSigningIn(true);
-    try {
-      const cred = await signInWithGoogle(auth);
-      const u = cred.user;
-      const display =
-        u.displayName?.trim() || (u.email?.split('@')[0] ?? '').trim() || 'User';
-
-      try {
-        const nav = await resolvePostSignInNavigation({ firebaseUser: u, entry: 'profile' });
-        setUserInfo({
-          ...userInfo,
-          fullName: userInfo.fullName || display,
-          userType: nav.userType,
-        });
-        router.replace(nav.home);
-      } catch (e: unknown) {
-        if (e instanceof Error && e.message === AUTH_POST_SIGN_IN_MISSING_PROFILE) {
-          setSubmitError(
-            'No UniSmart profile for this Google account yet. Use Create account, or sign in with the method you used to register.',
-          );
-        } else {
-          setSubmitError('Could not open the next screen. Please try again.');
-        }
-      }
-    } catch (e: unknown) {
-      setSubmitError(mapGoogleSignInFlowErrorToMessage(e));
-    } finally {
-      setIsGoogleSigningIn(false);
-    }
-  };
-
-  const handleAuthenticate = async () => {
-    if (isSigningIn || isGoogleSigningIn) return;
-    setSubmitError(null);
-
-    if (!configOk) {
-      setSubmitError(
-        'Sign-in is not available until Firebase is configured. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
-      );
-      return;
-    }
-
-    if (!formValid) {
-      return;
-    }
-
-    if (!auth) {
-      setSubmitError(
-        'Sign-in is not available until Firebase is configured. Set EXPO_PUBLIC_FIREBASE_* in your environment (see README).',
-      );
-      return;
-    }
-
-    setIsSigningIn(true);
-    try {
-      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
-
-      const trimmed = email.trim();
-      const nameFromEmail = trimmed.split('@')[0] || 'User';
-      try {
-        const nav = await resolvePostSignInNavigation({
-          firebaseUser: cred.user,
-          entry: 'profile',
-        });
-        setUserInfo({
-          ...userInfo,
-          fullName: userInfo.fullName || nameFromEmail,
-          userType: nav.userType,
-        });
-        router.replace(nav.home);
-      } catch (e: unknown) {
-        if (e instanceof Error && e.message === AUTH_POST_SIGN_IN_MISSING_PROFILE) {
-          setSubmitError(
-            'No UniSmart profile for this email yet. Create an account first, then complete onboarding.',
-          );
-        } else {
-          setSubmitError('Could not open the next screen. Please try again.');
-        }
-      }
-    } catch (e: unknown) {
-      setSubmitError(mapFirebaseAuthErrorToMessage(e));
-    } finally {
-      setIsSigningIn(false);
-    }
-  };
+  const {
+    email,
+    password,
+    submitError,
+    isSigningIn,
+    isGoogleSigningIn,
+    configOk,
+    canSubmit,
+    googleHint,
+    canUseGoogle,
+    emailHint,
+    passwordHint,
+    setEmail,
+    setPassword,
+    authenticate,
+    googleSignIn,
+  } = useSignInViewModel();
 
   return (
     <ThemedView style={styles.container}>
@@ -198,10 +66,7 @@ export default function SignInScreen() {
           <TextInput
             style={styles.input}
             value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              setSubmitError(null);
-            }}
+            onChangeText={setEmail}
             placeholder="you@university.edu"
             placeholderTextColor="#9B9B9B"
             autoCapitalize="none"
@@ -223,10 +88,7 @@ export default function SignInScreen() {
           <TextInput
             style={styles.input}
             value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              setSubmitError(null);
-            }}
+            onChangeText={setPassword}
             placeholder="........"
             placeholderTextColor="#9B9B9B"
             secureTextEntry
@@ -256,7 +118,7 @@ export default function SignInScreen() {
           style={[styles.authenticateButton, (!canSubmit || isSigningIn) && styles.authenticateButtonDisabled]}
           activeOpacity={canSubmit && !isSigningIn ? 0.8 : 1}
           onPress={() => {
-            void handleAuthenticate();
+            void authenticate();
           }}
           disabled={!canSubmit || isSigningIn}
           accessibilityLabel="Authenticate"
@@ -302,7 +164,7 @@ export default function SignInScreen() {
           activeOpacity={canUseGoogle ? 0.8 : 1}
           disabled={!canUseGoogle}
           onPress={() => {
-            void handleGoogleSignIn();
+            void googleSignIn();
           }}
           accessibilityLabel="Continue with Google"
           accessibilityState={{ disabled: !canUseGoogle }}>

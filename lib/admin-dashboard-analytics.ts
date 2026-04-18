@@ -94,7 +94,8 @@ export function computeEnrollmentSummary(rows: OfferingSeatSnapshot[]): Enrollme
   let totalSections = 0;
   let fullSections = 0;
   let highDemandSections = 0;
-  const topDemandRows: TopDemandCourse[] = [];
+  /** One row per courseId for ranking: same course can appear on many offerings. */
+  const demandByCourseId = new Map<string, number>();
 
   for (const row of rows) {
     if (!isFiniteNonNegativeNumber(row.capacity) || !isFiniteNonNegativeNumber(row.occupancy)) {
@@ -116,13 +117,16 @@ export function computeEnrollmentSummary(rows: OfferingSeatSnapshot[]): Enrollme
       highDemandSections += 1;
     }
 
-    topDemandRows.push({
-      courseId: row.courseId,
-      occupancyPercent: percent,
-    });
+    const prev = demandByCourseId.get(row.courseId);
+    if (prev === undefined || percent > prev) {
+      demandByCourseId.set(row.courseId, percent);
+    }
   }
 
-  topDemandRows.sort((left, right) => right.occupancyPercent - left.occupancyPercent);
+  const topDemandCourses = Array.from(demandByCourseId.entries())
+    .map(([courseId, occupancyPercent]) => ({ courseId, occupancyPercent }))
+    .sort((left, right) => right.occupancyPercent - left.occupancyPercent)
+    .slice(0, TOP_DEMAND_LIMIT);
 
   return {
     totalOccupancy,
@@ -131,7 +135,7 @@ export function computeEnrollmentSummary(rows: OfferingSeatSnapshot[]): Enrollme
     fullSections,
     highDemandSections,
     utilizationPercent: occupancyPercent(totalCapacity, totalOccupancy),
-    topDemandCourses: topDemandRows.slice(0, TOP_DEMAND_LIMIT),
+    topDemandCourses,
   };
 }
 

@@ -1,23 +1,25 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { designTokens } from '@/constants/design-tokens';
-import { ROUTES } from '@/constants/routes';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCreateAccountViewModel } from '@/view-models/use-create-account-view-model';
 
 export default function CreateAccountScreen() {
-  const insets = useSafeAreaInsets();
-  const primary = designTokens.color.primary;
-  const border = designTokens.color.border;
-  const textSecondary = designTokens.color.textSecondary;
+  const {
+    insets,
+    primary,
+    border,
+    textSecondary,
+    goBack,
+    goStudentNewMember,
+    goAdminNewMember,
+  } = useCreateAccountViewModel();
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}>
       <Pressable
         style={styles.backRow}
-        onPress={() => router.back()}
+        onPress={goBack}
         accessibilityRole="button"
         accessibilityLabel="Go back">
         <MaterialIcons name="chevron-left" size={28} color="#9B9B9B" />
@@ -49,9 +51,7 @@ export default function CreateAccountScreen() {
             styles.primaryButton,
             { backgroundColor: primary, opacity: pressed ? 0.88 : 1 },
           ]}
-          onPress={() =>
-            router.push({ pathname: ROUTES.AUTH.NEW_MEMBER, params: { userType: 'student' } })
-          }>
+          onPress={goStudentNewMember}>
           <MaterialIcons name="school" size={22} color="#FFFFFF" />
           <ThemedText style={styles.primaryButtonText}>Student account</ThemedText>
         </Pressable>
@@ -63,9 +63,7 @@ export default function CreateAccountScreen() {
             styles.outlineButton,
             { borderColor: border, opacity: pressed ? 0.88 : 1 },
           ]}
-          onPress={() =>
-            router.push({ pathname: ROUTES.AUTH.NEW_MEMBER, params: { userType: 'admin' } })
-          }>
+          onPress={goAdminNewMember}>
           <MaterialIcons name="admin-panel-settings" size={22} color="#2C2C2C" />
           <ThemedText style={styles.outlineButtonText}>Admin account</ThemedText>
         </Pressable>

@@ -1,7 +1,8 @@
-import { ROUTES } from '@/constants/routes';
 import { Redirect } from 'expo-router';
+import { useStudentLoginViewModel } from '@/view-models/use-student-login-view-model';
 
 /** Legacy route: unified sign-in resolves home from Firestore `role`. */
 export default function StudentLoginRedirectScreen() {
-  return <Redirect href={ROUTES.AUTH.SIGN_IN} />;
+  const { redirectHref } = useStudentLoginViewModel();
+  return <Redirect href={redirectHref} />;
 }

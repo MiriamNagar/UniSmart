@@ -2,46 +2,10 @@ import { StyleSheet, View, TouchableOpacity, Animated } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
-import { ROUTES } from '@/constants/routes';
+import { useSplashViewModel } from '@/view-models/use-splash-view-model';
 
 export default function SplashScreen() {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    // Fade in animation when component mounts
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-
-    // Fade out and navigate after 2 seconds
-    const timer = setTimeout(() => {
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }).start(() => {
-        router.replace(ROUTES.AUTH.WELCOME);
-      });
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [fadeAnim, opacityAnim]);
-
-  const handlePress = () => {
-    // Fade out and navigate when user taps
-    Animated.timing(opacityAnim, {
-      toValue: 0,
-      duration: 500,
-      useNativeDriver: true,
-    }).start(() => {
-      router.replace(ROUTES.AUTH.WELCOME);
-    });
-  };
+  const { fadeAnim, opacityAnim, handlePress } = useSplashViewModel();
 
   return (
     <ThemedView style={styles.container}>
