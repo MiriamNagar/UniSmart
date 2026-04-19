@@ -1,62 +1,56 @@
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { ROUTES } from '@/constants/routes';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useWelcomeViewModel } from '@/view-models/use-welcome-view-model';
 
 export default function WelcomeScreen() {
-  const { mode } = useLocalSearchParams<{ mode?: string }>();
-  const isSignIn = mode === 'signin';
-
-  const handleStudentPress = () => {
-    if (isSignIn) {
-      router.push(ROUTES.AUTH.STUDENT_LOGIN);
-    } else {
-      router.push({ pathname: ROUTES.AUTH.NEW_MEMBER, params: { userType: 'student' } });
-    }
-  };
-
-  const handleAdminPress = () => {
-    if (isSignIn) {
-      router.push(ROUTES.AUTH.ADMIN_LOGIN);
-    } else {
-      router.push({ pathname: ROUTES.AUTH.NEW_MEMBER, params: { userType: 'admin' } });
-    }
-  };
+  const { insets, primary, textSecondary, goSignIn, goCreateAccount } =
+    useWelcomeViewModel();
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
-      {/* Icon Circle */}
+    <ThemedView style={[styles.container, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
       <View style={styles.iconContainer}>
-        <View style={styles.iconCircle}>
-          <MaterialIcons name="menu-book" size={48} color="#5B4C9D" />
+        <View style={[styles.iconCircle, { backgroundColor: `${primary}26` }]}>
+          <MaterialIcons name="menu-book" size={48} color={primary} />
         </View>
       </View>
 
-      {/* Title */}
-      <ThemedText style={styles.title}>Academic Portal</ThemedText>
+      <ThemedText style={styles.title}>Welcome</ThemedText>
+      <ThemedText style={[styles.subtitle, { color: textSecondary }]}>
+        Sign in with your existing account, or create one and choose student or admin.
+      </ThemedText>
 
-      {/* Subtitle */}
-      <ThemedText style={styles.subtitle}>Who&apos;s accessing the system today?</ThemedText>
+      <ThemedText style={[styles.policyNote, { color: textSecondary }]}>
+        Each sign-in uses the role stored for your email (student or admin). One role per account today—use two emails
+        if you truly need both experiences.
+      </ThemedText>
 
-      {/* Student Entrance Button */}
-      <TouchableOpacity
-        style={styles.studentButton}
-        activeOpacity={0.8}
-        onPress={handleStudentPress}>
-        <MaterialIcons name="school" size={24} color="#FFFFFF" />
-        <ThemedText style={styles.studentButtonText}>Student Entrance</ThemedText>
-      </TouchableOpacity>
+      <View style={styles.actions} accessibilityRole="menu">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Sign in"
+          style={({ pressed }) => [
+            styles.primaryButton,
+            { backgroundColor: primary, opacity: pressed ? 0.88 : 1 },
+          ]}
+          onPress={goSignIn}>
+          <MaterialIcons name="login" size={22} color="#FFFFFF" />
+          <ThemedText style={styles.primaryButtonText}>Sign in</ThemedText>
+        </Pressable>
 
-      {/* Admin Credentials Button */}
-      <TouchableOpacity
-        style={styles.adminButton}
-        activeOpacity={0.8}
-        onPress={handleAdminPress}>
-        <MaterialIcons name="verified" size={24} color="#2C2C2C" />
-        <ThemedText style={styles.adminButtonText}>Admin Credentials</ThemedText>
-      </TouchableOpacity>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Create account"
+          style={({ pressed }) => [
+            styles.outlineButton,
+            { borderColor: primary, opacity: pressed ? 0.88 : 1 },
+          ]}
+          onPress={goCreateAccount}>
+          <MaterialIcons name="person-add" size={22} color={primary} />
+          <ThemedText style={[styles.outlineButtonText, { color: primary }]}>Create account</ThemedText>
+        </Pressable>
+      </View>
     </ThemedView>
   );
 }
@@ -70,13 +64,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   iconContainer: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   iconCircle: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#B8B3E0',
     justifyContent: 'center',
     alignItems: 'center',
     ...Platform.select({
@@ -92,54 +85,60 @@ const styles = StyleSheet.create({
     }),
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#1A1A1A',
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6B6B6B',
-    marginBottom: 48,
+    fontSize: 15,
+    marginBottom: 16,
     textAlign: 'center',
+    maxWidth: 340,
+    lineHeight: 22,
   },
-  studentButton: {
+  policyNote: {
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    maxWidth: 340,
+    marginBottom: 28,
+  },
+  actions: {
+    width: '100%',
+    maxWidth: 320,
+    gap: 12,
+  },
+  primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    maxWidth: 320,
-    height: 56,
-    backgroundColor: '#1A1A1A',
+    minHeight: 48,
     borderRadius: 16,
-    paddingHorizontal: 24,
-    marginBottom: 16,
-    gap: 12,
+    paddingHorizontal: 20,
+    gap: 10,
   },
-  studentButtonText: {
+  primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
   },
-  adminButton: {
+  outlineButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    maxWidth: 320,
-    height: 56,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D0D0D0',
+    minHeight: 48,
     borderRadius: 16,
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: 20,
+    borderWidth: 2,
+    backgroundColor: '#FFFFFF',
+    gap: 10,
   },
-  adminButtonText: {
-    color: '#1A1A1A',
-    fontSize: 18,
+  outlineButtonText: {
+    fontSize: 17,
     fontWeight: '600',
   },
 });
-

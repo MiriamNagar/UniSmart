@@ -1,0 +1,183 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function userProfileRoleValid() {
+      return !('role' in request.resource.data)
+        || request.resource.data.role == 'student'
+        || request.resource.data.role == 'admin';
+    }
+
+    function noteFolderScopeValid(scope) {
+      return scope == 'general' || scope == 'course' || scope == 'custom';
+    }
+
+    function noteFolderNameValid(data) {
+      return data.name is string && data.name.size() > 0;
+    }
+
+    function noteFolderCourseShapeValid(data) {
+      return (data.scope == 'course' && data.courseCode is string && data.courseCode.size() > 0)
+        || (data.scope != 'course' && !('courseCode' in data));
+    }
+
+    function noteFolderShapeValid(data) {
+      return data.ownerUid is string
+        && noteFolderScopeValid(data.scope)
+        && noteFolderNameValid(data)
+        && noteFolderCourseShapeValid(data);
+    }
+
+    function noteAttachmentTypeValid(type) {
+      return type == 'image' || type == 'document';
+    }
+
+    function noteAttachmentShapeValid(data, folderId) {
+      return data.ownerUid is string
+        && data.folderId is string
+        && data.folderId == folderId
+        && data.folderName is string
+        && data.folderName.size() > 0
+        && noteAttachmentTypeValid(data.type)
+        && data.fileName is string
+        && data.fileName.size() > 0
+        && data.contentType is string
+        && data.contentType.size() > 0
+        && data.storagePath is string
+        && data.storagePath.size() > 0
+        && data.downloadUrl is string
+        && data.downloadUrl.size() > 0
+        && data.createdAtMs is number;
+    }
+
+    // User profile: self only; optional role must be student or admin when present.
+    match /users/{userId} {
+      allow read: if isSelf(userId);
+      allow create, update: if isSelf(userId)
+        && userProfileRoleValid();
+      allow delete: if isSelf(userId);
+    }
+
+    // Student saved schedules are owner-scoped.
+    // Path and owner field must both match `request.auth.uid`.
+    match /users/{userId}/savedSchedules/{scheduleId} {
+      allow read: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+
+      allow create: if isSelf(userId)
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Student waitlist interests are owner-scoped.
+    // Path and owner field must both match `request.auth.uid`.
+    match /users/{userId}/waitlistInterests/{interestId} {
+      allow read: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+
+      allow create: if isSelf(userId)
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Student note folders are owner-scoped.
+    // Path and owner field must both match `request.auth.uid`.
+    match /users/{userId}/noteFolders/{folderId} {
+      allow read: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+
+      allow create: if isSelf(userId)
+        && request.resource.data.ownerUid == request.auth.uid
+        && noteFolderShapeValid(request.resource.data);
+
+      allow update: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.scope == resource.data.scope
+        && noteFolderShapeValid(request.resource.data);
+
+      allow delete: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+
+      match /attachments/{attachmentId} {
+        allow read: if isSelf(userId)
+          && resource.data.ownerUid == request.auth.uid;
+
+        allow create: if isSelf(userId)
+          && request.resource.data.ownerUid == request.auth.uid
+          && noteAttachmentShapeValid(request.resource.data, folderId);
+
+        allow update: if isSelf(userId)
+          && resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid
+          && request.resource.data.folderId == resource.data.folderId
+          && noteAttachmentShapeValid(request.resource.data, folderId);
+
+        allow delete: if isSelf(userId)
+          && resource.data.ownerUid == request.auth.uid;
+      }
+    }
+
+    // Student alerts are owner-scoped.
+    // Path and owner field must both match `request.auth.uid`.
+    match /users/{userId}/alerts/{alertId} {
+      allow read: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+
+      allow create: if isSelf(userId)
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow update: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if isSelf(userId)
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // BGU CS catalog (seeded by scripts/seed-firestore-3nf.mjs). Reads only from clients; writes via Admin SDK.
+    match /bgu_cs_courses/{courseId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /bgu_cs_offerings/{offeringId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /bgu_cs_prerequisite_edges/{edgeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Admin rollup metrics for analysis dashboards (planner usage, cohorts, exports).
+    // Keep this read-only from clients; writes are expected from privileged tooling.
+    match /adminAnalyticsRollups/{rollupId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}

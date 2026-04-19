@@ -1,64 +1,17 @@
-import { StyleSheet, View, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
+import { useAccountViewModel } from '@/view-models/use-account-view-model';
 
 export default function AccountScreen() {
-  const { userInfo, setUserInfo } = useSelection();
-
-  // Check if user is admin
-  const isAdmin = userInfo.userType === 'admin';
-
-  const getInitials = (name: string) => {
-    if (!name) return 'SU';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-
-  const formatAcademicLevel = (level: string) => {
-    const levelMap: { [key: string]: string } = {
-      FRESHMAN: 'Freshman',
-      SOPHOMORE: 'Sophomore',
-      JUNIOR: 'Junior',
-      SENIOR: 'Senior',
-      MASTER: 'Master',
-      PHD: 'PhD',
-    };
-    return levelMap[level] || level;
-  };
-
-  const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => {
-          // Navigate first to get to auth route before layouts check
-          router.replace(ROUTES.AUTH.STUDENT_SESSION);
-          
-          // Clear userInfo after navigation has completed
-          // This prevents student/admin layouts from redirecting
-          setTimeout(() => {
-            setUserInfo({
-              fullName: '',
-              age: '',
-              faculty: '',
-              major: '',
-              academicLevel: '',
-              userType: undefined,
-            });
-          }, 200);
-        },
-      },
-    ]);
-  };
+  const {
+    userInfo,
+    scrollViewProps,
+    isAdmin,
+    getInitials,
+    formatAcademicLevel,
+    handleSignOutPress,
+  } = useAccountViewModel();
 
   return (
     <ThemedView style={styles.container}>
@@ -73,6 +26,7 @@ export default function AccountScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
@@ -102,15 +56,31 @@ export default function AccountScreen() {
             <ThemedText style={styles.passportTitle}>ACADEMIC PASSPORT</ThemedText>
             <View style={styles.passportInfo}>
               <View style={styles.passportRow}>
-                <ThemedText style={styles.passportLabel}>DEPARTMENT</ThemedText>
+                <ThemedText style={styles.passportLabel}>FULL NAME</ThemedText>
                 <ThemedText style={styles.passportValue}>
-                  {userInfo.faculty && userInfo.major
-                    ? `${userInfo.faculty} - ${userInfo.major}`
-                    : 'Not set'}
+                  {userInfo.fullName?.trim() ? userInfo.fullName : 'Not set'}
                 </ThemedText>
               </View>
               <View style={styles.passportRow}>
-                <ThemedText style={styles.passportLabel}>CURRENT YEAR</ThemedText>
+                <ThemedText style={styles.passportLabel}>BIRTH DATE</ThemedText>
+                <ThemedText style={styles.passportValue}>
+                  {userInfo.birthDate?.trim() ? userInfo.birthDate : 'Not set'}
+                </ThemedText>
+              </View>
+              <View style={styles.passportRow}>
+                <ThemedText style={styles.passportLabel}>DEPARTMENT</ThemedText>
+                <ThemedText style={styles.passportValue}>
+                  {userInfo.faculty?.trim() ? userInfo.faculty : 'Not set'}
+                </ThemedText>
+              </View>
+              <View style={styles.passportRow}>
+                <ThemedText style={styles.passportLabel}>PROGRAM / MAJOR</ThemedText>
+                <ThemedText style={styles.passportValue}>
+                  {userInfo.major?.trim() ? userInfo.major : 'Not set'}
+                </ThemedText>
+              </View>
+              <View style={styles.passportRow}>
+                <ThemedText style={styles.passportLabel}>LEVEL</ThemedText>
                 <ThemedText style={styles.passportValue}>
                   {userInfo.academicLevel
                     ? formatAcademicLevel(userInfo.academicLevel)
@@ -121,9 +91,9 @@ export default function AccountScreen() {
           </View>
         )}
 
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
-          <ThemedText style={styles.logoutText}>LOGOUT</ThemedText>
+        {/* Sign out — confirmation required (Story 1.7); cancel leaves session intact */}
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOutPress} activeOpacity={0.7}>
+          <ThemedText style={styles.signOutText}>SIGN OUT</ThemedText>
         </TouchableOpacity>
       </ScrollView>
     </ThemedView>
@@ -251,7 +221,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1A1A1A',
   },
-  logoutButton: {
+  signOutButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
@@ -260,7 +230,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logoutText: {
+  signOutText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#FF4444',

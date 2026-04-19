@@ -2,54 +2,27 @@ import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
+import { useDepartmentViewModel } from '@/view-models/use-department-view-model';
 
 export default function DepartmentScreen() {
-  const { userInfo, setUserInfo } = useSelection();
-  const [selectedFaculty, setSelectedFaculty] = useState<string | null>(null);
-  const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
-
-  const faculties = [
-    'ENGINEERING',
-    'BUSINESS',
-    'SCIENCE',
-    'ARTS',
-    'MEDICINE',
-    'LAW',
-    'EDUCATION',
-  ];
-
-  const majors = [
-    'Software Engineering',
-    'Mechanical Engineering',
-    'Civil Engineering',
-    'Computer Science',
-    'Electrical Engineering',
-    'Data Science',
-  ];
-
-  const isFormValid = selectedFaculty !== null && selectedMajor !== null;
-
-  const handleContinue = () => {
-    if (isFormValid && selectedFaculty && selectedMajor) {
-      setUserInfo({
-        ...userInfo,
-        faculty: selectedFaculty,
-        major: selectedMajor,
-      });
-      router.push(ROUTES.ONBOARDING.ACADEMIC_LEVEL);
-    }
-  };
+  const {
+    faculties,
+    majors,
+    selectedFaculty,
+    setSelectedFaculty,
+    selectedMajor,
+    setSelectedMajor,
+    isFormValid,
+    handleContinue,
+    goBack,
+  } = useDepartmentViewModel();
 
   return (
     <ThemedView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.back()}
+        onPress={goBack}
         activeOpacity={0.7}>
         <MaterialIcons name="chevron-left" size={28} color="#9B9B9B" />
       </TouchableOpacity>
@@ -141,7 +114,7 @@ export default function DepartmentScreen() {
       <View style={styles.bottomButtons}>
         <TouchableOpacity
           style={styles.backButtonBottom}
-          onPress={() => router.back()}
+          onPress={goBack}
           activeOpacity={0.7}>
           <ThemedText style={styles.backButtonText}>BACK</ThemedText>
         </TouchableOpacity>

@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1066437680730",
+    "project_id": "my-first-project-f9f58",
+    "storage_bucket": "my-first-project-f9f58.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066437680730:android:4e48bd2b5d22997f09c263",
+        "android_client_info": {
+          "package_name": "com.miriam.unismart"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1066437680730-aqkkbm8p4km2gks4g88jdie5qsttp5st.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.miriam.unismart",
+            "certificate_hash": "7adda9c030c40509debc31780fb457fd517edbf7"
+          }
+        },
+        {
+          "client_id": "1066437680730-2n7m4u2nmgpspo40c9dslek4meetnbjp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCij4fQZgwCkCChnJRj2_u0-2bBV2fiQqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1066437680730-2n7m4u2nmgpspo40c9dslek4meetnbjp.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1066437680730-skaqr3150mt6h9o433mkrddkvifi5g98.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.miriam.unismart"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

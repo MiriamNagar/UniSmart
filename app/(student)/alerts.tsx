@@ -1,17 +1,16 @@
-import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useSelection } from '@/contexts/selection-context';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { useAlertsViewModel } from "@/view-models/use-alerts-view-model";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function AlertsScreen() {
-  const { alerts, setAlerts } = useSelection();
-
-  const handleMarkAllRead = () => {
-    setAlerts((prev) => prev.map((alert) => ({ ...alert, isRead: true })));
-  };
-
-  const unreadCount = alerts.filter((alert) => !alert.isRead).length;
+  const {
+    scrollViewProps,
+    alertHistoryItems,
+    unreadCount,
+    handleMarkAllRead,
+    handleMarkRead,
+  } = useAlertsViewModel();
 
   return (
     <ThemedView style={styles.container}>
@@ -26,28 +25,66 @@ export default function AlertsScreen() {
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <ThemedText style={styles.title}>Alert Center</ThemedText>
+          <ThemedText style={styles.title} accessibilityRole="header">
+            Alert Center
+          </ThemedText>
           {unreadCount > 0 && (
             <TouchableOpacity
               style={styles.markAllReadButton}
               onPress={handleMarkAllRead}
-              activeOpacity={0.7}>
-              <ThemedText style={styles.markAllReadText}>MARK ALL READ</ThemedText>
+              accessibilityRole="button"
+              accessibilityLabel="Mark all alerts as read"
+              accessibilityHint="Marks every unread alert in this list as read"
+              activeOpacity={0.7}
+            >
+              <ThemedText style={styles.markAllReadText}>
+                MARK ALL READ
+              </ThemedText>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Alerts List */}
         <View style={styles.alertsList}>
-          {alerts.map((alert) => (
-            <View key={alert.id} style={styles.alertCard}>
+          {alertHistoryItems.map((alert) => (
+            <View
+              key={alert.id}
+              style={[styles.alertCard, !alert.isRead && styles.alertCardUnread]}
+            >
+              <View style={styles.alertMetaRow}>
+                <ThemedText
+                  style={alert.isRead ? styles.readBadge : styles.unreadBadge}
+                  accessibilityLabel={`State ${alert.readLabel}`}
+                >
+                  {alert.readLabel.toUpperCase()}
+                </ThemedText>
+                <ThemedText style={styles.alertTimestamp}>
+                  {alert.timestampLabel}
+                </ThemedText>
+              </View>
               <ThemedText style={styles.alertTitle}>{alert.title}</ThemedText>
-              <ThemedText style={styles.alertMessage}>{alert.message}</ThemedText>
+              <ThemedText style={styles.alertMessage}>
+                {alert.message}
+              </ThemedText>
+              {!alert.isRead ? (
+                <TouchableOpacity
+                  style={styles.markReadButton}
+                  onPress={() => handleMarkRead(alert.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Mark ${alert.title} as read`}
+                  accessibilityHint="Marks this alert as read and removes it from unread count"
+                  activeOpacity={0.7}
+                >
+                  <ThemedText style={styles.markReadText}>MARK READ</ThemedText>
+                </TouchableOpacity>
+              ) : null}
             </View>
           ))}
         </View>
@@ -59,36 +96,36 @@ export default function AlertsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'flex-start',
+    backgroundColor: "#FFFFFF",
+    alignItems: "flex-start",
   },
   headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 4,
   },
   headerTitleUni: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
   },
   headerTitleSmart: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#5B4C9D',
+    fontWeight: "bold",
+    color: "#5B4C9D",
   },
   headerSubtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#6B7280",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   scrollView: {
     flex: 1,
@@ -98,45 +135,91 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   titleSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 20,
     marginBottom: 24,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
   },
   markAllReadButton: {
+    minHeight: 44,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    justifyContent: "center",
   },
   markAllReadText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#5B4C9D',
+    fontWeight: "600",
+    color: "#5B4C9D",
     letterSpacing: 0.5,
   },
   alertsList: {
     gap: 16,
   },
   alertCard: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 16,
     padding: 20,
+    borderWidth: 1,
+    borderColor: "#E1E1E1",
+  },
+  alertCardUnread: {
+    borderColor: "#5B4C9D",
+  },
+  alertMetaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  unreadBadge: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#5B4C9D",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  readBadge: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#9B9B9B",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  alertTimestamp: {
+    fontSize: 12,
+    color: "#6B6B6B",
   },
   alertTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#5B4C9D',
+    fontWeight: "bold",
+    color: "#5B4C9D",
     marginBottom: 8,
   },
   alertMessage: {
     fontSize: 14,
-    color: '#1A1A1A',
+    color: "#1A1A1A",
     lineHeight: 20,
   },
+  markReadButton: {
+    alignSelf: "flex-start",
+    marginTop: 12,
+    minHeight: 44,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: "#EDE9FE",
+    justifyContent: "center",
+  },
+  markReadText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#5B4C9D",
+    letterSpacing: 0.4,
+  },
 });
-

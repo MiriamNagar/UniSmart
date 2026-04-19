@@ -2,21 +2,16 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
+import { useSetupCompleteViewModel } from '@/view-models/use-setup-complete-view-model';
 
 export default function SetupCompleteScreen() {
-  const { userInfo } = useSelection();
-  
-  // Check if user is admin
-  const isAdmin = userInfo.userType === 'admin';
+  const { goBack, enterApp } = useSetupCompleteViewModel();
   return (
     <ThemedView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.back()}
+        onPress={goBack}
         activeOpacity={0.7}>
         <MaterialIcons name="chevron-left" size={28} color="#9B9B9B" />
       </TouchableOpacity>
@@ -46,19 +41,13 @@ export default function SetupCompleteScreen() {
       <View style={styles.bottomButtons}>
         <TouchableOpacity
           style={styles.backButtonBottom}
-          onPress={() => router.back()}
+          onPress={goBack}
           activeOpacity={0.7}>
           <ThemedText style={styles.backButtonText}>BACK</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.enterAppButton}
-          onPress={() => {
-            if (isAdmin) {
-              router.replace(ROUTES.ADMIN.DASHBOARD);
-            } else {
-              router.replace(ROUTES.STUDENT.PLANNER);
-            }
-          }}
+          onPress={enterApp}
           activeOpacity={0.8}>
           <ThemedText style={styles.enterAppButtonText}>ENTER APP</ThemedText>
         </TouchableOpacity>

@@ -1,0 +1,28 @@
+﻿git : warning: in the working copy of 'app/(student)/saved/_layout.tsx', LF will be replaced by CRLF the next time Git 
+touches it
+At C:\Users\מרים נגר\AppData\Local\Temp\ps-script-cd670339-9be1-4375-be91-0f43ec9769d0.ps1:101 char:243
++ ... racked.txt; git diff --no-index -- "NUL" "app/(student)/saved/_layout ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+diff --git a/app/(student)/saved/_layout.tsx b/app/(student)/saved/_layout.tsx
+new file mode 100644
+index 0000000..4fe27ac
+--- /dev/null
++++ b/app/(student)/saved/_layout.tsx
+@@ -0,0 +1,14 @@
++import { Stack } from "expo-router";
++
++export default function SavedStackLayout() {
++  return (
++    <Stack
++      screenOptions={{
++        headerShown: false,
++      }}
++    >
++      <Stack.Screen name="index" />
++      <Stack.Screen name="[id]" />
++    </Stack>
++  );
++}

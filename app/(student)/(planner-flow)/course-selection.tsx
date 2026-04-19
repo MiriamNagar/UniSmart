@@ -1,91 +1,198 @@
-import { StyleSheet, TouchableOpacity, View, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
-
-//TODO: Replace with real courses from backend
-import { mockCourses } from '@/mockData/mock-courses';
+import { PlannerCatalogStatusBanner } from "@/components/planner-catalog-status-banner";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useCourseSelectionViewModel } from "@/view-models/use-course-selection-view-model";
+import {
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function CourseSelectionScreen() {
-  const { selectedCourses, setSelectedCourses, setLastPlannerFlowRoute, userInfo, selectedSemester } = useSelection();
-
-  // Save this route as the last visited planner flow route
-  useEffect(() => {
-    setLastPlannerFlowRoute(ROUTES.STUDENT.PLANNER_FLOW.COURSE_SELECTION);
-  }, [setLastPlannerFlowRoute]);
-
-  const semesterKey = selectedSemester === 'Sem 1' ? 'A' : 'B';
-
-  const courses = mockCourses.filter(c => c.semester === semesterKey);
-
-  const toggleCourse = (courseId: string) => {
-    const newSelected = new Set(selectedCourses);
-    if (newSelected.has(courseId)) {
-      newSelected.delete(courseId);
-    } else {
-      newSelected.add(courseId);
-    }
-    setSelectedCourses(newSelected);
-  };
-
-  const hasSelectedCourses = selectedCourses.size > 0;
+  const {
+    userInfo,
+    activeTermSummary,
+    catalogUi,
+    catalogLoading,
+    refreshCatalog,
+    scrollViewProps,
+    courses,
+    waitlistSupportDetected,
+    selectedCourses,
+    toggleCourse,
+    pendingWaitlistSectionId,
+    waitlistedSectionIds,
+    waitlistSectionWhenAllFull,
+    handleJoinWaitlist,
+    hasSelectedCourses,
+    goBackToPlanner,
+    goToCustomRules,
+  } = useCourseSelectionViewModel();
 
   return (
     <ThemedView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <ThemedText style={styles.headerTitle}>UniSmart</ThemedText>
-        <ThemedText style={styles.headerSubtitle}>INTELLIGENCE PLANNER</ThemedText>
+        <ThemedText style={styles.headerSubtitle}>
+          INTELLIGENCE PLANNER
+        </ThemedText>
       </View>
 
       {/* Main Content */}
       <ScrollView
+        {...scrollViewProps}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
-        
+        showsVerticalScrollIndicator={false}
+      >
         {/* Curriculum Filter */}
         <View style={styles.curriculumFilter}>
           <ThemedText style={styles.filterLabel}>CURRICULUM FILTER</ThemedText>
           <ThemedText style={styles.filterTitle}>
-            {userInfo.major || 'Software Engineering'} - {userInfo.academicLevel || 'Freshman'}
+            {userInfo.major || "Computer Science"}
+            {userInfo.academicLevel ? ` — ${userInfo.academicLevel}` : ""}
           </ThemedText>
-          <ThemedText style={styles.filterSemester}>Active Semester: {selectedSemester}</ThemedText>
+          <ThemedText style={styles.filterSemester}>
+            Active term: {activeTermSummary}
+          </ThemedText>
+          <PlannerCatalogStatusBanner
+            ui={catalogUi}
+            loading={catalogLoading}
+            onRetry={refreshCatalog}
+          />
         </View>
-
 
         {/* Course List */}
         <View style={styles.courseListSection}>
           <ThemedText style={styles.sectionLabel}>COURSE LIST</ThemedText>
+          {!waitlistSupportDetected ? (
+            <View style={styles.waitlistUnavailableCard}>
+              <ThemedText style={styles.waitlistUnavailableTitle}>
+                Waitlist unavailable in this build
+              </ThemedText>
+              <ThemedText style={styles.waitlistUnavailableBody}>
+                This catalog does not expose full-section waitlist support yet,
+                so waitlist actions are disabled (no dead taps).
+              </ThemedText>
+            </View>
+          ) : null}
+          {!catalogLoading && courses.length === 0 ? (
+            <View style={styles.emptyCatalog}>
+              <ThemedText style={styles.emptyCatalogTitle}>
+                No courses for this term
+              </ThemedText>
+              <ThemedText style={styles.emptyCatalogBody}>
+                {catalogUi.showRetry
+                  ? `No courses in the loaded catalog match ${activeTermSummary}. If you expected classes here, try another degree year or semester on the planner home screen, or retry loading the catalog from Firestore.`
+                  : `No courses in the loaded catalog match ${activeTermSummary}. Try another degree year or semester on the planner home screen.`}
+              </ThemedText>
+              {catalogUi.showRetry ? (
+                <TouchableOpacity
+                  style={[
+                    styles.emptyRetry,
+                    catalogLoading ? styles.emptyRetryDisabled : null,
+                  ]}
+                  onPress={() => {
+                    if (catalogLoading) return;
+                    void refreshCatalog();
+                  }}
+                  disabled={catalogLoading}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry loading catalog from Firestore"
+                  accessibilityState={{ disabled: catalogLoading }}
+                >
+                  <ThemedText style={styles.emptyRetryText}>
+                    Retry Firestore
+                  </ThemedText>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
           {courses.map((course) => {
             const isSelected = selectedCourses.has(course.courseID);
+            const fullSection = waitlistSectionWhenAllFull(course);
+            const isWaitlistPending =
+              fullSection !== undefined &&
+              pendingWaitlistSectionId === fullSection.sectionID;
+            const isAlreadyWaitlisted =
+              fullSection !== undefined &&
+              waitlistedSectionIds.has(fullSection.sectionID);
             return (
-              <TouchableOpacity
-                key={course.courseID}
-                style={styles.courseCard}
-                onPress={() => toggleCourse(course.courseID)}
-                activeOpacity={0.7}>
-                <View style={styles.courseCardContent}>
-                  <View style={styles.courseInfo}>
-                    <ThemedText style={styles.courseCode}>{course.courseID}</ThemedText>
-                    <ThemedText style={styles.courseName}>{course.courseName}</ThemedText>
-                    <ThemedText style={styles.courseCredits}>{(course as any).credits} Credits</ThemedText>
+              <View key={course.courseID} style={styles.courseCardWrapper}>
+                <TouchableOpacity
+                  style={styles.courseCard}
+                  onPress={() => toggleCourse(course.courseID)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.courseCardContent}>
+                    <View style={styles.courseInfo}>
+                      <ThemedText style={styles.courseCode}>
+                        {course.courseID}
+                      </ThemedText>
+                      <ThemedText style={styles.courseName}>
+                        {course.courseName}
+                      </ThemedText>
+                      <ThemedText style={styles.courseCredits}>
+                        {course.credits} Credits
+                      </ThemedText>
+                    </View>
+                    <View
+                      style={[
+                        styles.checkIcon,
+                        isSelected && styles.checkIconSelected,
+                      ]}
+                    >
+                      {isSelected && (
+                        <MaterialIcons name="check" size={20} color="#FFFFFF" />
+                      )}
+                    </View>
                   </View>
-                  <View
+                </TouchableOpacity>
+                {fullSection ? (
+                  <TouchableOpacity
                     style={[
-                      styles.checkIcon,
-                      isSelected && styles.checkIconSelected,
-                    ]}>
-                    {isSelected && (
-                      <MaterialIcons name="check" size={20} color="#FFFFFF" />
-                    )}
-                  </View>
-                </View>
-              </TouchableOpacity>
+                      styles.waitlistButton,
+                      isAlreadyWaitlisted ? styles.waitlistButtonActive : null,
+                      isWaitlistPending ? styles.waitlistButtonDisabled : null,
+                    ]}
+                    onPress={() =>
+                      void handleJoinWaitlist({
+                        courseId: course.courseID,
+                        courseName: course.courseName,
+                        sectionId: fullSection.sectionID,
+                      })
+                    }
+                    disabled={
+                      isWaitlistPending || pendingWaitlistSectionId !== null
+                    }
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isAlreadyWaitlisted
+                        ? `Cancel waitlist for ${course.courseName}`
+                        : `Join waitlist for ${course.courseName}`
+                    }
+                    accessibilityState={{
+                      disabled:
+                        isWaitlistPending || pendingWaitlistSectionId !== null,
+                    }}
+                  >
+                    <ThemedText style={styles.waitlistButtonText}>
+                      {isWaitlistPending
+                        ? isAlreadyWaitlisted
+                          ? "CANCELLING WAITLIST..."
+                          : "JOINING WAITLIST..."
+                        : isAlreadyWaitlisted
+                          ? "ALREADY IN WAITLIST · TAP TO CANCEL"
+                          : "JOIN WAITLIST"}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             );
           })}
         </View>
@@ -95,11 +202,9 @@ export default function CourseSelectionScreen() {
       <View style={styles.bottomActions}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => {
-            setLastPlannerFlowRoute(null);
-            router.push(ROUTES.STUDENT.PLANNER);
-          }}
-          activeOpacity={0.7}>
+          onPress={goBackToPlanner}
+          activeOpacity={0.7}
+        >
           <MaterialIcons name="chevron-left" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <TouchableOpacity
@@ -111,14 +216,16 @@ export default function CourseSelectionScreen() {
           disabled={!hasSelectedCourses}
           onPress={() => {
             if (hasSelectedCourses) {
-              router.push(ROUTES.STUDENT.PLANNER_FLOW.CUSTOM_RULES);
+              goToCustomRules();
             }
-          }}>
+          }}
+        >
           <ThemedText
             style={[
               styles.solverButtonText,
               !hasSelectedCourses && styles.solverButtonTextDisabled,
-            ]}>
+            ]}
+          >
             SOLVER SETUP
           </ThemedText>
         </TouchableOpacity>
@@ -130,27 +237,27 @@ export default function CourseSelectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   header: {
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 24,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
     marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     letterSpacing: 1,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   scrollView: {
     flex: 1,
@@ -160,7 +267,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   curriculumFilter: {
-    backgroundColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
     borderRadius: 16,
     padding: 20,
     marginTop: 20,
@@ -168,116 +275,186 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontSize: 11,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     marginBottom: 8,
   },
   filterTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 8,
   },
   filterSemester: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     opacity: 0.9,
+  },
+  emptyCatalog: {
+    paddingVertical: 20,
+    paddingHorizontal: 4,
+  },
+  emptyCatalogTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 8,
+  },
+  emptyCatalogBody: {
+    fontSize: 14,
+    color: "#666666",
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  emptyRetry: {
+    alignSelf: "flex-start",
+    backgroundColor: "#5B4C9D",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  emptyRetryDisabled: {
+    opacity: 0.55,
+  },
+  emptyRetryText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
   },
   courseListSection: {
     marginBottom: 32,
   },
+  waitlistUnavailableCard: {
+    backgroundColor: "#FFF4E5",
+    borderColor: "#FFD8A8",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  waitlistUnavailableTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#9C5B16",
+    marginBottom: 6,
+  },
+  waitlistUnavailableBody: {
+    fontSize: 12,
+    color: "#7A5A2A",
+    lineHeight: 17,
+  },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#9B9B9B',
+    fontWeight: "600",
+    color: "#9B9B9B",
     marginBottom: 16,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
+  },
+  courseCardWrapper: {
+    marginBottom: 12,
   },
   courseCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 12,
-    marginBottom: 12,
     padding: 16,
   },
   courseCardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   courseInfo: {
     flex: 1,
   },
   courseCode: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#5B4C9D',
+    fontWeight: "600",
+    color: "#5B4C9D",
     marginBottom: 4,
   },
   courseName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
+    fontWeight: "bold",
+    color: "#1A1A1A",
     marginBottom: 4,
   },
   courseCredits: {
     fontSize: 14,
-    color: '#9B9B9B',
+    color: "#9B9B9B",
   },
   checkIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#E0E0E0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkIconSelected: {
-    backgroundColor: '#5B4C9D',
-    borderColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
+    borderColor: "#5B4C9D",
+  },
+  waitlistButton: {
+    marginTop: 8,
+    backgroundColor: "#5B4C9D",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  waitlistButtonDisabled: {
+    opacity: 0.6,
+  },
+  waitlistButtonActive: {
+    backgroundColor: "#F4B26B",
+  },
+  waitlistButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
   bottomActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 24,
     paddingBottom: 16,
     paddingTop: 16,
     gap: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
+    borderTopColor: "#F0F0F0",
   },
   backButton: {
     width: 56,
     height: 56,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: "#1A1A1A",
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   solverButton: {
     flex: 1,
     height: 56,
-    backgroundColor: '#5B4C9D',
+    backgroundColor: "#5B4C9D",
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   solverButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.5,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   solverButtonDisabled: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   solverButtonTextDisabled: {
-    color: '#9B9B9B',
+    color: "#9B9B9B",
   },
 });
-

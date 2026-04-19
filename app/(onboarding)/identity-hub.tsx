@@ -2,53 +2,27 @@ import { StyleSheet, TouchableOpacity, View, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { useSelection } from '@/contexts/selection-context';
-import { ROUTES } from '@/constants/routes';
+import { useIdentityHubViewModel } from '@/view-models/use-identity-hub-view-model';
 
 export default function IdentityHubScreen() {
-  const { userType } = useLocalSearchParams<{ userType?: string }>();
-  const isAdmin = userType === 'admin';
-  const { userInfo, setUserInfo } = useSelection();
-  const [fullName, setFullName] = useState('');
-  const [age, setAge] = useState('');
-
-  const isFormValid = fullName.trim().length > 0 && age.trim().length > 0;
-
-  const handleContinue = () => {
-    if (isFormValid) {
-      if (isAdmin) {
-        // Admin: save info with userType and go directly to setup-complete
-        setUserInfo({ 
-          ...userInfo, 
-          fullName, 
-          age, 
-          faculty: '', 
-          major: '', 
-          academicLevel: '',
-          userType: 'admin'
-        });
-        router.push(ROUTES.ONBOARDING.SETUP_COMPLETE);
-      } else {
-        // Student: save info with userType and go to department
-        setUserInfo({ 
-          ...userInfo, 
-          fullName, 
-          age,
-          userType: 'student'
-        });
-        router.push(ROUTES.ONBOARDING.DEPARTMENT);
-      }
-    }
-  };
+  const {
+    isAdmin,
+    fullName,
+    setFullName,
+    birthDate,
+    setBirthDate,
+    isFormValid,
+    birthDateHint,
+    handleContinue,
+    goBack,
+  } = useIdentityHubViewModel();
 
   return (
     <ThemedView style={styles.container}>
       {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.back()}
+        onPress={goBack}
         activeOpacity={0.7}>
         <MaterialIcons name="chevron-left" size={28} color="#9B9B9B" />
       </TouchableOpacity>
@@ -80,17 +54,19 @@ export default function IdentityHubScreen() {
           />
         </View>
 
-        {/* Age Input */}
+        {/* Birth Date Input */}
         <View style={styles.inputContainer}>
-          <ThemedText style={styles.label}>AGE</ThemedText>
+          <ThemedText style={styles.label}>BIRTH DATE (YYYY-MM-DD)</ThemedText>
           <TextInput
             style={styles.input}
-            value={age}
-            onChangeText={setAge}
-            placeholder="20"
+            value={birthDate}
+            onChangeText={setBirthDate}
+            placeholder="2005-09-14"
             placeholderTextColor="#9B9B9B"
-            keyboardType="numeric"
+            keyboardType="numbers-and-punctuation"
+            autoCapitalize="none"
           />
+          {birthDateHint ? <ThemedText style={styles.hintText}>{birthDateHint}</ThemedText> : null}
         </View>
 
         {/* Continue Button */}
@@ -174,6 +150,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     marginBottom: 24,
+  },
+  hintText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#B45309',
   },
   label: {
     fontSize: 12,

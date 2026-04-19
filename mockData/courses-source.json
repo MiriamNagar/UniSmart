@@ -1,0 +1,253 @@
+{
+  "אלגוריתמים 1": [
+    {"type": "שיעור", "lecturer": "ד\"ר גולן שי", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ד 10:00-13:00", "credits": 4, "weekly_hours": 2.5, "places": 3},
+    {"type": "שיעור", "lecturer": "ד\"ר ניבש גבריאל", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ב 10:00-13:00", "credits": 4, "weekly_hours": 2.5, "places": 10},
+    {"type": "שיעור (מצטיינים)", "lecturer": "ד\"ר ניבש גבריאל", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ד 09:00-12:00", "credits": 4, "weekly_hours": 2.5, "places": 18},
+    {"type": "תרגיל", "lecturer": "מר שור תומר", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 14:00-16:00", "credits": 0, "weekly_hours": 0, "places": 4},
+    {"type": "תרגיל", "lecturer": "מר צדיק דניאל", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ד 17:00-19:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "תרגיל (מצטיינים)", "lecturer": "מר צדיק דניאל", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ב 09:00-11:00", "credits": 0, "weekly_hours": 0, "places": 17},
+    {"type": "תרגיל", "lecturer": "מר שור תומר", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 16:00-18:00", "credits": 0, "weekly_hours": 0, "places": 4},
+    {"type": "תרגיל", "lecturer": "מר קליין מתן", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 2}
+  ],
+  "אלגוריתמים 2": [
+    {"type": "שיעור", "lecturer": "מר טרושקין מיכאל", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ג 09:00-12:00", "credits": 4, "weekly_hours": 2.5, "places": 0},
+    {"type": "שיעור", "lecturer": "מר רוזנברג דניאל", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ה 12:00-15:00", "credits": 4, "weekly_hours": 2.5, "places": 2},
+    {"type": "שיעור (מצטיינים)", "lecturer": "מר טרושקין מיכאל", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ב 15:00-18:00", "credits": 4, "weekly_hours": 2.5, "places": 25},
+    {"type": "תרגיל", "lecturer": "מר דנינו דותן", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ב 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 6},
+    {"type": "תרגיל", "lecturer": "מר רוזנברג דניאל", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ב 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל (מצטיינים)", "lecturer": "מר דנינו דותן", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ד 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 15},
+    {"type": "תרגיל", "lecturer": "מר רוזנברג דניאל", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ב 17:00-19:00", "credits": 0, "weekly_hours": 0, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר דנינו דותן", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ה 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 2}
+  ],
+  "מסדי נתונים": [
+    {"type": "שיעור", "lecturer": "ד\"ר קליין איל", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ג 12:00-15:00", "credits": 4, "weekly_hours": 2.5, "places": 28},
+    {"type": "שיעור", "lecturer": "ד\"ר קליין איל", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ד 10:00-13:00", "credits": 4, "weekly_hours": 2.5, "places": 3},
+    {"type": "שיעור", "lecturer": "מר טרם נקבע", "language": "עברית", "semester": "ק", "year": "ב", "time": "02:00-", "credits": 4, "weekly_hours": 2.5, "places": 35},
+    {"type": "תרגיל", "lecturer": "מר קליין מתן", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום א 12:00-14:00", "credits": 0, "weekly_hours": 0, "places": 3},
+    {"type": "תרגיל", "lecturer": "מר קליין מתן", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ג 12:00-14:00", "credits": 0, "weekly_hours": 0, "places": 13},
+    {"type": "תרגיל", "lecturer": "מר טרם נקבע", "language": "עברית", "semester": "ק", "year": "ב", "time": "02:00-", "credits": 0, "weekly_hours": 0, "places": 5},
+    {"type": "תרגיל", "lecturer": "מר קליין מתן", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ד 19:00-21:00", "credits": 0, "weekly_hours": 0, "places": 4}
+  ],
+  "תכנות מערכות 1": [
+    {"type": "שיעור", "lecturer": "ד\"ר בן ארצי גיל", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ב 13:00-16:00", "credits": 4, "weekly_hours": 2.5, "places": 7},
+    {"type": "שיעור", "lecturer": "ד\"ר בן ארצי גיל", "language": "עברית", "semester": "א", "year": "ב", "time": "יום א 15:00-18:00", "credits": 4, "weekly_hours": 2.5, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר בראון ליאור", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ד 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר פרדס יואן", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 14:00-16:00", "credits": 0, "weekly_hours": 0, "places": 5},
+    {"type": "תרגיל", "lecturer": "מר פרדס יואן", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 11:00-13:00", "credits": 0, "weekly_hours": 0, "places": 8},
+    {"type": "תרגיל", "lecturer": "מר בראון ליאור", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 16:00-18:00", "credits": 0, "weekly_hours": 0, "places": 1}
+  ],
+  "תכנות מונחה עצמים": [
+    {"type": "שיעור", "lecturer": "ד\"ר קליין איל", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 10:00-14:00", "credits": 5, "weekly_hours": 3, "places": 0},
+    {"type": "שיעור", "lecturer": "ד\"ר אנידג'ר אור חיים", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ד 09:00-13:00", "credits": 5, "weekly_hours": 3, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר עופר משה", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ד 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "גב' סטרמן חרות", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 09:00-11:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "תרגיל", "lecturer": "מר עופר משה", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ד 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "גב' סטרמן חרות", "language": "עברית", "semester": "א", "year": "ב", "time": "יום ג 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 3}
+  ],
+  "הנדסת תוכנה": [
+    {"type": "שיעור", "lecturer": "ד\"ר שקרון מירב", "language": "עברית", "semester": "א", "year": "ג", "time": "יום א 12:00-15:00", "credits": 3.5, "weekly_hours": 2, "places": 23},
+    {"type": "שיעור", "lecturer": "ד\"ר שקרון מירב", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ה 12:00-15:00", "credits": 3.5, "weekly_hours": 2, "places": 38},
+    {"type": "תרגיל", "lecturer": "מר בן טובים דביר חי", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ד 13:00-14:00", "credits": 0, "weekly_hours": 0, "places": 33},
+    {"type": "תרגיל", "lecturer": "מר מיכאל שקד", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ד 13:00-14:00", "credits": 0, "weekly_hours": 0, "places": 19},
+    {"type": "תרגיל", "lecturer": "מר מיכאל שקד", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ד 14:00-15:00", "credits": 0, "weekly_hours": 0, "places": 7}
+  ],
+  "חישוביות": [
+    {"type": "שיעור", "lecturer": "ד\"ר פסקין צ'רניאבסקי ענת", "language": "עברית", "semester": "א", "year": "ג", "time": "יום א 09:00-12:00", "credits": 3.5, "weekly_hours": 2, "places": 8},
+    {"type": "שיעור", "lecturer": "פרופ' הירש אדוארד", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ב 15:00-18:00", "credits": 3.5, "weekly_hours": 2, "places": 24},
+    {"type": "שיעור", "lecturer": "פרופ' הירש אדוארד", "language": "עברית", "semester": "ק", "year": "ג", "time": "יום א 09:00-13:30", "credits": 3.5, "weekly_hours": 2, "places": 13},
+    {"type": "תרגיל", "lecturer": "מר רוזנברג דניאל", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ב 17:00-18:00", "credits": 0, "weekly_hours": 0, "places": 3},
+    {"type": "תרגיל", "lecturer": "מר פסח עדי", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ד 13:00-14:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "תרגיל", "lecturer": "מר פסח עדי", "language": "עברית", "semester": "ק", "year": "ג", "time": "יום ג 13:30-15:00", "credits": 0, "weekly_hours": 0, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר פסח עדי", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ב 16:00-17:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "תרגיל", "lecturer": "מר פסח עדי", "language": "עברית", "semester": "ק", "year": "ג", "time": "יום ג 15:00-16:30", "credits": 0, "weekly_hours": 0, "places": 13}
+  ],
+  "הסקה סטטיסטית": [
+    {"type": "שיעור", "lecturer": "ד\"ר וויס רועי", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ד 09:00-12:00", "credits": 3.5, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור", "lecturer": "ד\"ר וויס רועי", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ה 09:00-12:00", "credits": 3.5, "weekly_hours": 2, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר רוזנברג דניאל", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ג 15:00-16:00", "credits": 0, "weekly_hours": 0, "places": 5},
+    {"type": "תרגיל", "lecturer": "מר רוזנברג דניאל", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ג 16:00-17:00", "credits": 0, "weekly_hours": 0, "places": 0}
+  ],
+  "דחיסת נתונים": [
+    {"type": "שיעור", "lecturer": "פרופ' שפירא דנה", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ב 12:00-15:00", "credits": 3, "weekly_hours": 1.5, "places": 0},
+    {"type": "שיעור", "lecturer": "פרופ' שפירא דנה", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ג 09:00-12:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "פתרון בעיות באמצעות חיפוש": [
+    {"type": "שיעור", "lecturer": "פרופ' חזון נועם", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ד 10:00-13:00", "credits": 3, "weekly_hours": 1.5, "places": 1}
+  ],
+  "אלגוריתמים כלכליים": [
+    {"type": "שיעור", "lecturer": "פרופ' סגל הלוי דוד אראל", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ב 12:00-15:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "ראייה ממוחשבת ועיבוד תמונה": [
+    {"type": "שיעור", "lecturer": "ד\"ר בן ארצי גיל", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ד 15:00-18:00", "credits": 3.5, "weekly_hours": 2, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר לוין נועם", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום א 16:00-17:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר אילוק אליאן", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום א 18:00-19:00", "credits": 0, "weekly_hours": 0, "places": 6}
+  ],
+  "הגנת פרוטוקולי תקשורת": [
+    {"type": "שיעור", "lecturer": "ד\"ר ברגר הראל", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום א 09:00-12:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "למידה עמוקה ועיבוד שפות טבעיות": [
+    {"type": "שיעור", "lecturer": "פרופ' עזריה עמוס יהודה", "language": "עברית", "semester": "א", "year": "ג", "time": "יום א 12:00-15:00", "credits": 3, "weekly_hours": 1.5, "places": 0},
+    {"type": "שיעור", "lecturer": "פרופ' עזריה עמוס יהודה", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ב 09:00-12:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "מבוא לקריפטוגרפיה": [
+    {"type": "שיעור", "lecturer": "ד\"ר פסקין צ'רניאבסקי ענת", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ג 09:00-12:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "שיטות לגילוי התקפות סייבר": [
+    {"type": "שיעור", "lecturer": "ד\"ר דובין רן", "language": "עברית", "semester": "א", "year": "ג", "time": "יום א 09:00-12:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "אלגברה ליניארית 2 למדעי המחשב": [
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "ב", "year": "שנה", "time": "יום ה 11:00-13:00", "credits": 0, "weekly_hours": 0, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "ב", "year": "שנה", "time": "יום ד 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 11},
+    {"type": "שיעור", "lecturer": "ד\"ר קלמנוביץ דניאל", "language": "עברית", "semester": "ב", "year": "א", "time": "יום א 10:00-14:00", "credits": 5, "weekly_hours": 3, "places": 107},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ד 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 3}
+  ],
+  "אלגברה ליניארית 1 למדעי המחשב": [
+    {"type": "תרגיל", "lecturer": "גב' בן דוד תמר", "language": "עברית", "semester": "א", "year": "א", "time": "יום ב 17:00-19:00", "credits": 0, "weekly_hours": 0, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר דנינו דותן", "language": "עברית", "semester": "א", "year": "א", "time": "יום א 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 5},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "א", "year": "א", "time": "יום א 17:00-19:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "א", "year": "א", "time": "יום א 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 0}
+  ],
+  "לוגיקה ותורת הקבוצות למדעי המחשב": [
+    {"type": "שיעור", "lecturer": "ד\"ר קלמנוביץ דניאל", "language": "עברית", "semester": "א", "year": "א", "time": "יום א 10:00-13:00", "credits": 4, "weekly_hours": 2.5, "places": 2},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "א", "year": "א", "time": "יום ג 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "א", "year": "א", "time": "יום ד 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "א", "year": "א", "time": "יום ג 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 9}
+  ],
+  "מבנים דיסקרטיים למדעי המחשב": [
+    {"type": "שיעור", "lecturer": "פרופ' עמרי ערן", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ג 11:00-15:00", "credits": 5, "weekly_hours": 3, "places": 3},
+    {"type": "שיעור", "lecturer": "ד\"ר קלמנוביץ דניאל", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ד 15:00-19:00", "credits": 5, "weekly_hours": 3, "places": 44},
+    {"type": "שיעור", "lecturer": "פרופ' עמרי ערן", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ב 09:00-13:00", "credits": 5, "weekly_hours": 3, "places": 6},
+    {"type": "תרגיל", "lecturer": "מר שור תומר", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ד 11:00-13:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר שור תומר", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ג 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 5},
+    {"type": "תרגיל", "lecturer": "גב' בן דוד תמר", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ג 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 0}
+  ],
+  "מערכות ספרתיות": [
+    {"type": "תרגיל", "lecturer": "גב' ליסק בר", "language": "עברית", "semester": "א", "year": "א", "time": "יום א 15:00-16:00", "credits": 0, "weekly_hours": 0, "places": 3},
+    {"type": "תרגיל", "lecturer": "מר רוזנברג דניאל", "language": "עברית", "semester": "א", "year": "א", "time": "יום ב 15:00-16:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "שיעור", "lecturer": "מר מור דורון", "language": "עברית", "semester": "א", "year": "א", "time": "יום ד 15:00-17:00", "credits": 2.5, "weekly_hours": 1.5, "places": 0},
+    {"type": "שיעור", "lecturer": "מר מור דורון", "language": "עברית", "semester": "א", "year": "א", "time": "יום ד 17:00-19:00", "credits": 2.5, "weekly_hours": 1.5, "places": 12},
+    {"type": "תרגיל", "lecturer": "מר רוזנברג דניאל", "language": "עברית", "semester": "א", "year": "א", "time": "יום ב 16:00-17:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "א", "year": "א", "time": "יום ג 18:00-19:00", "credits": 0, "weekly_hours": 0, "places": 8}
+  ],
+  "ארכיטקטורה של מחשבים": [
+    {"type": "שיעור", "lecturer": "ד\"ר וויסברג פנחס", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ד 09:00-11:00", "credits": 2.5, "weekly_hours": 1.5, "places": 3},
+    {"type": "שיעור", "lecturer": "ד\"ר וויסברג פנחס", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ה 13:00-15:00", "credits": 2.5, "weekly_hours": 1.5, "places": 38},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ג 19:00-20:00", "credits": 0, "weekly_hours": 0, "places": 3},
+    {"type": "תרגיל", "lecturer": "מר מור דורון", "language": "עברית", "semester": "ב", "year": "א", "time": "יום א 18:00-19:00", "credits": 0, "weekly_hours": 0, "places": 12},
+    {"type": "תרגיל", "lecturer": "גב' ליסק בר", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ג 19:00-20:00", "credits": 0, "weekly_hours": 0, "places": 12},
+    {"type": "תרגיל", "lecturer": "גב' ליסק בר", "language": "עברית", "semester": "ב", "year": "א", "time": "יום א 19:00-20:00", "credits": 0, "weekly_hours": 0, "places": 12}
+  ],
+  "מבני נתונים": [
+    {"type": "שיעור", "lecturer": "ד\"ר גולן שי", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ג 11:00-13:00", "credits": 5, "weekly_hours": 3, "places": 26},
+    {"type": "תרגיל", "lecturer": "מר צדיק דניאל", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ד 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 10},
+    {"type": "תרגיל", "lecturer": "מר אבן-חן ידידיה", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ב 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר צדיק דניאל", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ד 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 10},
+    {"type": "שיעור", "lecturer": "פרופ' גוטליב ליעד", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ב 09:00-13:00", "credits": 5, "weekly_hours": 3, "places": 8}
+  ],
+  "חשבון אינפיניטסימלי 1 למדעי המחשב": [
+    {"type": "תרגיל", "lecturer": "מר סגל רן", "language": "עברית", "semester": "א", "year": "א", "time": "יום ב 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 11},
+    {"type": "שיעור", "lecturer": "מר סגל רן", "language": "עברית", "semester": "א", "year": "א", "time": "02:00-", "credits": 5, "weekly_hours": 3, "places": 62},
+    {"type": "תרגיל", "lecturer": "מר כשרים ברוך", "language": "עברית", "semester": "א", "year": "א", "time": "יום א 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר סגל רן", "language": "עברית", "semester": "א", "year": "א", "time": "יום ב 17:00-19:00", "credits": 0, "weekly_hours": 0, "places": 9},
+    {"type": "תרגיל", "lecturer": "מר כשרים ברוך", "language": "עברית", "semester": "א", "year": "א", "time": "יום ב 15:00-17:00", "credits": 0, "weekly_hours": 0, "places": 4}
+  ],
+  "חשבון אינפיניטסימלי 2 למדעי המחשב": [
+    {"type": "שיעור", "lecturer": "ד\"ר ויצמן אריאל", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ג 09:00-11:00", "credits": 5, "weekly_hours": 3, "places": 99},
+    {"type": "שיעור", "lecturer": "מר טרם נקבע", "language": "עברית", "semester": "ק", "year": "א", "time": "יום א 09:00-12:00", "credits": 5, "weekly_hours": 3, "places": 18},
+    {"type": "תרגיל", "lecturer": "מר כשרים ברוך", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ד 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "תרגיל", "lecturer": "מר כשרים ברוך", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ב 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 8},
+    {"type": "תרגיל", "lecturer": "מר סגל רן", "language": "עברית", "semester": "ב", "year": "א", "time": "יום ב 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 16},
+    {"type": "תרגיל", "lecturer": "מר טרם נקבע", "language": "עברית", "semester": "ק", "year": "א", "time": "יום ה 09:00-12:00", "credits": 0, "weekly_hours": 0, "places": 18}
+  ],
+  "מבוא לחישוב": [
+    {"type": "שיעור", "lecturer": "פרופ' בן משה בועז", "language": "עברית", "semester": "א", "year": "א", "time": "יום ג 09:00-11:00", "credits": 5, "weekly_hours": 3, "places": 5},
+    {"type": "תרגיל", "lecturer": "מר אבן-חן ידידיה", "language": "עברית", "semester": "א", "year": "א", "time": "יום ד 18:00-20:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר רודקין אמרי", "language": "עברית", "semester": "א", "year": "א", "time": "יום ד 11:00-13:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "תרגיל", "lecturer": "מר צדיק דניאל", "language": "עברית", "semester": "א", "year": "א", "time": "יום ד 13:00-15:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "שיעור", "lecturer": "פרופ' בן משה בועז", "language": "עברית", "semester": "א", "year": "א", "time": "יום א 15:00-17:00", "credits": 5, "weekly_hours": 3, "places": 21}
+  ],
+  "Undergraduate seminar in Computer Science": [
+    {"type": "שיעור", "lecturer": "ד\"ר ניבש גבריאל", "language": "אנגלית", "semester": "א", "year": "ג", "time": "יום ד 15:00-17:00", "credits": 2, "weekly_hours": 1, "places": 0},
+    {"type": "שיעור", "lecturer": "ד\"ר חוגי אסף", "language": "אנגלית", "semester": "א", "year": "ג", "time": "יום ג 15:00-17:00", "credits": 2, "weekly_hours": 1, "places": 0},
+    {"type": "שיעור", "lecturer": "פרופ' הירש אדוארד", "language": "אנגלית", "semester": "ב", "year": "ג", "time": "יום א 20:00-22:00", "credits": 2, "weekly_hours": 1, "places": 6},
+    {"type": "שיעור", "lecturer": "ד\"ר קלמנוביץ דניאל", "language": "אנגלית", "semester": "ב", "year": "ג", "time": "יום ב 12:00-14:00", "credits": 2, "weekly_hours": 1, "places": 0},
+    {"type": "שיעור", "lecturer": "פרופ' חזון נועם", "language": "אנגלית", "semester": "א", "year": "ג", "time": "יום ג 15:00-17:00", "credits": 2, "weekly_hours": 1, "places": 0},
+    {"type": "שיעור", "lecturer": "ד\"ר גולן שי", "language": "אנגלית", "semester": "ב", "year": "ג", "time": "יום ד 15:00-17:00", "credits": 2, "weekly_hours": 1, "places": 10}
+  ],
+  "Undergraduate final project workshop in Computer Science": [
+    {"type": "שיעור", "lecturer": "ד\"ר ברגר הראל", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור", "lecturer": "פרופ' גוטליב ליעד", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור", "lecturer": "ד\"ר אנידג'ר אור חיים", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור", "lecturer": "ד\"ר דובין רן", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור (Combines industry experience)", "lecturer": "פרופ' דביר עמית זאב", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור (Combines industry experience)", "lecturer": "ד\"ר חוגי אסף", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור (Combines industry experience)", "lecturer": "ד\"ר קליין איל", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור (Combines industry experience)", "lecturer": "ד\"ר דובין רן", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור (Combines industry experience)", "lecturer": "פרופ' שפירא דנה", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור", "lecturer": "פרופ' סגל הלוי דוד אראל", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור", "lecturer": "טרם נקבע", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 197},
+    {"type": "שיעור", "lecturer": "ד\"ר חוגי אסף", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 19},
+    {"type": "שיעור", "lecturer": "ד\"ר חורב אלעד", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0},
+    {"type": "שיעור", "lecturer": "פרופ' דביר עמית זאב", "language": "אנגלית", "semester": "ש", "year": "ג", "time": "02:00-", "credits": 4, "weekly_hours": 2, "places": 0}
+  ],
+  "פיתוח יישומים לענן": [
+    {"type": "תרגיל", "lecturer": "מר מאיר גד יוסף", "language": "עברית", "semester": "ב", "year": "ר", "time": "יום א 17:00-18:00", "credits": 0, "weekly_hours": 0, "places": 1},
+    {"type": "שיעור", "lecturer": "מר מאיר גד יוסף", "language": "עברית", "semester": "ב", "year": "ר", "time": "יום א 14:00-17:00", "credits": 3.5, "weekly_hours": 2, "places": 1}
+  ],
+  "הסתברות רב-מימדית למדעי המחשב": [
+    {"type": "שיעור", "lecturer": "ד\"ר חורב אלעד", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ד 17:00-19:00", "credits": 4, "weekly_hours": 2, "places": 21}
+  ],
+  "אלגוריתמי ניווט ושיערוך מיקום": [
+    {"type": "שיעור", "lecturer": "פרופ' בן משה בועז", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ג 12:00-15:00", "credits": 3, "weekly_hours": 1.5, "places": 6}
+  ],
+  "סיבוכיות תקשורת": [
+    {"type": "שיעור", "lecturer": "ד\"ר פסקין צ'רניאבסקי ענת", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום א 09:00-12:00", "credits": 3, "weekly_hours": 1.5, "places": 1}
+  ],
+  "שיטות טופולוגיות במדעי הנתונים": [
+    {"type": "שיעור", "lecturer": "ד\"ר קלמנוביץ דניאל", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ד 10:00-13:00", "credits": 3, "weekly_hours": 1.5, "places": 2}
+  ],
+  "מדעי הנתונים התיאורטיים": [
+    {"type": "שיעור", "lecturer": "ד\"ר חורב אלעד", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ב 15:00-18:00", "credits": 3, "weekly_hours": 1.5, "places": 5}
+  ],
+  "הסברה בבינה מלאכותית": [
+    {"type": "שיעור", "lecturer": "ד\"ר חוגי אסף", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ב 09:00-12:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "מודלים מתקדמים של הבנת השפה": [
+    {"type": "שיעור", "lecturer": "ד\"ר קליין איל", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום א 13:00-16:00", "credits": 3, "weekly_hours": 1.5, "places": 5}
+  ],
+  "שיכונים מטריים ואלגוריתמים": [
+    {"type": "שיעור", "lecturer": "פרופ' גוטליב ליעד", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ה 09:00-12:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "מבוא לחישוב קוונטי": [
+    {"type": "שיעור", "lecturer": "ד\"ר פסקין צ'רניאבסקי ענת", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ה 15:00-18:00", "credits": 3, "weekly_hours": 1.5, "places": 2}
+  ],
+  "למידה יישומית בראייה ממוחשבת": [
+    {"type": "שיעור", "lecturer": "ד\"ר בן ארצי גיל", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ה 15:00-18:00", "credits": 3.5, "weekly_hours": 2, "places": 0},
+    {"type": "תרגיל", "lecturer": "מר לוין נועם", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ב 19:00-20:00", "credits": 0, "weekly_hours": 0, "places": 0}
+  ],
+  "נושאים מתקדמים בראייה ממוחשבת עם יישומים בהדמיה רפואית": [
+    {"type": "שיעור", "lecturer": "ד\"ר חוגי אסף", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ג 12:00-15:00", "credits": 3, "weekly_hours": 1.5, "places": 0}
+  ],
+  "תכנות אלגוריתמים מחקריים": [
+    {"type": "שיעור", "lecturer": "פרופ' סגל הלוי דוד אראל", "language": "עברית", "semester": "ב", "year": "ג", "time": "יום ה 12:00-15:00", "credits": 3, "weekly_hours": 1.5, "places": 24}
+  ],
+  "פיתוח משחקי מחשב": [
+    {"type": "שיעור", "lecturer": "פרופ' סגל הלוי דוד אראל", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ד 15:00-18:00", "credits": 4, "weekly_hours": 2.5, "places": 8},
+    {"type": "תרגיל", "lecturer": "מר קושניר ויקטור", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ב 18:00-20:00", "credits": 0, "weekly_hours": 0, "places": 3},
+    {"type": "תרגיל", "lecturer": "מר קושניר ויקטור", "language": "עברית", "semester": "א", "year": "ג", "time": "יום ב 20:00-22:00", "credits": 0, "weekly_hours": 0, "places": 5}
+  ],
+  "Boolean Satisfiability": [
+    {"type": "שיעור", "lecturer": "פרופ' הירש אדוארד", "language": "אנגלית", "semester": "ב", "year": "ג", "time": "יום ג 12:00-15:00", "credits": 3, "weekly_hours": 1.5, "places": 28}
+  ],
+  "תכנות מערכות 2": [
+    {"type": "שיעור", "lecturer": "פרופ' סגל הלוי דוד אראל", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ב 09:00-12:00", "credits": 4, "weekly_hours": 2.5, "places": 0},
+    {"type": "שיעור", "lecturer": "ד\"ר אופלינסקי אלינה", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום א 09:00-12:00", "credits": 4, "weekly_hours": 2.5, "places": 1},
+    {"type": "תרגיל", "lecturer": "מר צרפתי שחר", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ה 17:00-18:00", "credits": 0, "weekly_hours": 0, "places": 5},
+    {"type": "תרגיל", "lecturer": "מר צרפתי שחר", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ב 15:00-16:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "מעבדה", "lecturer": "מר צרפתי שחר", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ב 19:00-20:00", "credits": 0, "weekly_hours": 0, "places": 2},
+    {"type": "מעבדה", "lecturer": "גב' סטרמן חרות", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ג 14:00-15:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "מעבדה", "lecturer": "גב' סטרמן חרות", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ה 10:00-11:00", "credits": 0, "weekly_hours": 0, "places": 0},
+    {"type": "מעבדה", "lecturer": "גב' סטרמן חרות", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ב 19:00-20:00", "credits": 0, "weekly_hours": 0, "places": 1},
+    {"type": "מעבדה", "lecturer": "מר צרפתי שחר", "language": "עברית", "semester": "ב", "year": "ב", "time": "יום ג 20:00-21:00", "credits": 0, "weekly_hours": 0, "places": 0}
+  ]
+}

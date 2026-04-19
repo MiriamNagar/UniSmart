@@ -21,13 +21,26 @@ export interface Lesson { // A single lesson within a course section - could be 
 export interface CourseSection { // A specific section of a course: A course can have multiple sections, each with its own schedule and lecturer
 	sectionID: string;
 	lessons: Lesson[];
+	/** Known remaining seats for this section when catalog provides capacity. */
+	remainingSeats?: number;
+	/** True when catalog explicitly marks the section as full (0 seats). */
+	isFull?: boolean;
+	/** True when the catalog supports waitlist/interest actions for this section. */
+	waitlistSupported?: boolean;
 }
 
 export interface Course {
 	courseID: string;
 	courseName: string; // ADD
+	/** Optional short catalog summary displayed in planner result rows when present. */
+	shortDescription?: string;
 	isMandatory: boolean;
 	credits: number;
 	semester: 'A' | 'B' | 'summer'; // ADD
+	/** BGU catalog degree year (Hebrew letter: א–ד). Present for catalog-derived courses. */
+	degreeCatalogYear?: string;
 	availableSections: CourseSection[];
+	/** Catalog prerequisite course names (same language as in the catalog). Shown in planner detail UI; selection is not blocked when unmet. */
+	prerequisiteNames?: string[];
 }
+
