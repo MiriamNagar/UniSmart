@@ -316,8 +316,8 @@ async function createCustomFolderWithFirebase(
     doc,
     getDocs,
     query,
-    runTransaction,
     serverTimestamp,
+    setDoc,
     where,
   } = await import("firebase/firestore");
   const foldersRef = collection(
@@ -347,19 +347,14 @@ async function createCustomFolderWithFirebase(
     NOTE_FOLDERS_SUBCOLLECTION,
     customDocId,
   );
-  await runTransaction(db, async (transaction) => {
-    const existing = await transaction.get(folderRef);
-    if (existing.exists()) {
-      throw new Error("A folder with this name already exists.");
-    }
-    transaction.set(folderRef, {
-      ownerUid: uid,
-      scope: "custom",
-      name: trimmedName,
-      normalizedName,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+  // setDoc avoids transaction.get on a missing doc (that read fails under strict folder read rules).
+  await setDoc(folderRef, {
+    ownerUid: uid,
+    scope: "custom",
+    name: trimmedName,
+    normalizedName,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   });
   return {
     id: customDocId,
